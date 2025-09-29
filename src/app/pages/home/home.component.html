@@ -1,11 +1,54 @@
-<section>
-  <h2>Welcome to Ark Valley Events</h2>
-  <p>This is the Home page, rendered via Angular routing and SSR.</p>
-  <mat-toolbar color="primary">Test Toolbar</mat-toolbar>
+<section class="hero" aria-labelledby="welcome-heading">
+    <div class="hero__content">
+        <h1 id="welcome-heading" class="hero__title">Discover Live Music in the Arkansas Valley</h1>
+        <p class="hero__subtitle">
+            Find shows, festivals, and community events—curated for locals and visitors alike.
+        </p>
+        <div class="hero__actions">
+            <a mat-raised-button color="primary" routerLink="/events">Browse Events</a>
+            <a mat-stroked-button color="primary" routerLink="/about">Learn More</a>
+        </div>
+    </div>
+</section>
 
-  <div style="padding: 2rem">
-    <button mat-raised-button color="primary">Primary</button>
-    <button mat-raised-button color="accent">Accent</button>
-    <button mat-raised-button color="warn">Warn</button>
-  </div>
+<section class="highlights" aria-label="Why use Ark Valley Events">
+    <div class="highlights__grid">
+        <mat-card class="highlight">
+            <mat-card-header>
+                <mat-icon aria-hidden="true">event</mat-icon>
+                <mat-card-title>Up-to-date Listings</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+                <p>Timely event info from venues and organizers across the valley.</p>
+            </mat-card-content>
+        </mat-card>
+
+        <mat-card class="highlight">
+            <mat-card-header>
+                <mat-icon aria-hidden="true">place</mat-icon>
+                <mat-card-title>Local First</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+                <p>Spotlight on local artists, small venues, and community gatherings.</p>
+            </mat-card-content>
+        </mat-card>
+
+        <mat-card class="highlight">
+            <mat-card-header>
+                <mat-icon aria-hidden="true">schedule</mat-icon>
+                <mat-card-title>Plan Your Week</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+                <p>Save time with a clean calendar view and easy navigation.</p>
+            </mat-card-content>
+        </mat-card>
+    </div>
+</section>
+
+<section class="cta" aria-label="Call to action">
+    <div class="cta__inner">
+        <h2 class="cta__title">Ready to explore what’s happening?</h2>
+        <p class="cta__subtitle">Jump into the calendar and find your next show.</p>
+        <a mat-raised-button color="primary" routerLink="/events">View the Calendar</a>
+    </div>
 </section>
