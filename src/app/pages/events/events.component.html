@@ -1,0 +1,13 @@
+<section class="events-page">
+    <h1 class="page-title">Events Calendar</h1>
+
+    <!-- Server-side placeholder to keep SSR markup stable -->
+    <div *ngIf="!isBrowser()" class="calendar-placeholder" aria-hidden="true">
+        <p>Calendar is available on the client.</p>
+    </div>
+
+    <!-- Render FullCalendar only in the browser; skip hydration to avoid mismatches -->
+    <div *ngIf="isBrowser()">
+        <full-calendar ngSkipHydration [options]="calendarOptions"></full-calendar>
+    </div>
+</section>

@@ -1,0 +1,10 @@
+// Reusable mixins
+@mixin container($max: 1200px) {
+    width: min(100% - 2rem, #{$max});
+    margin-inline: auto;
+}
+
+@mixin focus-ring {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+}
