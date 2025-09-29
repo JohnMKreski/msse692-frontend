@@ -39,6 +39,10 @@ export class EventsComponent {
         navLinks: true,
         eventClick: (arg) => this.onEventClick(arg),
         datesSet: (arg) => this.onDatesSet(arg as any),
+        dayMaxEvents: true,
+        contentHeight: 'auto',
+        expandRows: true,
+        windowResize: () => this.applyResponsiveOptions(),
         plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin],
     };
 
@@ -49,6 +53,7 @@ export class EventsComponent {
     constructor() {
         // Initial load (client only)
         if (this.isBrowser()) {
+            this.applyResponsiveOptions();
             this.loadEvents();
         }
     }
@@ -84,5 +89,23 @@ export class EventsComponent {
                     this.calendarOptions = { ...this.calendarOptions, events: [] };
                 },
             });
+    }
+
+    private applyResponsiveOptions() {
+        if (!this.isBrowser()) return;
+        const narrow = window.matchMedia('(max-width: 600px)').matches;
+        const headerToolbar = narrow
+            ? { left: 'prev,next', center: 'title', right: 'today' }
+            : {
+                  left: 'prev,next today',
+                  center: 'title',
+                  right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek',
+              };
+        const initialView = narrow ? 'listWeek' : 'dayGridMonth';
+        this.calendarOptions = {
+            ...this.calendarOptions,
+            headerToolbar,
+            initialView,
+        };
     }
 }

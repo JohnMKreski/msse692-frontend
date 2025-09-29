@@ -4,6 +4,8 @@
 @use './styles/utilities';
 @use './styles/layout';
 
+/* FullCalendar v6 ships styles via JS; no external CSS imports are required. */
+
 $my-theme: mat.define-theme(
     (
         color: (
@@ -56,4 +58,18 @@ body {
 html {
     color-scheme: light;
     @include mat.all-component-themes($my-theme);
+}
+
+/* Optional: compact toolbar/buttons on small screens */
+@media (max-width: 600px) {
+    .fc .fc-toolbar {
+        gap: 0.25rem;
+    }
+    .fc .fc-toolbar-title {
+        font-size: clamp(1rem, 4vw, 1.1rem);
+    }
+    .fc .fc-button {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
 }
