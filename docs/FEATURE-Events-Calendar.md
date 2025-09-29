@@ -32,38 +32,27 @@ Optional add-ons you can consider later:
 -   `@fullcalendar/rrule` for recurring events
 -   `@fullcalendar/multimonth` for a multi-month view
 
-## 2) Add FullCalendar styles
+## 2) Styles (v6 vs v5)
 
-FullCalendar ships its own CSS. Add these to Angular’s global styles so SSR and client both see consistent styles.
+-   FullCalendar v6: No separate CSS files are shipped; styles are bundled within the JS and injected automatically. You do not need to import any CSS for v6 packages.
+-   FullCalendar v5 and earlier: CSS files exist under `main.css` per package (e.g., `@fullcalendar/daygrid/main.css`). If you use v5, add those CSS files globally via `angular.json` or import them in `styles.scss`.
 
-Note: For FullCalendar v6+, CSS is typically under `index.css`. If you’re on an older version, paths may use `main.css`. Adjust as needed.
-
-Option A — angular.json (recommended):
-
-1. Open `angular.json` and in the build `styles` array (for your app project), add:
-
-```json
-{
-  "input": "node_modules/@fullcalendar/core/index.css"
-},
-{
-  "input": "node_modules/@fullcalendar/daygrid/index.css"
-},
-{
-  "input": "node_modules/@fullcalendar/timegrid/index.css"
-},
-{
-  "input": "node_modules/@fullcalendar/list/index.css"
-}
-```
-
-Option B — import in `styles.scss` (works too but may be less explicit in some setups):
+Optional mobile tweaks (global):
 
 ```scss
-@import '@fullcalendar/core/index.css';
-@import '@fullcalendar/daygrid/index.css';
-@import '@fullcalendar/timegrid/index.css';
-@import '@fullcalendar/list/index.css';
+/* styles.scss */
+@media (max-width: 600px) {
+    .fc .fc-toolbar {
+        gap: 0.25rem;
+    }
+    .fc .fc-toolbar-title {
+        font-size: clamp(1rem, 4vw, 1.1rem);
+    }
+    .fc .fc-button {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+}
 ```
 
 ## 3) Define event models
