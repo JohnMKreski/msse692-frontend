@@ -2,6 +2,7 @@ import { APP_BASE_HREF } from '@angular/common';
 import { CommonEngine, isMainModule } from '@angular/ssr/node';
 import express from 'express';
 import { dirname, join, resolve } from 'node:path';
+import { appendFileSync, existsSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import bootstrap from './main.server';
 
@@ -11,6 +12,21 @@ const indexHtml = join(serverDistFolder, 'index.server.html');
 
 const app = express();
 const commonEngine = new CommonEngine();
+
+// Simple SSR file logging (Node-side only). This doesn't run in the browser.
+const logsDir = resolve(process.cwd(), 'logs');
+const ssrLogFile = join(logsDir, 'frontend-ssr.log');
+if (!existsSync(logsDir)) {
+    mkdirSync(logsDir, { recursive: true });
+}
+function ssrLog(line: string) {
+    try {
+        const timestamp = new Date().toISOString();
+        appendFileSync(ssrLogFile, `[${timestamp}] ${line}\n`, { encoding: 'utf8' });
+    } catch {
+        // swallow logging errors
+    }
+}
 
 /**
  * Example Express Rest API endpoints can be defined here.
@@ -28,29 +44,30 @@ const commonEngine = new CommonEngine();
  * Serve static files from /browser
  */
 app.get(
-  '**',
-  express.static(browserDistFolder, {
-    maxAge: '1y',
-    index: 'index.html'
-  }),
+    '**',
+    express.static(browserDistFolder, {
+        maxAge: '1y',
+        index: 'index.html',
+    }),
 );
 
 /**
  * Handle all other requests by rendering the Angular application.
  */
 app.get('**', (req, res, next) => {
-  const { protocol, originalUrl, baseUrl, headers } = req;
+    const { protocol, originalUrl, baseUrl, headers } = req;
+    ssrLog(`GET ${originalUrl}`);
 
-  commonEngine
-    .render({
-      bootstrap,
-      documentFilePath: indexHtml,
-      url: `${protocol}://${headers.host}${originalUrl}`,
-      publicPath: browserDistFolder,
-      providers: [{ provide: APP_BASE_HREF, useValue: baseUrl }],
-    })
-    .then((html) => res.send(html))
-    .catch((err) => next(err));
+    commonEngine
+        .render({
+            bootstrap,
+            documentFilePath: indexHtml,
+            url: `${protocol}://${headers.host}${originalUrl}`,
+            publicPath: browserDistFolder,
+            providers: [{ provide: APP_BASE_HREF, useValue: baseUrl }],
+        })
+        .then((html) => res.send(html))
+        .catch((err) => next(err));
 });
 
 /**
@@ -58,10 +75,10 @@ app.get('**', (req, res, next) => {
  * The server listens on the port defined by the `PORT` environment variable, or defaults to 4000.
  */
 if (isMainModule(import.meta.url)) {
-  const port = process.env['PORT'] || 4000;
-  app.listen(port, () => {
-    console.log(`Node Express server listening on http://localhost:${port}`);
-  });
+    const port = process.env['PORT'] || 4000;
+    app.listen(port, () => {
+        console.log(`Node Express server listening on http://localhost:${port}`);
+    });
 }
 
 export default app;
