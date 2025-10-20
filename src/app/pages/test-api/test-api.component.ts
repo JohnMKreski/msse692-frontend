@@ -8,6 +8,7 @@ import {
     FormControl,
 } from '@angular/forms';
 import { EventsService } from '../events/events.service';
+import { EnumsService, EnumOption } from '../events/enums.service';
 import { EventDto, CreateEventRequest } from '../events/event.model';
 
 @Component({
@@ -50,7 +51,9 @@ import { EventDto, CreateEventRequest } from '../events/event.model';
                     </label>
                     <label>
                         Type
-                        <input type="text" formControlName="type" placeholder="Concert" />
+                        <select formControlName="type">
+                            <option *ngFor="let t of typeOptions" [value]="t.value">{{ t.label }}</option>
+                        </select>
                     </label>
                     <label>
                         Start At
@@ -90,7 +93,9 @@ import { EventDto, CreateEventRequest } from '../events/event.model';
                     </label>
                     <label>
                         Type
-                        <input type="text" formControlName="type" />
+                        <select formControlName="type">
+                            <option *ngFor="let t of typeOptions" [value]="t.value">{{ t.label }}</option>
+                        </select>
                     </label>
                     <label>
                         Start At
@@ -214,6 +219,13 @@ export class TestApiComponent {
     error: WritableSignal<string | null> = signal(null);
     events: WritableSignal<EventDto[]> = signal([]);
     lastResponse: WritableSignal<any> = signal(null);
+    // Enum-backed options for EventType. Hydrated from backend on init with static fallback.
+    typeOptions: EnumOption[] = [
+        { value: 'CONCERT', label: 'Concert' },
+        { value: 'FESTIVAL', label: 'Festival' },
+        { value: 'PARTY', label: 'Party' },
+        { value: 'OTHER', label: 'Other' },
+    ];
 
     form!: FormGroup<{
         eventName: FormControl<string>;
@@ -238,14 +250,36 @@ export class TestApiComponent {
 
     constructor(
         private readonly eventsService: EventsService,
+        private readonly enumsService: EnumsService,
         private readonly fb: NonNullableFormBuilder,
     ) {
+        // Load enum options from backend. If empty/error, keep default list.
+        this.enumsService.getEventTypes().subscribe((opts) => {
+            if (opts && opts.length) {
+                const currentCreate = this.form?.controls.type.value;
+                const currentUpdate = this.updateForm?.controls.type.value;
+
+                // Start with backend options
+                let merged = [...opts];
+
+                // Ensure current form values remain selectable even if not in fetched list
+                if (currentCreate && !merged.some((o) => o.value === currentCreate)) {
+                    merged = [...merged, { value: currentCreate, label: this.labelFromValue(currentCreate) }];
+                }
+                if (currentUpdate && !merged.some((o) => o.value === currentUpdate)) {
+                    merged = [...merged, { value: currentUpdate, label: this.labelFromValue(currentUpdate) }];
+                }
+
+                this.typeOptions = merged;
+            }
+        });
         const now = new Date();
         const plusHour = new Date(now.getTime() + 60 * 60 * 1000);
         this.form = this.fb.group(
             {
                 eventName: this.fb.control('Sample Event', { validators: [Validators.required] }),
-                type: this.fb.control('Concert', { validators: [Validators.required] }),
+                // Use enum constant values for payload compatibility; display shows labels
+                type: this.fb.control(this.typeOptions[0].value, { validators: [Validators.required] }),
                 startAt: this.fb.control(this.toLocalInput(now), {
                     validators: [Validators.required],
                 }),
@@ -268,7 +302,7 @@ export class TestApiComponent {
             {
                 id: this.fb.control('', { validators: [Validators.required] }),
                 eventName: this.fb.control('Updated Event', { validators: [Validators.required] }),
-                type: this.fb.control('Concert', { validators: [Validators.required] }),
+                type: this.fb.control(this.typeOptions[0].value, { validators: [Validators.required] }),
                 startAt: this.fb.control(this.toLocalInput(now), {
                     validators: [Validators.required],
                 }),
@@ -325,7 +359,7 @@ export class TestApiComponent {
         this.eventsService.get(id).subscribe({
             next: (data: any) => {
                 const eventName = data.eventName ?? data.title ?? 'Updated Event';
-                const type = data.type ?? 'Concert';
+                const type = this.toEnumValue(data.type ?? data.typeDisplayName ?? 'Concert');
                 const startAtIso = data.startAt ?? data.start ?? new Date().toISOString();
                 const endAtIso =
                     data.endAt ?? data.end ?? new Date(Date.now() + 3600000).toISOString();
@@ -393,7 +427,7 @@ export class TestApiComponent {
         this.error.set(null);
         const sample: CreateEventRequest = {
             eventName: 'Sample Event',
-            type: 'Concert',
+            type: 'CONCERT',
             startAt: new Date().toISOString(),
             endAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
             eventLocation: 'Test Runner',
@@ -477,5 +511,25 @@ export class TestApiComponent {
         } catch {
             return String(err);
         }
+    }
+
+    // Helpers to convert between backend display names and enum constants
+    private toEnumValue(input: string): string {
+        if (!input) return this.typeOptions[0].value;
+        // Prefer exact label match first
+        const byLabel = this.typeOptions.find((t) => t.label.toLowerCase() === input.toLowerCase());
+        if (byLabel) return byLabel.value;
+        // Fallback: assume already a constant or upper-case it
+        const normalized = input.trim().toUpperCase();
+        const byValue = this.typeOptions.find((t) => t.value === normalized);
+        return byValue ? byValue.value : this.typeOptions[this.typeOptions.length - 1].value; // default OTHER
+    }
+
+    // Returns a display label for a given enum value using current options or a title-cased fallback.
+    private labelFromValue(value: string): string {
+        const found = this.typeOptions.find((t) => t.value === value);
+        if (found) return found.label;
+        const lower = value?.toLowerCase() ?? '';
+        return lower.charAt(0).toUpperCase() + lower.slice(1).toLowerCase();
     }
 }
