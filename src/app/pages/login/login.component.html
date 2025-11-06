@@ -1,0 +1,26 @@
+<section class="login">
+    <h1>Sign in</h1>
+
+    <div *ngIf="user() as u; else signInForm">
+        <p>Signed in as <strong>{{ u.email || u.displayName }}</strong></p>
+        <button type="button" (click)="logout()" [disabled]="loading()">Sign out</button>
+    </div>
+
+    <ng-template #signInForm>
+        <form [formGroup]="form" (ngSubmit)="loginWithEmail()">
+        <label>
+            Email
+            <input type="email" formControlName="email" placeholder="you@example.com" />
+        </label>
+        <label>
+            Password
+            <input type="password" formControlName="password" placeholder="••••••" />
+        </label>
+
+        <button type="submit" [disabled]="loading() || form.invalid">Sign in</button>
+        <!-- <button type="button" (click)="loginWithGoogle()" [disabled]="loading()">Sign in with Google</button> -->
+        </form>
+    </ng-template>
+
+    <p class="error" *ngIf="error() as err">{{ err }}</p>
+</section>
