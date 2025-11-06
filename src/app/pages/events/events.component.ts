@@ -12,7 +12,7 @@ import interactionPlugin from '@fullcalendar/interaction';
 import listPlugin from '@fullcalendar/list';
 
 // Note: some versions of @fullcalendar/angular auto-wire plugins from options.plugins.
-// We'll pass plugins through calendarOptions directly to avoid relying on static registration APIs.
+// Passing plugins through calendarOptions directly to avoid relying on static registration APIs.
 
 @Component({
     selector: 'app-events',

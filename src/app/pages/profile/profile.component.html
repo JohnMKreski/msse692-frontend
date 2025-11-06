@@ -1,0 +1,36 @@
+<section class="profile" *ngIf="!loading(); else loadingTpl">
+  <ng-container *ngIf="user() as u; else notSignedIn">
+    <div class="profile__header">
+      <img *ngIf="u.photoURL as photo" [src]="photo" alt="avatar" class="avatar" />
+      <div>
+        <h1 class="title">{{ u.displayName || u.email || 'Your profile' }}</h1>
+        <p class="muted">UID: {{ u.uid }}</p>
+        <p *ngIf="u.email">Email: {{ u.email }}</p>
+      </div>
+    </div>
+
+    <div class="profile__actions">
+      <button type="button" (click)="logout()">Logout</button>
+    </div>
+
+    <div class="profile__claims" *ngIf="roles() as r">
+      <h2>Roles</h2>
+      <ul>
+        <li *ngFor="let role of r">{{ role }}</li>
+      </ul>
+    </div>
+
+    <div class="profile__claims" *ngIf="claims() as c">
+      <h2>Token Claims</h2>
+      <pre>{{ c | json }}</pre>
+    </div>
+  </ng-container>
+
+  <ng-template #notSignedIn>
+    <p>You’re not signed in. <a routerLink="/login">Go to Login</a></p>
+  </ng-template>
+</section>
+
+<ng-template #loadingTpl>
+  <p>Loading profile…</p>
+  </ng-template>
