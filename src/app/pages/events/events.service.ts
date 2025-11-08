@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { CreateEventRequest, EventDto, UpdateEventRequest } from './event.model';
+import { CreateEventRequest, EventDto, UpdateEventRequest, EventAudit } from './event.model';
 
 @Injectable({ providedIn: 'root' })
 export class EventsService {
@@ -35,5 +35,10 @@ export class EventsService {
 
     delete(id: string): Observable<void> {
         return this.http.delete<void>(`${this.baseUrl}/events/${encodeURIComponent(id)}`);
+    }
+
+    // Read-only: fetch recent audit entries for an event
+    getAudits(eventId: string, limit: number = 10): Observable<EventAudit[]> {
+        return this.http.get<EventAudit[]>(`${this.baseUrl}/events/${encodeURIComponent(eventId)}/audits`, { params: { limit } });
     }
 }

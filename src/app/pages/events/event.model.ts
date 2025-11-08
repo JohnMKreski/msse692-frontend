@@ -18,3 +18,12 @@ export interface CreateEventRequest {
 }
 
 export type UpdateEventRequest = Partial<CreateEventRequest>;
+
+// Read-only audit entry as returned by backend GET /api/events/{id}/audits
+export interface EventAudit {
+    id: number;
+    eventId: number;
+    actorUserId: number;
+    action: 'CREATE' | 'UPDATE' | 'DELETE' | string;
+    at: string; // ISO date-time
+}

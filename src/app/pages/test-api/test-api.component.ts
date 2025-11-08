@@ -9,7 +9,7 @@ import {
 } from '@angular/forms';
 import { EventsService } from '../events/events.service';
 import { EnumsService, EnumOption } from '../events/enums.service';
-import { EventDto, CreateEventRequest } from '../events/event.model';
+import { CreateEventRequest } from '../events/event.model';
 
 @Component({
     selector: 'app-test-api',
@@ -149,9 +149,19 @@ import { EventDto, CreateEventRequest } from '../events/event.model';
 
             <div *ngIf="events().length">
                 <h3>Events ({{ events().length }})</h3>
-                <ul>
-                    <li *ngFor="let e of events()">{{ e.title }} — {{ e.start }}</li>
-                </ul>
+                <div class="events-json-list">
+                    <article class="event-json" *ngFor="let e of events(); let i = index">
+                        <header class="event-json-header">
+                            <span class="index-badge">Frontend Index: [{{ i }}]</span>
+                            <strong>{{ e.eventName || 'Event' }}</strong>
+                            <span class="muted" *ngIf="e.id">ID: #{{ e.id }}</span>
+                            <!-- <button type="button" (click)="toggleExpand(i)">
+                                {{ expanded()[i] ? 'Collapse' : 'Expand' }}
+                            </button> -->
+                        </header>
+                        <pre *ngIf="expanded()[i]">{{ e | json }}</pre>
+                    </article>
+                </div>
             </div>
 
             <div *ngIf="lastResponse()">
@@ -210,6 +220,33 @@ import { EventDto, CreateEventRequest } from '../events/event.model';
                 background: #ffe5e5;
                 border-color: #ffcccc;
             }
+            .events-json-list {
+                display: grid;
+                gap: 0.75rem;
+            }
+            .event-json {
+                border: 1px solid #e5e7eb;
+                border-radius: 8px;
+                padding: 0.75rem;
+                background: #fff;
+            }
+            .event-json-header {
+                display: flex;
+                gap: 0.5rem;
+                align-items: center;
+                justify-content: flex-start;
+                margin-bottom: 0.5rem;
+            }
+            .index-badge {
+                font-family: monospace;
+                background: #f3f4f6;
+                padding: 0 0.4rem;
+                border-radius: 4px;
+            }
+            .muted {
+                color: #6b7280;
+                font-size: 0.85rem;
+            }
         `,
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -217,7 +254,8 @@ import { EventDto, CreateEventRequest } from '../events/event.model';
 export class TestApiComponent {
     loading: WritableSignal<boolean> = signal(false);
     error: WritableSignal<string | null> = signal(null);
-    events: WritableSignal<EventDto[]> = signal([]);
+    events: WritableSignal<any[]> = signal([]);
+    expanded: WritableSignal<boolean[]> = signal([]);
     lastResponse: WritableSignal<any> = signal(null);
     // Enum-backed options for EventType. Hydrated from backend on init with static fallback.
     typeOptions: EnumOption[] = [
@@ -325,7 +363,20 @@ export class TestApiComponent {
         this.error.set(null);
         this.eventsService.list().subscribe({
             next: (data) => {
-                this.events.set(data ?? []);
+                const normalized = (data ?? []).map((e: any) => ({
+                    ...e, // <-- brings in eventId, eventName, startAt, endAt, eventLocation, etc.
+                    // id: e?.id ?? e?.eventId ?? e?.uuid ?? e?.identifier ?? undefined,
+                    // title: e?.title ?? e?.eventName ?? '(no title)',
+                    // type: e?.type ?? e?.typeDisplayName ?? undefined,
+                    // start: e?.start ?? e?.startAt ?? '',
+                    // end: e?.end ?? e?.endAt ?? '',
+                    // location: e?.location ?? e?.eventLocation ?? undefined,
+                    // description: e?.description ?? e?.eventDescription ?? undefined,
+                    // ownerUid: e?.ownerUid ?? e?.createdByUid ?? e?.createdBy ?? undefined,
+                    // ownerEmail: e?.ownerEmail ?? e?.createdByEmail ?? undefined,
+                }));
+                this.events.set(normalized);
+                this.expanded.set(new Array(normalized.length).fill(true));
                 this.lastResponse.set({ ok: true, count: data?.length ?? 0 });
                 this.loading.set(false);
             },
@@ -334,6 +385,14 @@ export class TestApiComponent {
                 this.loading.set(false);
             },
         });
+    }
+
+    toggleExpand(index: number) {
+        const current = this.expanded();
+        if (!current[index] && typeof current[index] === 'undefined') return;
+        const next = [...current];
+        next[index] = !next[index];
+        this.expanded.set(next);
     }
 
     getById() {

@@ -2,7 +2,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { Auth } from '@angular/fire/auth';
-import { onAuthStateChanged, User } from 'firebase/auth';
+import { onAuthStateChanged, User, signOut } from 'firebase/auth';
 
 @Component({
     selector: 'app-header',
@@ -24,6 +24,10 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
     ngOnDestroy(): void {
         if (this.unsub) this.unsub();
+    }
+
+    async logout(): Promise<void> {
+        await signOut(this.auth);
     }
 
 }

@@ -3,10 +3,11 @@
     <nav aria-label="Primary">
         <a routerLink="/" routerLinkActive="active" ariaCurrentWhenActive="page">Home</a>
         <!-- <a routerLink="/about" routerLinkActive="active">About</a> -->
-        <a routerLink="/events" routerLinkActive="active">Events</a>
-        <a routerLink="/test-api" routerLinkActive="active">Test API</a>
-        <a *ngIf="!user" routerLink="/login" routerLinkActive="active">Login</a>
-        <a *ngIf="user" routerLink="/profile" routerLinkActive="active">Profile</a>
+    <a routerLink="/events" routerLinkActive="active">Events</a>
+    <a routerLink="/test-api" routerLinkActive="active">Test API</a>
+    <a routerLink="/profile" routerLinkActive="active">Profile</a>
+    <a *ngIf="user" (click)="logout()" class="logout-link" title="Logout" role="button" tabindex="0">Logout</a>
+    <a *ngIf="!user" routerLink="/login" routerLinkActive="active" class="login-link">Login</a>
         <!-- Add routerLinks as pages are created -->
     </nav>
 </div>
