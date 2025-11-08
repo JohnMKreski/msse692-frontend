@@ -21,10 +21,22 @@
       <ng-template #noFirebase>
         <p>No Firebase user loaded.</p>
       </ng-template>
-      <div *ngIf="roles() as r"><strong>Roles:</strong> {{ r.join(', ') }}</div>
+      <div *ngIf="roles() as r"><strong>Roles ({{ rolesSource() || 'unknown' }}):</strong> {{ r.join(', ') }}</div>
       <div *ngIf="claims() as c">
         <strong>Token Claims (JSON):</strong>
         <pre>{{ c | json }}</pre>
+      </div>
+      <div class="token-decode" *ngIf="idTokenHeader() || idTokenPayload()">
+        <h3 class="section-subtitle">Decoded ID Token</h3>
+        <details open>
+          <summary>Header</summary>
+          <pre>{{ idTokenHeader() | json }}</pre>
+        </details>
+        <details open>
+          <summary>Payload</summary>
+          <pre>{{ idTokenPayload() | json }}</pre>
+        </details>
+        <button type="button" (click)="forceRefreshTokenAndClaims()">Refresh Token & Claims</button>
       </div>
     </section>
 
@@ -41,7 +53,7 @@
 
     <!-- Section 3: Profile Data (plain text) -->
     <section class="profile__sec3">
-      <h2 class="section-title">Section 3: Profile Data</h2>
+      <h2 class="section-title">Section 3: Profile Data //TODO</h2>
       <ng-container *ngIf="existingProfile() as p; else noProfilePlain">
         <pre>{{ p | json }}</pre>
         <p class="muted">Completed: {{ p.completed }} | Verified: {{ p.verified }}</p>

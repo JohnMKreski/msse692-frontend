@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, signal, WritableSignal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Auth } from '@angular/fire/auth';
 import { onAuthStateChanged, User, getIdTokenResult, signOut } from 'firebase/auth';
@@ -23,6 +23,9 @@ export class ProfileComponent implements OnInit, OnDestroy {
     user = signal<User | null>(null);
     roles = signal<string[] | null>(null);
     claims = signal<Record<string, any> | null>(null);
+    rolesSource = signal<'firebase-claims' | 'backend-fallback' | null>(null);
+    idTokenHeader = signal<Record<string, any> | null>(null);
+    idTokenPayload = signal<Record<string, any> | null>(null);
     loading = signal<boolean>(true);
     myEvents = signal<EventDto[] | null>(null);
     allEvents = signal<any[] | null>(null);
@@ -45,10 +48,16 @@ export class ProfileComponent implements OnInit, OnDestroy {
         const claimRoles = this.roles();
         if (Array.isArray(claimRoles) && claimRoles.length) return claimRoles;
         const au = this.appUser();
-        return (au && Array.isArray((au as any).roles) && (au as any).roles.length) ? (au as any).roles : null;
+        console.log('Falling back to AppUser roles:', au); //Log
+        const appUserRoles = (au && Array.isArray((au as any).roles) && (au as any).roles.length)
+            ? (au as any).roles as string[]
+            : null;
+        console.log('isAdmin?', appUserRoles);
+        return appUserRoles;
     });
     isAdmin = computed(() => {
         const r = this.effectiveRoles();
+        console.log('isAdmin?', r); //Log
         return Array.isArray(r) && r.includes('ADMIN');
     });
 
@@ -110,11 +119,19 @@ export class ProfileComponent implements OnInit, OnDestroy {
         this.claims.set(null);
         if (u) {
             try {
-            const token = await getIdTokenResult(u, /*forceRefresh*/ false);
-            const c = token.claims || {};
+            const tokenResult = await getIdTokenResult(u, /*forceRefresh*/ false);
+            const c = tokenResult.claims || {};
             const r = Array.isArray(c['roles']) ? (c['roles'] as string[]) : (typeof c['roles'] === 'string' ? [c['roles']] : []);
             this.claims.set(c);
-            this.roles.set(r.length ? r : null);
+            if (r.length) {
+                this.roles.set(r);
+                this.rolesSource.set('firebase-claims');
+            } else {
+                this.roles.set(null);
+                this.rolesSource.set(null); // might become backend fallback later
+            }
+            // Decode JWT header/payload (omit signature) for visibility
+            this.decodeAndSetIdTokenParts(tokenResult.token);
             } catch {
             // ignore claim fetch errors; show basic profile
             }
@@ -127,12 +144,12 @@ export class ProfileComponent implements OnInit, OnDestroy {
         this.events.list().subscribe({
             next: (items: any[]) => {
                 const normalized = (items ?? []).map((e: any) => {
-                    const id = e?.id ?? e?.eventId ?? e?.slug ?? null;
-                    const title = e?.title ?? e?.eventName ?? '(no title)';
-                    const start = e?.start ?? e?.startAt ?? '';
-                    const end = e?.end ?? e?.endAt ?? '';
-                    const location = e?.location ?? e?.eventLocation ?? undefined;
-                    return { ...e, id, title, start, end, location };
+                    // const id = e?.id ?? e?.eventId ?? e?.slug ?? null;
+                    // const title = e?.title ?? e?.eventName ?? '(no title)';
+                    // const start = e?.start ?? e?.startAt ?? '';
+                    // const end = e?.end ?? e?.endAt ?? '';
+                    // const location = e?.location ?? e?.eventLocation ?? undefined;
+                    return { ...e };
                 });
                 this.allEvents.set(normalized);
                 this.updateMyEventsFilter();
@@ -173,6 +190,10 @@ export class ProfileComponent implements OnInit, OnDestroy {
                 // If roles signal is still empty, hydrate from backend AppUser
                 if (!this.roles() && (u as any)?.roles?.length) {
                     this.roles.set([ ...(u as any).roles ]);
+                    if (!this.rolesSource()) this.rolesSource.set('backend-fallback');
+                } else if (this.roles() && !this.rolesSource()) {
+                    // If roles already set but source not recorded, assume firebase
+                    this.rolesSource.set('firebase-claims');
                 }
                 // Recompute my events once we know our AppUser ID
                 this.updateMyEventsFilter();
@@ -201,6 +222,45 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
     async logout(): Promise<void> {
         await signOut(this.auth);
+    }
+
+    async forceRefreshTokenAndClaims(): Promise<void> {
+        const current = this.user();
+        if (!current) return;
+        try {
+            const tokenResult = await getIdTokenResult(current, /*force*/ true);
+            const c = tokenResult.claims || {};
+            this.claims.set(c);
+            const r = Array.isArray(c['roles']) ? (c['roles'] as string[]) : (typeof c['roles'] === 'string' ? [c['roles']] : []);
+            if (r.length) {
+                this.roles.set(r);
+                this.rolesSource.set('firebase-claims');
+            } else {
+                // keep existing fallback if present
+                if (!this.roles() || this.rolesSource() === 'firebase-claims') {
+                    this.roles.set(null);
+                    this.rolesSource.set(null);
+                }
+            }
+            this.decodeAndSetIdTokenParts(tokenResult.token);
+        } catch (e) {
+            // silent
+        }
+    }
+
+    private decodeAndSetIdTokenParts(token: string | null | undefined): void {
+        if (!token) { this.idTokenHeader.set(null); this.idTokenPayload.set(null); return; }
+        const parts = token.split('.');
+        if (parts.length !== 3) { this.idTokenHeader.set(null); this.idTokenPayload.set(null); return; }
+        try {
+            if (typeof window === 'undefined') return; // SSR guard
+            const decode = (s: string) => JSON.parse(atob(s.replace(/-/g, '+').replace(/_/g, '/')));
+            this.idTokenHeader.set(decode(parts[0]));
+            this.idTokenPayload.set(decode(parts[1]));
+        } catch {
+            this.idTokenHeader.set(null);
+            this.idTokenPayload.set(null);
+        }
     }
 
     async submitCreate(): Promise<void> {

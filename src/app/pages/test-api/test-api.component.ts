@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, signal, WritableSignal } from '@angular/core';
 import { NgIf, NgFor, JsonPipe } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import {
     ReactiveFormsModule,
     NonNullableFormBuilder,
@@ -10,6 +11,8 @@ import {
 import { EventsService } from '../events/events.service';
 import { EnumsService, EnumOption } from '../events/enums.service';
 import { CreateEventRequest } from '../events/event.model';
+import { Auth } from '@angular/fire/auth';
+import { getIdToken } from 'firebase/auth';
 
 @Component({
     selector: 'app-test-api',
@@ -22,6 +25,21 @@ import { CreateEventRequest } from '../events/event.model';
                 <button (click)="pingList()">GET /api/events</button>
                 <button (click)="createSample()">POST /api/events</button>
             </div>
+
+            <!-- ADMIN: Get Roles by UID -->
+            <form [formGroup]="adminForm" (ngSubmit)="getAdminRoles()" class="card">
+                <h3>Admin: Get Roles by UID</h3>
+                <div class="grid">
+                    <label class="span-2">
+                        UID
+                        <input type="text" formControlName="uid" placeholder="Firebase UID" />
+                    </label>
+                </div>
+                <div class="actions">
+                    <button type="submit" [disabled]="adminForm.invalid || loading()">Get Roles</button>
+                    <button type="button" (click)="forceRefreshToken()" [disabled]="refreshing()">Refresh Token</button>
+                </div>
+            </form>
 
             <!-- GET by ID -->
             <form [formGroup]="getForm" (ngSubmit)="getById()" class="card">
@@ -168,6 +186,11 @@ import { CreateEventRequest } from '../events/event.model';
                 <h3>Last Response</h3>
                 <pre>{{ lastResponse() | json }}</pre>
             </div>
+
+            <div *ngIf="adminRoles()">
+                <h3>Admin Roles Result</h3>
+                <pre>{{ adminRoles() | json }}</pre>
+            </div>
         </section>
     `,
     styles: [
@@ -253,10 +276,12 @@ import { CreateEventRequest } from '../events/event.model';
 })
 export class TestApiComponent {
     loading: WritableSignal<boolean> = signal(false);
+    refreshing: WritableSignal<boolean> = signal(false);
     error: WritableSignal<string | null> = signal(null);
     events: WritableSignal<any[]> = signal([]);
     expanded: WritableSignal<boolean[]> = signal([]);
     lastResponse: WritableSignal<any> = signal(null);
+    adminRoles: WritableSignal<any | null> = signal(null);
     // Enum-backed options for EventType. Hydrated from backend on init with static fallback.
     typeOptions: EnumOption[] = [
         { value: 'CONCERT', label: 'Concert' },
@@ -285,11 +310,14 @@ export class TestApiComponent {
         eventDescription: FormControl<string | null>;
     }>;
     deleteForm!: FormGroup<{ id: FormControl<string> }>;
+    adminForm!: FormGroup<{ uid: FormControl<string> }>;
 
     constructor(
         private readonly eventsService: EventsService,
         private readonly enumsService: EnumsService,
         private readonly fb: NonNullableFormBuilder,
+        private readonly http: HttpClient,
+        private readonly auth: Auth,
     ) {
         // Load enum options from backend. If empty/error, keep default list.
         this.enumsService.getEventTypes().subscribe((opts) => {
@@ -355,6 +383,10 @@ export class TestApiComponent {
 
         this.deleteForm = this.fb.group({
             id: this.fb.control('', { validators: [Validators.required] }),
+        });
+
+        this.adminForm = this.fb.group({
+            uid: this.fb.control('', { validators: [Validators.required] }),
         });
     }
 
@@ -479,6 +511,47 @@ export class TestApiComponent {
                 this.loading.set(false);
             },
         });
+    }
+
+    // ADMIN: Get Roles by UID using the browser token via interceptor
+    getAdminRoles() {
+        if (this.adminForm.invalid) return;
+        this.loading.set(true);
+        this.error.set(null);
+        this.adminRoles.set(null);
+        const uid = this.adminForm.controls.uid.value;
+        this.http
+            .get(`/api/admin/users/${encodeURIComponent(uid)}/roles`)
+            .subscribe({
+                next: (res) => {
+                    this.adminRoles.set(res);
+                    this.loading.set(false);
+                },
+                error: (err) => {
+                    this.error.set(this.stringifyError(err));
+                    this.loading.set(false);
+                },
+            });
+    }
+
+    // Optionally force-refresh the Firebase ID token to pick up updated custom claims
+    async forceRefreshToken() {
+        try {
+            this.refreshing.set(true);
+            this.error.set(null);
+            const user = this.auth.currentUser;
+            if (!user) {
+                this.error.set('Not signed in.');
+                return;
+            }
+            const token = await getIdToken(user, true);
+            // Provide a small confirmation of success without exposing the whole token
+            this.lastResponse.set({ tokenRefreshed: true, tokenPreview: token?.slice(0, 16) + '...' });
+        } catch (e) {
+            this.error.set(this.stringifyError(e));
+        } finally {
+            this.refreshing.set(false);
+        }
     }
 
     createSample() {
