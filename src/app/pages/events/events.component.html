@@ -1,6 +1,31 @@
 <section class="events-page">
     <h1 class="page-title">Events Calendar</h1>
 
+    <!-- Simple chronological list above the calendar -->
+    <div *ngIf="isBrowser()" class="upcoming-list">
+        <h2>Upcoming Events</h2>
+        <div *ngIf="upcomingLoading">Loading…</div>
+        <p class="error" *ngIf="upcomingError as err">{{ err }}</p>
+        <ul *ngIf="!upcomingLoading && !upcomingError && upcoming.length">
+            <li *ngFor="let e of upcoming">
+                <a [routerLink]="['/events', e.eventId]">{{ e.eventName }}</a>
+                <span>— {{ e.startAt | date:'medium' }}</span>
+            </li>
+        </ul>
+        <p *ngIf="!upcomingLoading && !upcomingError && !upcoming.length">No upcoming events found.</p>
+
+        <h3>All Events (debug)</h3>
+        <div *ngIf="allLoading">Loading…</div>
+        <p class="error" *ngIf="allError as err2">{{ err2 }}</p>
+        <ul *ngIf="!allLoading && !allError && allEvents.length">
+            <li *ngFor="let e of allEvents">
+                <a [routerLink]="['/events', e.eventId]">{{ e.eventName }}</a>
+                <span>— {{ e.startAt | date:'medium' }} ({{ e.status }})</span>
+            </li>
+        </ul>
+        <p *ngIf="!allLoading && !allError && !allEvents.length">No events returned.</p>
+    </div>
+
     <!-- Server-side placeholder to keep SSR markup stable -->
     <div *ngIf="!isBrowser()" class="calendar-placeholder" aria-hidden="true">
         <p>Calendar is available on the client.</p>

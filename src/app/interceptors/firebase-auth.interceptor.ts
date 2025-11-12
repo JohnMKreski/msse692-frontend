@@ -11,6 +11,15 @@ import { catchError, switchMap } from 'rxjs/operators';
  */
 export const firebaseAuthInterceptor: HttpInterceptorFn = (req, next) => {
     const auth = inject(Auth) as Auth;
+    // Do not attach Authorization for truly public endpoints
+    const url = req.url || '';
+    const isPublic =
+        url.includes('/api/v1/events/public-upcoming') ||
+        url.includes('/api/v1/enums') ||
+        /\/api\/v1\/events\/\d+(?:$|[/?#])/i.test(url);
+    if (isPublic) {
+        return next(req);
+    }
     const user = auth.currentUser;
     if (!user) {
         return next(req);

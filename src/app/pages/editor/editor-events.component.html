@@ -13,6 +13,15 @@
         <div class="row" *ngFor="let e of items()">
           <div class="col col--name">{{ e.eventName }}</div>
           <div class="col col--date">{{ e.startAt | date:'short' }}</div>
+          <div class="col col--status">
+            <app-status-badge [status]="e.status" size="sm"></app-status-badge>
+            <mat-form-field appearance="outline" class="status-ff">
+              <mat-label>Status</mat-label>
+              <mat-select [value]="e.status" (selectionChange)="onStatusChange(e, $event.value)" [disabled]="e.status === 'CANCELLED'">
+                <mat-option *ngFor="let opt of statusOptions()" [value]="opt.value">{{ opt.label }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
           <div class="col col--actions">
             <button mat-button (click)="edit(e)">Edit</button>
             <button mat-button color="warn" (click)="delete(e)" [disabled]="saving()">Delete</button>
@@ -31,17 +40,28 @@
 
         <mat-form-field appearance="outline" class="full">
           <mat-label>Type</mat-label>
-          <input matInput formControlName="type" />
+          <mat-select formControlName="type">
+            <mat-option [value]="''">—</mat-option>
+            <mat-option *ngFor="let t of typeOptions()" [value]="t.value">{{ t.label }}</mat-option>
+          </mat-select>
         </mat-form-field>
 
-        <div class="grid">
+        <div class="grid grid--datetime">
           <mat-form-field appearance="outline">
-            <mat-label>Start</mat-label>
-            <input matInput type="datetime-local" formControlName="startAt" required />
+            <mat-label>Start Date</mat-label>
+            <input matInput type="date" formControlName="dateStart" required />
           </mat-form-field>
           <mat-form-field appearance="outline">
-            <mat-label>End</mat-label>
-            <input matInput type="datetime-local" formControlName="endAt" required />
+            <mat-label>Start Time</mat-label>
+            <input matInput type="time" formControlName="timeStart" required />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>End Date</mat-label>
+            <input matInput type="date" formControlName="dateEnd" required />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>End Time</mat-label>
+            <input matInput type="time" formControlName="timeEnd" required />
           </mat-form-field>
         </div>
 

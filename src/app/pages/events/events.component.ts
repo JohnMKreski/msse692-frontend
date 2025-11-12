@@ -1,9 +1,10 @@
 import { ChangeDetectionStrategy, Component, OnDestroy, PLATFORM_ID, inject } from '@angular/core';
-import { isPlatformBrowser, NgIf } from '@angular/common';
+import { isPlatformBrowser, NgForOf, NgIf, DatePipe } from '@angular/common';
 import { EventsService } from './events.service';
 import { EventDto } from './event.model';
 import { take, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
+import { RouterLink } from '@angular/router';
 import { EventsUiService } from '../../shared/events-ui.service';
 
 // FullCalendar Angular wrapper
@@ -20,7 +21,7 @@ import listPlugin from '@fullcalendar/list';
 @Component({
     selector: 'app-events',
     standalone: true,
-    imports: [NgIf, FullCalendarModule],
+    imports: [NgIf, NgForOf, DatePipe, RouterLink, FullCalendarModule],
     templateUrl: './events.component.html',
     styleUrls: ['./events.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -30,6 +31,12 @@ export class EventsComponent implements OnDestroy {
     private readonly eventsService = inject(EventsService);
     private readonly ui = inject(EventsUiService);
     private readonly destroy$ = new Subject<void>();
+    upcomingLoading = false;
+    upcomingError: string | null = null;
+    upcoming: EventDto[] = [];
+    allLoading = false;
+    allError: string | null = null;
+    allEvents: EventDto[] = [];
 
     // Calendar options (updated when events load)
     calendarOptions: CalendarOptions = {
@@ -61,6 +68,8 @@ export class EventsComponent implements OnDestroy {
             this.applyResponsiveOptions();
             this.loadEvents();
             this.ui.changed$.pipe(takeUntil(this.destroy$)).subscribe(() => this.loadEvents());
+            this.loadUpcoming();
+            this.loadAllEvents();
         }
     }
 
@@ -75,9 +84,9 @@ export class EventsComponent implements OnDestroy {
     }
 
     private loadEvents(window?: { from?: string; to?: string }) {
-        // calendar expects simplified fields; map backend EventDto → FullCalendar event
+        // Use public endpoint so page stays public; map EventDto → FullCalendar event
         this.eventsService
-            .list() // ignoring window filter for now until backend supports date range filters
+            .listPublicUpcoming(new Date(), 200)
             .pipe(take(1))
             .subscribe({
                 next: (items: EventDto[]) => {
@@ -92,10 +101,32 @@ export class EventsComponent implements OnDestroy {
                     this.calendarOptions = { ...this.calendarOptions, events: fcEvents };
                 },
                 error: (err) => {
-                    console.error('Failed to load events', err);
+                    console.error('Failed to load public upcoming events', err);
                     this.calendarOptions = { ...this.calendarOptions, events: [] };
                 },
             });
+    }
+
+    private loadUpcoming() {
+        this.upcomingLoading = true;
+        this.upcomingError = null;
+        this.eventsService.listPublicUpcoming(new Date(), 20).pipe(take(1)).subscribe({
+            next: (rows) => { this.upcoming = rows; this.upcomingLoading = false; },
+            error: (err) => { console.error(err); this.upcoming = []; this.upcomingError = 'Failed to load'; this.upcomingLoading = false; }
+        });
+    }
+
+    private loadAllEvents() {
+        this.allLoading = true;
+        this.allError = null;
+        this.eventsService.list().pipe(take(1)).subscribe({
+            next: (rows) => {
+                // sort chronologically by startAt ascending
+                this.allEvents = [...rows].sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
+                this.allLoading = false;
+            },
+            error: (err) => { console.error(err); this.allEvents = []; this.allError = 'Failed to load all events'; this.allLoading = false; }
+        });
     }
 
     private applyResponsiveOptions() {
