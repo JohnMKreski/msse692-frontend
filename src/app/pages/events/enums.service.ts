@@ -1,6 +1,7 @@
 // Service to retrieve enum options from the backend. Results are memoized.
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { API_URL } from '../../shared/api-tokens';
 import { Observable, of, map, catchError, shareReplay } from 'rxjs';
 
 export interface EnumOption {
@@ -11,7 +12,8 @@ export interface EnumOption {
 @Injectable({ providedIn: 'root' })
 export class EnumsService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = '/api/enums';
+  private readonly apiUrl = inject(API_URL);
+  private readonly baseUrl = `${this.apiUrl}/enums`;
 
   private _eventTypes$?: Observable<EnumOption[]>;
 
