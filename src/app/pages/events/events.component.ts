@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser, NgIf } from '@angular/common';
 import { EventsService } from './events.service';
+import { EventDto } from './event.model';
 import { take } from 'rxjs/operators';
 
 // FullCalendar Angular wrapper
@@ -69,18 +70,19 @@ export class EventsComponent {
     }
 
     private loadEvents(window?: { from?: string; to?: string }) {
+        // calendar expects simplified fields; map backend EventDto → FullCalendar event
         this.eventsService
-            .list(window)
+            .list() // ignoring window filter for now until backend supports date range filters
             .pipe(take(1))
             .subscribe({
-                next: (items) => {
-                    const fcEvents = (items as any[]).map((e: any) => ({
-                        id: e.id,
-                        title: e.title,
-                        start: e.start,
-                        end: e.end,
-                        allDay: e.allDay,
-                        extendedProps: { location: e.location },
+                next: (items: EventDto[]) => {
+                    const fcEvents = items.map(e => ({
+                        id: String(e.eventId),
+                        title: e.eventName,
+                        start: e.startAt,
+                        end: e.endAt,
+                        allDay: false,
+                        extendedProps: { location: e.eventLocation, status: e.status }
                     }));
                     this.calendarOptions = { ...this.calendarOptions, events: fcEvents };
                 },

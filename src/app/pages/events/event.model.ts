@@ -1,16 +1,25 @@
+export type EventStatusCode = 'DRAFT' | 'PUBLISHED' | 'UNPUBLISHED' | 'CANCELLED';
+
 export interface EventDto {
-    id: string;
-    title: string;
-    start: string; // ISO date-time
-    end?: string; // ISO date-time
-    allDay?: boolean;
-    location?: string;
+    eventId: number; // align with backend eventId
+    slug?: string;
+    eventName: string;
+    type?: string; // backend enum value
+    typeDisplayName?: string;
+    startAt: string; // ISO date-time
+    endAt?: string; // ISO date-time
+    status?: EventStatusCode;
+    statusDisplayName?: string;
+    eventLocation?: string;
+    eventDescription?: string;
+    createdByUserId?: number;
+    lastModifiedByUserId?: number;
 }
 
 // Backend POST/PUT request schema
 export interface CreateEventRequest {
     eventName: string;
-    type: string; // e.g., "Concert"
+    type?: string; // enum code
     startAt: string; // ISO date-time
     endAt: string; // ISO date-time
     eventLocation?: string;
@@ -26,4 +35,9 @@ export interface EventAudit {
     actorUserId: number;
     action: 'CREATE' | 'UPDATE' | 'DELETE' | string;
     at: string; // ISO date-time
+}
+
+export interface EventStatusOption {
+    value: EventStatusCode;
+    label: string;
 }

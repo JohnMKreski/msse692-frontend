@@ -274,7 +274,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
         const payload = this.createForm.getRawValue();
         this.events.createRaw(payload as any).subscribe({
             next: (created) => {
-                this.createSuccess.set(`Created event: ${created.title ?? created.id}`);
+                this.createSuccess.set(`Created event: ${created.eventName ?? created.eventId}`);
                 // refresh list
                 this.events.list().subscribe({
                     next: (items) => this.myEvents.set(items ?? []),
