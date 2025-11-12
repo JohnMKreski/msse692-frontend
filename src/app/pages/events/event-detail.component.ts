@@ -8,6 +8,8 @@ import { StatusBadgeComponent } from '../../components/status-badge/status-badge
 import { CancelConfirmDialogComponent } from '../../components/cancel-confirm-dialog/cancel-confirm-dialog.component';
 import { MatDialog } from '@angular/material/dialog';
 import { take } from 'rxjs/operators';
+import { Auth, onAuthStateChanged } from '@angular/fire/auth';
+import { AppUserService } from '../../shared/app-user.service';
 
 @Component({
   selector: 'app-event-detail',
@@ -21,17 +23,32 @@ export class EventDetailComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly events = inject(EventsService);
   private readonly dialog = inject(MatDialog);
+  private readonly auth = inject(Auth);
+  private readonly appUserService = inject(AppUserService);
 
   readonly loading = signal<boolean>(true);
   readonly saving = signal<boolean>(false);
   readonly event = signal<EventDto | null>(null);
   readonly error = signal<string | null>(null);
+  readonly canManage = signal<boolean>(false);
 
   readonly canPublish = computed(() => this.event()?.status === 'DRAFT' || this.event()?.status === 'UNPUBLISHED');
   readonly canUnpublish = computed(() => this.event()?.status === 'PUBLISHED');
   readonly canCancel = computed(() => this.event() && this.event()!.status !== 'CANCELLED');
 
   constructor() {
+    // Determine if current user can manage (ADMIN/EDITOR). If not authenticated, false by default.
+    onAuthStateChanged(this.auth, (user) => {
+      if (!user) { this.canManage.set(false); return; }
+      this.appUserService.getMe().pipe(take(1)).subscribe({
+        next: me => {
+          const roles = me?.roles || [];
+          const allowed = Array.isArray(roles) && roles.some(r => ['ADMIN','EDITOR'].includes(String(r).toUpperCase()));
+          this.canManage.set(!!allowed);
+        },
+        error: () => { this.canManage.set(false); }
+      });
+    });
     effect(() => {
       const id = this.route.snapshot.paramMap.get('id');
       if (!id) { this.error.set('Missing event id'); return; }

@@ -1,11 +1,10 @@
-import { ChangeDetectionStrategy, Component, OnDestroy, PLATFORM_ID, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, PLATFORM_ID, ChangeDetectorRef, inject, OnInit, NgZone, AfterViewInit } from '@angular/core';
 import { isPlatformBrowser, NgForOf, NgIf, DatePipe } from '@angular/common';
 import { EventsService } from './events.service';
 import { EventDto } from './event.model';
 import { take, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { RouterLink } from '@angular/router';
-import { EventsUiService } from '../../shared/events-ui.service';
 
 // FullCalendar Angular wrapper
 import { FullCalendarModule } from '@fullcalendar/angular';
@@ -25,11 +24,14 @@ import listPlugin from '@fullcalendar/list';
     templateUrl: './events.component.html',
     styleUrls: ['./events.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
+    host: { ngSkipHydration: '' }
 })
-export class EventsComponent implements OnDestroy {
+export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
     private readonly platformId = inject(PLATFORM_ID);
     private readonly eventsService = inject(EventsService);
-    private readonly ui = inject(EventsUiService);
+    private readonly cdr = inject(ChangeDetectorRef);
+    private readonly zone = inject(NgZone);
+    // UI change bus merged into EventsService
     private readonly destroy$ = new Subject<void>();
     upcomingLoading = false;
     upcomingError: string | null = null;
@@ -62,15 +64,29 @@ export class EventsComponent implements OnDestroy {
         return isPlatformBrowser(this.platformId);
     }
 
-    constructor() {
-        // Initial load (client only)
-        if (this.isBrowser()) {
+    constructor() {}
+
+    ngOnInit(): void {
+        // Diagnostic: ensure ngOnInit fires after refresh
+        console.log('[EventsComponent] ngOnInit, isBrowser=', this.isBrowser());
+        if (!this.isBrowser()) return;
+        // Defer to next tick to ensure hydration is complete before manipulating state
+        setTimeout(() => {
+            console.log('[EventsComponent] init tick start');
             this.applyResponsiveOptions();
             this.loadEvents();
-            this.ui.changed$.pipe(takeUntil(this.destroy$)).subscribe(() => this.loadEvents());
+            this.eventsService.changed$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+                console.log('[EventsComponent] changed$ received -> reload events');
+                this.loadEvents();
+            });
             this.loadUpcoming();
             this.loadAllEvents();
-        }
+        }, 0);
+    }
+
+    ngAfterViewInit(): void {
+        // Extra diagnostic hook to see lifecycle on refresh
+        console.log('[EventsComponent] ngAfterViewInit, isBrowser=', this.isBrowser());
     }
 
     onDatesSet(arg: any): void {
@@ -84,48 +100,78 @@ export class EventsComponent implements OnDestroy {
     }
 
     private loadEvents(window?: { from?: string; to?: string }) {
-        // Use public endpoint so page stays public; map EventDto → FullCalendar event
+        console.log('[EventsComponent] loadEvents() start', window ?? {});
+        // For debugging: load all events (ignore status/owner) to ensure visibility while unauthenticated
         this.eventsService
-            .listPublicUpcoming(new Date(), 200)
+            .list()
             .pipe(take(1))
             .subscribe({
                 next: (items: EventDto[]) => {
-                    const fcEvents = items.map(e => ({
-                        id: String(e.eventId),
-                        title: e.eventName,
-                        start: e.startAt,
-                        end: e.endAt,
-                        allDay: false,
-                        extendedProps: { location: e.eventLocation, status: e.status }
-                    }));
-                    this.calendarOptions = { ...this.calendarOptions, events: fcEvents };
+                    this.zone.run(() => {
+                        console.log('[EventsComponent] loadEvents() success, count=', items?.length ?? 0);
+                        const fcEvents = items.map(e => ({
+                            id: String(e.eventId),
+                            title: e.eventName,
+                            start: e.startAt,
+                            end: e.endAt,
+                            allDay: false,
+                            extendedProps: { location: e.eventLocation, status: e.status }
+                        }));
+                        this.calendarOptions = { ...this.calendarOptions, events: fcEvents };
+                        this.cdr.markForCheck();
+                    });
                 },
                 error: (err) => {
-                    console.error('Failed to load public upcoming events', err);
-                    this.calendarOptions = { ...this.calendarOptions, events: [] };
+                    console.error('[EventsComponent] loadEvents() error', err);
+                    this.zone.run(() => {
+                        this.calendarOptions = { ...this.calendarOptions, events: [] };
+                        this.cdr.markForCheck();
+                    });
                 },
             });
     }
 
     private loadUpcoming() {
+        // For debugging: show all events (no status/owner filter) to validate visibility
+        console.log('[EventsComponent] loadUpcoming() start');
         this.upcomingLoading = true;
         this.upcomingError = null;
-        this.eventsService.listPublicUpcoming(new Date(), 20).pipe(take(1)).subscribe({
-            next: (rows) => { this.upcoming = rows; this.upcomingLoading = false; },
-            error: (err) => { console.error(err); this.upcoming = []; this.upcomingError = 'Failed to load'; this.upcomingLoading = false; }
+        this.eventsService.list().pipe(take(1)).subscribe({
+            next: (rows) => {
+                this.zone.run(() => {
+                    console.log('[EventsComponent] loadUpcoming() success, count=', rows?.length ?? 0);
+                    // sort chronologically and show first 20
+                    const sorted = [...rows].sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
+                    this.upcoming = sorted.slice(0, 20);
+                    this.upcomingLoading = false;
+                    this.cdr.markForCheck();
+                });
+            },
+            error: (err) => {
+                console.error('[EventsComponent] loadUpcoming() error', err);
+                this.zone.run(() => { this.upcoming = []; this.upcomingError = 'Failed to load'; this.upcomingLoading = false; this.cdr.markForCheck(); });
+            }
         });
     }
 
     private loadAllEvents() {
+        console.log('[EventsComponent] loadAllEvents() start');
         this.allLoading = true;
         this.allError = null;
         this.eventsService.list().pipe(take(1)).subscribe({
             next: (rows) => {
-                // sort chronologically by startAt ascending
-                this.allEvents = [...rows].sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
-                this.allLoading = false;
+                this.zone.run(() => {
+                    console.log('[EventsComponent] loadAllEvents() success, count=', rows?.length ?? 0);
+                    // sort chronologically by startAt ascending
+                    this.allEvents = [...rows].sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
+                    this.allLoading = false;
+                    this.cdr.markForCheck();
+                });
             },
-            error: (err) => { console.error(err); this.allEvents = []; this.allError = 'Failed to load all events'; this.allLoading = false; }
+            error: (err) => {
+                console.error('[EventsComponent] loadAllEvents() error', err);
+                this.zone.run(() => { this.allEvents = []; this.allError = 'Failed to load all events'; this.allLoading = false; this.cdr.markForCheck(); });
+            }
         });
     }
 

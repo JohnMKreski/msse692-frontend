@@ -1,8 +1,8 @@
-<section class="events-page">
+<section class="events-page" ngSkipHydration>
     <h1 class="page-title">Events Calendar</h1>
 
     <!-- Simple chronological list above the calendar -->
-    <div *ngIf="isBrowser()" class="upcoming-list">
+    <div class="upcoming-list">
         <h2>Upcoming Events</h2>
         <div *ngIf="upcomingLoading">Loading…</div>
         <p class="error" *ngIf="upcomingError as err">{{ err }}</p>

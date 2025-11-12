@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { API_URL } from '../../shared/api-tokens';
-import { Observable } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 import { CreateEventRequest, EventDto, UpdateEventRequest, EventAudit } from './event.model';
 
 @Injectable({ providedIn: 'root' })
@@ -9,6 +9,11 @@ export class EventsService {
     private readonly http = inject(HttpClient);
     private readonly apiUrl = inject(API_URL);
     private readonly baseUrl = `${this.apiUrl}`;
+    // UI event bus (merged from EventsUiService)
+    private readonly _changed = new Subject<void>();
+    readonly changed$ = this._changed.asObservable();
+
+    notifyChanged() { this._changed.next(); }
 
     list(params?: { page?: number; size?: number; sort?: string }): Observable<EventDto[]> {
         return this.http.get<EventDto[]>(`${this.baseUrl}/events`, { params: params as any });

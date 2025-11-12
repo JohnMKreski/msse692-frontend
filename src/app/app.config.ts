@@ -2,7 +2,7 @@ import { ApplicationConfig, provideZoneChangeDetection, inject, provideAppInitia
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { routes } from './app.routes';
-import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
+import { provideClientHydration } from '@angular/platform-browser';
 import { provideFirebaseApp, initializeApp } from '@angular/fire/app';
 import { provideAuth, getAuth } from '@angular/fire/auth';
 import { environment } from '../environments/environment';
@@ -18,7 +18,8 @@ export const appConfig: ApplicationConfig = {
             withFetch(),
             withInterceptors([firebaseAuthInterceptor])
         ),
-        provideClientHydration(withEventReplay()),
+    // Simplify hydration to avoid NG0506 (stability timeout) during refresh
+    provideClientHydration(),
         provideFirebaseApp(() => initializeApp(environment.firebase)),
         provideAuth(() => getAuth()),
         // Load runtime config before app bootstrap using modern provideAppInitializer API

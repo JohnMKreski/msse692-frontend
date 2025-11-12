@@ -13,7 +13,7 @@
     <p>{{ e.eventDescription }}</p>
   </article>
 
-  <div class="event-detail__actions">
+  <div class="event-detail__actions" *ngIf="canManage()">
     <button mat-raised-button color="primary" (click)="publish()" [disabled]="!canPublish() || saving()">Publish</button>
     <button mat-stroked-button color="primary" (click)="unpublish()" [disabled]="!canUnpublish() || saving()">Unpublish</button>
     <button mat-raised-button color="warn" (click)="cancel()" [disabled]="!canCancel() || saving()">Cancel</button>

@@ -6,7 +6,6 @@ import { EventsService } from '../events/events.service';
 import { EnumsService } from '../events/enums.service';
 import { EventDto, CreateEventRequest, EventStatusOption, EventStatusCode } from '../events/event.model';
 import { take } from 'rxjs/operators';
-import { EventsUiService } from '../../shared/events-ui.service';
 import { AppUserService } from '../../shared/app-user.service';
 import { MatDialog } from '@angular/material/dialog';
 import { CancelConfirmDialogComponent } from '../../components/cancel-confirm-dialog/cancel-confirm-dialog.component';
@@ -25,7 +24,7 @@ export class EditorEventsComponent implements OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly events = inject(EventsService);
   private readonly enums = inject(EnumsService);
-  private readonly ui = inject(EventsUiService);
+  // UI change bus merged into EventsService
   private readonly users = inject(AppUserService);
   private readonly dialog = inject(MatDialog);
 
@@ -120,7 +119,7 @@ export class EditorEventsComponent implements OnDestroy {
     if (!confirm(`Delete "${item.eventName}"? This cannot be undone.`)) return;
     this.saving.set(true);
     this.events.delete(item.eventId).pipe(take(1)).subscribe({
-      next: () => { this.saving.set(false); this.load(); this.ui.notifyChanged(); },
+  next: () => { this.saving.set(false); this.load(); this.events.notifyChanged(); },
       error: (err) => { console.error(err); this.saving.set(false); this.error.set('Delete failed'); }
     });
   }
@@ -145,7 +144,7 @@ export class EditorEventsComponent implements OnDestroy {
       : this.events.createRaw(payload);
 
     req$.pipe(take(1)).subscribe({
-      next: () => { this.saving.set(false); this.resetForm(); this.load(); this.ui.notifyChanged(); },
+  next: () => { this.saving.set(false); this.resetForm(); this.load(); this.events.notifyChanged(); },
       error: (err) => { console.error(err); this.saving.set(false); this.error.set('Save failed'); }
     });
   }
@@ -155,7 +154,7 @@ export class EditorEventsComponent implements OnDestroy {
     if (target === 'PUBLISHED') {
       this.saving.set(true);
       this.events.publishEvent(item.eventId).pipe(take(1)).subscribe({
-        next: () => { this.saving.set(false); this.load(); this.ui.notifyChanged(); },
+  next: () => { this.saving.set(false); this.load(); this.events.notifyChanged(); },
         error: (err) => { console.error(err); this.saving.set(false); this.error.set('Publish failed'); }
       });
       return;
@@ -163,7 +162,7 @@ export class EditorEventsComponent implements OnDestroy {
     if (target === 'UNPUBLISHED') {
       this.saving.set(true);
       this.events.unpublishEvent(item.eventId).pipe(take(1)).subscribe({
-        next: () => { this.saving.set(false); this.load(); this.ui.notifyChanged(); },
+  next: () => { this.saving.set(false); this.load(); this.events.notifyChanged(); },
         error: (err) => { console.error(err); this.saving.set(false); this.error.set('Unpublish failed'); }
       });
       return;
@@ -174,7 +173,7 @@ export class EditorEventsComponent implements OnDestroy {
         if (!ok) return;
         this.saving.set(true);
         this.events.cancelEvent(item.eventId).pipe(take(1)).subscribe({
-          next: () => { this.saving.set(false); this.load(); this.ui.notifyChanged(); },
+          next: () => { this.saving.set(false); this.load(); this.events.notifyChanged(); },
           error: (err) => { console.error(err); this.saving.set(false); this.error.set('Cancel failed'); }
         });
       });

@@ -1,15 +1,4 @@
-import { Injectable } from '@angular/core';
-import { Subject } from 'rxjs';
-
-/**
- * Lightweight UI event bus for cross-component coordination around Events updates.
- */
-@Injectable({ providedIn: 'root' })
-export class EventsUiService {
-  private readonly _changed = new Subject<void>();
-  readonly changed$ = this._changed.asObservable();
-
-  notifyChanged() {
-    this._changed.next();
-  }
-}
+// Deprecated: merged into EventsService (pages/events/events.service.ts)
+// Kept as a no-op placeholder to avoid breaking imports during incremental refactors.
+// Remove this file once all references are updated.
+export class EventsUiService {}
