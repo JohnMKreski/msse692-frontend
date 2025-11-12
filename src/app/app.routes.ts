@@ -8,6 +8,8 @@ import { LoginComponent } from './pages/login/login.component';
 import { ProfileComponent } from './pages/profile/profile.component';
 import { SignupComponent } from './pages/signup/signup.component';
 import { requireAuthGuard } from './guards/require-auth.guard';
+import { editorRoleGuard } from './guards/editor-role.guard';
+import { EditorEventsComponent } from './pages/editor/editor-events.component';
 
 export const routes: Routes = [
     { path: '', component: HomeComponent },
@@ -18,5 +20,6 @@ export const routes: Routes = [
     { path: 'login', component: LoginComponent },
     { path: 'signup', component: SignupComponent },
     { path: 'profile', component: ProfileComponent, canActivate: [requireAuthGuard] },
+    { path: 'editor/events', component: EditorEventsComponent, canActivate: [requireAuthGuard, editorRoleGuard] },
     // { path: 'about', component: AboutComponent }
 ];

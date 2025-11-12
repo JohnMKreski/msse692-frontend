@@ -1,8 +1,10 @@
-import { ChangeDetectionStrategy, Component, PLATFORM_ID, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser, NgIf } from '@angular/common';
 import { EventsService } from './events.service';
 import { EventDto } from './event.model';
-import { take } from 'rxjs/operators';
+import { take, takeUntil } from 'rxjs/operators';
+import { Subject } from 'rxjs';
+import { EventsUiService } from '../../shared/events-ui.service';
 
 // FullCalendar Angular wrapper
 import { FullCalendarModule } from '@fullcalendar/angular';
@@ -23,9 +25,11 @@ import listPlugin from '@fullcalendar/list';
     styleUrls: ['./events.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class EventsComponent {
+export class EventsComponent implements OnDestroy {
     private readonly platformId = inject(PLATFORM_ID);
     private readonly eventsService = inject(EventsService);
+    private readonly ui = inject(EventsUiService);
+    private readonly destroy$ = new Subject<void>();
 
     // Calendar options (updated when events load)
     calendarOptions: CalendarOptions = {
@@ -56,6 +60,7 @@ export class EventsComponent {
         if (this.isBrowser()) {
             this.applyResponsiveOptions();
             this.loadEvents();
+            this.ui.changed$.pipe(takeUntil(this.destroy$)).subscribe(() => this.loadEvents());
         }
     }
 
@@ -109,5 +114,10 @@ export class EventsComponent {
             headerToolbar,
             initialView,
         };
+    }
+
+    ngOnDestroy(): void {
+        this.destroy$.next();
+        this.destroy$.complete();
     }
 }
