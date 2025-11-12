@@ -11,6 +11,24 @@
     </div>
 </section>
 
+<section class="upcoming" aria-labelledby="upcoming-heading">
+    <h2 id="upcoming-heading">Upcoming Events</h2>
+    <div *ngIf="loading()" class="loading"><mat-spinner diameter="28"></mat-spinner> <span>Loading…</span></div>
+    <p *ngIf="!loading() && error() as err" class="error">{{ err }}</p>
+    <div class="upcoming__grid" *ngIf="!loading() && upcoming().length">
+        <mat-card class="upcoming-item" *ngFor="let e of upcoming()" routerLink="/events/{{ e.eventId }}">
+            <mat-card-header>
+                <mat-card-title>{{ e.eventName }}</mat-card-title>
+                <mat-card-subtitle>{{ e.startAt | date:'mediumDate' }}</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+                <p class="line-clamp" *ngIf="e.eventDescription">{{ e.eventDescription }}</p>
+            </mat-card-content>
+        </mat-card>
+    </div>
+    <p *ngIf="!loading() && !upcoming().length && !error()" class="empty" aria-live="polite">No upcoming events found.</p>
+</section>
+
 <section class="highlights" aria-label="Why use Ark Valley Events">
     <div class="highlights__grid">
         <mat-card class="highlight">

@@ -1,3 +1,10 @@
+ .upcoming{margin:2rem 0}
+ .upcoming__grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1rem;margin-top:1rem}
+ .upcoming-item{cursor:pointer}
+ .upcoming-item .line-clamp{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+ .loading{display:flex;align-items:center;gap:.75rem}
+ .error{color:#b91c1c}
+ .empty{font-style:italic;color:#555}
 :host {
     display: block;
 }

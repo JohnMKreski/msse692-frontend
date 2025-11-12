@@ -1,0 +1,9 @@
+<h2 mat-dialog-title>Cancel Event</h2>
+<mat-dialog-content>
+  <p><strong>{{ data.eventName || 'This event' }}</strong> will be marked as <em>Cancelled</em>. This cannot be undone.</p>
+  <p>Are you sure you want to continue?</p>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="close(false)">Keep Event</button>
+  <button mat-raised-button color="warn" (click)="close(true)">Cancel Event</button>
+</mat-dialog-actions>
