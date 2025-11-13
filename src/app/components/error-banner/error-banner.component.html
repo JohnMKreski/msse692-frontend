@@ -1,0 +1,16 @@
+<div class="error-banner" [class.error]="severity==='error'" [class.warn]="severity==='warn'" *ngIf="message">
+  <div class="content">
+    <div class="icon" aria-hidden="true">&#9888;</div>
+    <div class="text">
+      <div class="message">{{ message }}</div>
+      <ul class="details" *ngIf="details?.length">
+        <li *ngFor="let d of details">{{ d.field ? (d.field + ': ') : ''}}{{ d.message }}</li>
+      </ul>
+      <div class="meta" *ngIf="status">Status: {{ status }}</div>
+    </div>
+    <div class="actions">
+      <button type="button" class="retry" (click)="onRetry()">{{ retryLabel }}</button>
+      <button type="button" class="dismiss" *ngIf="dismissible" (click)="onDismiss()" aria-label="Dismiss">✕</button>
+    </div>
+  </div>
+</div>

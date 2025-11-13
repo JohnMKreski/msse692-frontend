@@ -7,6 +7,7 @@ import { take, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { RouterLink } from '@angular/router';
 import { formatApiError } from '../../shared/api-error';
+import { ErrorBannerComponent } from '../../components/error-banner/error-banner.component';
 
 // FullCalendar Angular wrapper
 import { FullCalendarModule } from '@fullcalendar/angular';
@@ -22,7 +23,7 @@ import listPlugin from '@fullcalendar/list';
 @Component({
     selector: 'app-events',
     standalone: true,
-    imports: [NgIf, NgForOf, DatePipe, RouterLink, FullCalendarModule, FormsModule],
+    imports: [NgIf, NgForOf, DatePipe, RouterLink, FullCalendarModule, FormsModule, ErrorBannerComponent],
     templateUrl: './events.component.html',
     styleUrls: ['./events.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -133,7 +134,7 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
             });
     }
 
-    private loadUpcoming() {
+    loadUpcoming() {
         // For debugging: show all events (no status/owner filter) to validate visibility
         console.log('[EventsComponent] loadUpcoming() start');
         this.upcomingLoading = true;
@@ -153,7 +154,7 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
         });
     }
 
-    private loadAllEvents() {
+    loadAllEvents() {
         console.log('[EventsComponent] loadAllEvents() start');
         this.allLoading = true;
         this.allError = null;

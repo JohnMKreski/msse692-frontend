@@ -10,6 +10,8 @@ import { SignupComponent } from './pages/signup/signup.component';
 import { requireAuthGuard } from './guards/require-auth.guard';
 import { editorRoleGuard } from './guards/editor-role.guard';
 import { EditorEventsComponent } from './pages/editor/editor-events.component';
+import { ErrorPageComponent } from './pages/error/error-page.component';
+import { NotFoundComponent } from './pages/error/not-found.component';
 
 export const routes: Routes = [
     { path: '', component: HomeComponent },
@@ -21,5 +23,7 @@ export const routes: Routes = [
     { path: 'signup', component: SignupComponent },
     { path: 'profile', component: ProfileComponent, canActivate: [requireAuthGuard] },
     { path: 'editor/events', component: EditorEventsComponent, canActivate: [requireAuthGuard, editorRoleGuard] },
+    { path: 'error', component: ErrorPageComponent },
+    { path: 'not-found', component: NotFoundComponent },
     // { path: 'about', component: AboutComponent }
 ];

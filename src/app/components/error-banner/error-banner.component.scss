@@ -1,0 +1,16 @@
+.error-banner { 
+  display: block; 
+  border: 1px solid transparent; 
+  border-radius: 6px; 
+  padding: 12px 12px; 
+  margin: 10px 0; 
+}
+.error-banner.warn { background: #fff8e1; border-color: #ffecb3; color: #7a5e00; }
+.error-banner.error { background: #ffebee; border-color: #ffcdd2; color: #7a0010; }
+.error-banner .content { display: flex; align-items: start; gap: 12px; }
+.error-banner .icon { font-size: 18px; line-height: 1; margin-top: 2px; }
+.error-banner .text { flex: 1; }
+.error-banner .message { font-weight: 600; }
+.error-banner .details { margin: 6px 0; padding-left: 18px; }
+.error-banner .actions { display: flex; gap: 8px; }
+.error-banner button { cursor: pointer; }
