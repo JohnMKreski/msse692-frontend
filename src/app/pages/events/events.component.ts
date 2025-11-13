@@ -67,16 +67,12 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
     constructor() {}
 
     ngOnInit(): void {
-        // Diagnostic: ensure ngOnInit fires after refresh
-        console.log('[EventsComponent] ngOnInit, isBrowser=', this.isBrowser());
         if (!this.isBrowser()) return;
         // Defer to next tick to ensure hydration is complete before manipulating state
         setTimeout(() => {
-            console.log('[EventsComponent] init tick start');
             this.applyResponsiveOptions();
             this.loadEvents();
             this.eventsService.changed$.pipe(takeUntil(this.destroy$)).subscribe(() => {
-                console.log('[EventsComponent] changed$ received -> reload events');
                 this.loadEvents();
             });
             this.loadUpcoming();
@@ -85,8 +81,7 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     ngAfterViewInit(): void {
-        // Extra diagnostic hook to see lifecycle on refresh
-        console.log('[EventsComponent] ngAfterViewInit, isBrowser=', this.isBrowser());
+        // no-op
     }
 
     onDatesSet(arg: any): void {
@@ -136,19 +131,16 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
         console.log('[EventsComponent] loadUpcoming() start');
         this.upcomingLoading = true;
         this.upcomingError = null;
-        this.eventsService.list().pipe(take(1)).subscribe({
+        // Use public-upcoming endpoint: PUBLISHED only, future events, ascending, limited
+        this.eventsService.listPublicUpcoming(new Date(), 20).pipe(take(1)).subscribe({
             next: (rows) => {
                 this.zone.run(() => {
-                    console.log('[EventsComponent] loadUpcoming() success, count=', rows?.length ?? 0);
-                    // sort chronologically and show first 20
-                    const sorted = [...rows].sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
-                    this.upcoming = sorted.slice(0, 20);
+                    this.upcoming = rows ?? [];
                     this.upcomingLoading = false;
                     this.cdr.markForCheck();
                 });
             },
             error: (err) => {
-                console.error('[EventsComponent] loadUpcoming() error', err);
                 this.zone.run(() => { this.upcoming = []; this.upcomingError = 'Failed to load'; this.upcomingLoading = false; this.cdr.markForCheck(); });
             }
         });
