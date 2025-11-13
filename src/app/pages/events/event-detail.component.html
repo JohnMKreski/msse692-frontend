@@ -1,4 +1,4 @@
-<section class="event-detail" *ngIf="event() as e; else loadingTpl">
+<section class="event-detail" *ngIf="event() as e; else loadingOrErrorTpl">
   <header class="event-detail__header">
     <h1 class="event-detail__title">{{ e.eventName }}</h1>
     <app-status-badge [status]="e.status" size="sm"></app-status-badge>
@@ -22,9 +22,15 @@
   <p class="error" *ngIf="error() as err">{{ err }}</p>
 </section>
 
-<ng-template #loadingTpl>
-  <div class="loading">
-    <mat-spinner diameter="32"></mat-spinner>
-    <span>Loading…</span>
+<ng-template #loadingOrErrorTpl>
+  <div *ngIf="error() as err; else justLoading" class="loading error-state">
+    <mat-icon aria-hidden="true">error_outline</mat-icon>
+    <span>{{ err }}</span>
   </div>
+  <ng-template #justLoading>
+    <div class="loading">
+      <mat-spinner diameter="32"></mat-spinner>
+      <span>Loading…</span>
+    </div>
+  </ng-template>
 </ng-template>
