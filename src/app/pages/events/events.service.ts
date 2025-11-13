@@ -19,10 +19,34 @@ export class EventsService {
         const safeParams: any = {
             page: params?.page ?? 0,
             size: params?.size ?? 50,
-            // Respect backend sort whitelist (e.g., startAt, eventName)
-            sort: params?.sort ?? 'startAt,asc',
+            sort: this.normalizeSort(params?.sort),
         };
         return this.http.get<EventPageResponse>(`${this.baseUrl}/events`, { params: safeParams });
+    }
+
+    // Enforce backend-allowed sort fields and produce a stable format
+    private normalizeSort(input?: string | null): string {
+        const DEFAULT = 'startAt,asc';
+        const allowed = new Set(['startAt', 'eventName']);
+        if (!input || !input.trim()) return DEFAULT;
+        const s = input.trim();
+        // Accept forms: "-field", "field,desc", "field,asc", or plain "field"
+        let field = s;
+        let dir: 'asc' | 'desc' | '' = '';
+        if (s.startsWith('-')) {
+            field = s.substring(1);
+            dir = 'desc';
+        } else if (/,\s*asc$/i.test(s)) {
+            field = s.replace(/,\s*asc$/i, '');
+            dir = 'asc';
+        } else if (/,\s*desc$/i.test(s)) {
+            field = s.replace(/,\s*desc$/i, '');
+            dir = 'desc';
+        }
+        field = field.trim();
+        if (!allowed.has(field)) return DEFAULT;
+        // Default direction to asc when unspecified
+        return `${field},${dir || 'asc'}`;
     }
 
     listPublicUpcoming(from?: Date, limit: number = 10): Observable<EventDto[]> {

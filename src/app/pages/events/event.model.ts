@@ -42,6 +42,10 @@ export interface EventStatusOption {
     label: string;
 }
 
+// Typed sort options aligned with backend whitelist
+export type EventSortField = 'startAt' | 'eventName';
+export type SortDir = 'asc' | 'desc';
+
 // Pagination metadata returned by backend for page-wrapped lists
 export interface PageMetadata {
     number: number;
