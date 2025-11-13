@@ -1,0 +1,85 @@
+<section class="editor">
+  <header class="editor__header">
+    <h1>Manage Events</h1>
+    <button mat-stroked-button color="primary" (click)="resetForm()">New Event</button>
+  </header>
+
+  <div class="editor__content">
+    <div class="editor__list">
+      <h2>My Events</h2>
+      <div *ngIf="loading()" class="loading">Loading…</div>
+      <p class="error" *ngIf="error() as err">{{ err }}</p>
+      <div class="list" *ngIf="!loading()">
+        <div class="row" *ngFor="let e of items()">
+          <div class="col col--name">{{ e.eventName }}</div>
+          <div class="col col--date">{{ e.startAt | date:'short' }}</div>
+          <div class="col col--status">
+            <app-status-badge [status]="e.status" size="sm"></app-status-badge>
+            <mat-form-field appearance="outline" class="status-ff">
+              <mat-label>Status</mat-label>
+              <mat-select [value]="e.status" (selectionChange)="onStatusChange(e, $event.value)" [disabled]="e.status === 'CANCELLED'">
+                <mat-option *ngFor="let opt of statusOptions()" [value]="opt.value">{{ opt.label }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+          <div class="col col--actions">
+            <button mat-button (click)="edit(e)">Edit</button>
+            <button mat-button color="warn" (click)="delete(e)" [disabled]="saving()">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="editor__form">
+      <h2>{{ editId ? 'Edit Event' : 'Create Event' }}</h2>
+      <form [formGroup]="form" (ngSubmit)="submit()">
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>Event Name</mat-label>
+          <input matInput formControlName="eventName" required />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>Type</mat-label>
+          <mat-select formControlName="type">
+            <mat-option [value]="''">—</mat-option>
+            <mat-option *ngFor="let t of typeOptions()" [value]="t.value">{{ t.label }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <div class="grid grid--datetime">
+          <mat-form-field appearance="outline">
+            <mat-label>Start Date</mat-label>
+            <input matInput type="date" formControlName="dateStart" required />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Start Time</mat-label>
+            <input matInput type="time" formControlName="timeStart" required />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>End Date</mat-label>
+            <input matInput type="date" formControlName="dateEnd" required />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>End Time</mat-label>
+            <input matInput type="time" formControlName="timeEnd" required />
+          </mat-form-field>
+        </div>
+
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>Location</mat-label>
+          <input matInput formControlName="eventLocation" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>Description</mat-label>
+          <textarea matInput formControlName="eventDescription" rows="4"></textarea>
+        </mat-form-field>
+
+        <div class="actions">
+          <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid || saving()">{{ editId ? 'Save Changes' : 'Create Event' }}</button>
+          <button mat-button type="button" (click)="resetForm()">Reset</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>

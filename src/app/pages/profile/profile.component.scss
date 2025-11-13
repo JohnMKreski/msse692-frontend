@@ -34,4 +34,21 @@
   padding: 1rem;
   border-radius: 8px;
   overflow: auto;
+
+  .profile-form label.block {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .row {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-top: 0.5rem;
+  }
+
+  .error { color: #b00020; margin-top: 0.5rem; }
+  .success { color: #0b8457; margin-top: 0.5rem; }
 }

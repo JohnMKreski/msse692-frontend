@@ -4,26 +4,143 @@
       <img *ngIf="u.photoURL as photo" [src]="photo" alt="avatar" class="avatar" />
       <div>
         <h1 class="title">{{ u.displayName || u.email || 'Your profile' }}</h1>
+        <h2 class="section-title">Info</h2>
         <p class="muted">UID: {{ u.uid }}</p>
         <p *ngIf="u.email">Email: {{ u.email }}</p>
       </div>
     </div>
 
-    <div class="profile__actions">
-      <button type="button" (click)="logout()">Logout</button>
-    </div>
+    <!-- Removed inline logout button; logout now handled in header navigation -->
 
-    <div class="profile__claims" *ngIf="roles() as r">
-      <h2>Roles</h2>
-      <ul>
-        <li *ngFor="let role of r">{{ role }}</li>
-      </ul>
-    </div>
+    <!-- Section 1: Firebase Info (full JSON) -->
+    <section class="profile__sec1">
+      <h2 class="section-title">Section 1: Firebase Info (Full JSON)</h2>
+      <ng-container *ngIf="firebaseInfo() as f; else noFirebase">
+        <pre>{{ f | json }}</pre>
+      </ng-container>
+      <ng-template #noFirebase>
+        <p>No Firebase user loaded.</p>
+      </ng-template>
+      <div *ngIf="roles() as r"><strong>Roles ({{ rolesSource() || 'unknown' }}):</strong> {{ r.join(', ') }}</div>
+      <div *ngIf="claims() as c">
+        <strong>Token Claims (JSON):</strong>
+        <pre>{{ c | json }}</pre>
+      </div>
+      <div class="token-decode" *ngIf="idTokenHeader() || idTokenPayload()">
+        <h3 class="section-subtitle">Decoded ID Token</h3>
+        <details open>
+          <summary>Header</summary>
+          <pre>{{ idTokenHeader() | json }}</pre>
+        </details>
+        <details open>
+          <summary>Payload</summary>
+          <pre>{{ idTokenPayload() | json }}</pre>
+        </details>
+        <button type="button" (click)="forceRefreshTokenAndClaims()">Refresh Token & Claims</button>
+      </div>
+    </section>
 
-    <div class="profile__claims" *ngIf="claims() as c">
-      <h2>Token Claims</h2>
-      <pre>{{ c | json }}</pre>
-    </div>
+    <!-- Section 2: AppUser (backend) -->
+    <section class="profile__sec2">
+      <h2 class="section-title">Section 2: Backend AppUser (Full JSON)</h2>
+      <ng-container *ngIf="appUser() as au; else noAppUser">
+        <pre>{{ au | json }}</pre>
+      </ng-container>
+      <ng-template #noAppUser>
+        <p>No backend AppUser found.</p>
+      </ng-template>
+    </section>
+
+    <!-- Section 3: Profile Data (plain text) -->
+    <section class="profile__sec3">
+      <h2 class="section-title">Section 3: Profile Data //TODO</h2>
+      <ng-container *ngIf="existingProfile() as p; else noProfilePlain">
+        <pre>{{ p | json }}</pre>
+        <p class="muted">Completed: {{ p.completed }} | Verified: {{ p.verified }}</p>
+      </ng-container>
+      <ng-template #noProfilePlain>
+        <p>No profile created yet.</p>
+      </ng-template>
+    </section>
+
+  <!-- CRUD Events placeholder -->
+    <section class="profile__crud" *ngIf="canCrud()">
+      <h2 class="section-title">Events</h2>
+      <p class="muted">Inline event management will move to its own page.</p>
+      <div class="row">
+        <button type="button" (click)="showCrudComingSoon()">Manage Events (coming soon)</button>
+        <a class="link" routerLink="/events">Open Calendar</a>
+      </div>
+    </section>
+
+    <!-- Section 4: My Events (Filtered by createdByUserId) -->
+    <section class="profile__mine">
+      <h2 class="section-title">Section 4: My Events (Created By Me)</h2>
+      <p class="muted">Events where createdByUserId matches your AppUser ID.</p>
+      <ng-container *ngIf="myEvents() as my; else noMyEvents">
+        <div *ngIf="my.length; else noMyEventsReal">
+          <div *ngFor="let e of my">
+            <pre>{{ e | json }}</pre>
+          </div>
+        </div>
+      </ng-container>
+      <ng-template #noMyEvents>
+        <p>Loading...</p>
+      </ng-template>
+      <ng-template #noMyEventsReal>
+        <p>No events you created yet.</p>
+      </ng-template>
+    </section>
+
+    <!-- Section 4b: All Events (raw) for visibility during dev -->
+    <section class="profile__allevents" *ngIf="allEvents() as all">
+      <h2 class="section-title">Section 4b: All Events (Dev Visibility)</h2>
+      <p class="muted">Temporary dev section showing all events for comparison.</p>
+      <div *ngIf="all.length; else noAllEvents">
+        <div *ngFor="let e of all"><pre>{{ e | json }}</pre></div>
+      </div>
+      <ng-template #noAllEvents><p>No events returned.</p></ng-template>
+    </section>
+
+    <!-- Section 5: Admin – Event Audits -->
+    <section class="profile__audits" *ngIf="isAdmin()">
+      <h2 class="section-title">Section 5: Event Audits (Admin)</h2>
+      <p class="muted">Recent CREATE / UPDATE / DELETE actions for a selected event.</p>
+      <div class="audit-controls" *ngIf="adminSelectableEvents() as events">
+        <label>
+          <span>Select Event</span>
+          <select (change)="selectedEventId.set($any($event.target).value); loadAudits();">
+            <option *ngFor="let e of events" [value]="e.id">{{ e.title || e.id }}</option>
+          </select>
+        </label>
+        <button type="button" (click)="loadAudits()" [disabled]="auditsLoading()">Reload</button>
+      </div>
+      <div *ngIf="auditsLoading()">Loading audits…</div>
+      <div *ngIf="auditsError() as err" class="error">{{ err }}</div>
+      <ng-container *ngIf="audits() as rows">
+        <table class="audit-table" *ngIf="rows.length; else noAudits">
+          <thead>
+            <tr>
+              <th>When</th>
+              <th>Action</th>
+              <th>Actor User Id</th>
+              <th>Timestamp</th>
+            </tr>
+          </thead>
+            <tbody>
+              <tr *ngFor="let a of rows">
+                <td>{{ relTime(a.at) }}</td>
+                <td>{{ a.action }}</td>
+                <td>{{ a.actorUserId }}</td>
+                <td>{{ a.at }}</td>
+              </tr>
+            </tbody>
+        </table>
+        <ng-template #noAudits>
+          <p class="muted">No audit entries yet for this event.</p>
+        </ng-template>
+      </ng-container>
+    </section>
   </ng-container>
 
   <ng-template #notSignedIn>

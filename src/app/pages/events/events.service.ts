@@ -1,39 +1,60 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { CreateEventRequest, EventDto, UpdateEventRequest } from './event.model';
+import { API_URL } from '../../shared/api-tokens';
+import { Observable, Subject } from 'rxjs';
+import { CreateEventRequest, EventDto, UpdateEventRequest, EventAudit } from './event.model';
 
 @Injectable({ providedIn: 'root' })
 export class EventsService {
     private readonly http = inject(HttpClient);
-    private readonly baseUrl = '/api';
+    private readonly apiUrl = inject(API_URL);
+    private readonly baseUrl = `${this.apiUrl}`;
+    // UI event bus (merged from EventsUiService)
+    private readonly _changed = new Subject<void>();
+    readonly changed$ = this._changed.asObservable();
 
-    list(params?: { from?: string; to?: string }): Observable<EventDto[]> {
+    notifyChanged() { this._changed.next(); }
+
+    list(params?: { page?: number; size?: number; sort?: string }): Observable<EventDto[]> {
         return this.http.get<EventDto[]>(`${this.baseUrl}/events`, { params: params as any });
     }
 
-    get(id: string): Observable<EventDto> {
-        return this.http.get<EventDto>(`${this.baseUrl}/events/${encodeURIComponent(id)}`);
+    listPublicUpcoming(from?: Date, limit: number = 10): Observable<EventDto[]> {
+        const clamped = Math.min(Math.max(limit, 1), 100);
+        const params: any = { limit: clamped };
+        if (from) params.from = from.toISOString();
+        return this.http.get<EventDto[]>(`${this.baseUrl}/events/public-upcoming`, { params });
     }
 
-    create(event: Omit<EventDto, 'id'>): Observable<EventDto> {
-        return this.http.post<EventDto>(`${this.baseUrl}/events`, event);
+    get(id: number | string): Observable<EventDto> {
+        return this.http.get<EventDto>(`${this.baseUrl}/events/${encodeURIComponent(String(id))}`);
     }
 
-    // Methods aligned to backend request schema
     createRaw(payload: CreateEventRequest): Observable<EventDto> {
         return this.http.post<EventDto>(`${this.baseUrl}/events`, payload);
     }
 
-    update(id: string, event: Partial<Omit<EventDto, 'id'>>): Observable<EventDto> {
-        return this.http.put<EventDto>(`${this.baseUrl}/events/${encodeURIComponent(id)}`, event);
+    updateRaw(id: number | string, payload: UpdateEventRequest): Observable<EventDto> {
+        return this.http.put<EventDto>(`${this.baseUrl}/events/${encodeURIComponent(String(id))}`, payload);
     }
 
-    updateRaw(id: string, payload: UpdateEventRequest): Observable<EventDto> {
-        return this.http.put<EventDto>(`${this.baseUrl}/events/${encodeURIComponent(id)}`, payload);
+    delete(id: number | string): Observable<void> {
+        return this.http.delete<void>(`${this.baseUrl}/events/${encodeURIComponent(String(id))}`);
     }
 
-    delete(id: string): Observable<void> {
-        return this.http.delete<void>(`${this.baseUrl}/events/${encodeURIComponent(id)}`);
+    // Read-only: fetch recent audit entries for an event
+    getAudits(eventId: number | string, limit: number = 10): Observable<EventAudit[]> {
+        return this.http.get<EventAudit[]>(`${this.baseUrl}/events/${encodeURIComponent(String(eventId))}/audits`, { params: { limit } });
+    }
+
+    // ===== Status transitions =====
+    publishEvent(id: number | string): Observable<EventDto> {
+        return this.http.post<EventDto>(`${this.baseUrl}/events/${encodeURIComponent(String(id))}/publish`, {});
+    }
+    unpublishEvent(id: number | string): Observable<EventDto> {
+        return this.http.post<EventDto>(`${this.baseUrl}/events/${encodeURIComponent(String(id))}/unpublish`, {});
+    }
+    cancelEvent(id: number | string): Observable<EventDto> {
+        return this.http.post<EventDto>(`${this.baseUrl}/events/${encodeURIComponent(String(id))}/cancel`, {});
     }
 }

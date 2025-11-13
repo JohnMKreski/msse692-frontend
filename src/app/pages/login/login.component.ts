@@ -57,18 +57,18 @@ export class LoginComponent implements OnInit, OnDestroy {
         }
     }
 
-    async loginWithGoogle(): Promise<void> {
-        this.loading.set(true);
-        this.error.set(null);
-        try {
-        const provider = new GoogleAuthProvider();
-        await signInWithPopup(this.auth, provider);
-        } catch (e: any) {
-        this.error.set(e?.message ?? 'Google sign-in failed');
-        } finally {
-        this.loading.set(false);
-        }
-    }
+    // async loginWithGoogle(): Promise<void> {
+    //     this.loading.set(true);
+    //     this.error.set(null);
+    //     try {
+    //     const provider = new GoogleAuthProvider();
+    //     await signInWithPopup(this.auth, provider);
+    //     } catch (e: any) {
+    //     this.error.set(e?.message ?? 'Google sign-in failed');
+    //     } finally {
+    //     this.loading.set(false);
+    //     }
+    // }
 
     async logout(): Promise<void> {
         this.loading.set(true);

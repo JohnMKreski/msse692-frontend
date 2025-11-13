@@ -1,0 +1,8 @@
+<span *ngIf="meta as m" class="badge" [class]="'badge ' + m.color" [attr.aria-label]="m.label" role="status">
+  <mat-icon fontIcon="{{ m.icon }}" aria-hidden="true"></mat-icon>
+  <span class="badge__text" [ngClass]="size === 'sm' ? 'visually-hidden' : ''">{{ status }}</span>
+</span>
+<span *ngIf="!meta" class="badge badge--unknown" aria-label="Unknown status" role="status">
+  <mat-icon fontIcon="help" aria-hidden="true"></mat-icon>
+  <span class="badge__text" [ngClass]="size === 'sm' ? 'visually-hidden' : ''">?</span>
+</span>

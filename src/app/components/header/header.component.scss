@@ -1,1 +1,11 @@
 /* Header component specific overrides (optional) */
+
+.logout-link {
+	cursor: pointer;
+	text-decoration: underline;
+}
+
+/* Optional: keep nav links consistent */
+nav a {
+	cursor: pointer;
+}

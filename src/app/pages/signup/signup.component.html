@@ -1,0 +1,36 @@
+<section class="signup">
+  <h1>Create account</h1>
+
+  <form [formGroup]="form" (ngSubmit)="submit()">
+    <label>
+      User name
+      <input type="text" formControlName="displayName" placeholder="Your username" required />
+    </label>
+    <label>
+      Email
+      <input type="email" formControlName="email" placeholder="you@example.com" required />
+    </label>
+    <label>
+      Password
+      <input type="password" formControlName="password" placeholder="••••••" required minlength="6" />
+    </label>
+    <label>
+      Confirm password
+      <input type="password" formControlName="confirmPassword" placeholder="••••••" required />
+    </label>
+
+    <div class="errors" *ngIf="form.invalid && (form.dirty || form.touched)">
+      <div *ngIf="form.errors?.['passwordsMismatch']">Passwords must match.</div>
+    </div>
+
+    <button type="submit" [disabled]="form.invalid || loading()">
+      <span *ngIf="!loading()">Continue</span>
+      <span *ngIf="loading()">Creating...</span>
+    </button>
+  </form>
+
+  <p class="error" *ngIf="error() as err">{{ err }}</p>
+  <p class="success" *ngIf="!error() && !loading() && form.valid && authUserCreated()">
+    Account created and signed in.
+  </p>
+</section>
