@@ -69,10 +69,11 @@ export class EditorEventsComponent implements OnDestroy {
     this.users.getMe().pipe(take(1)).subscribe({
       next: (me) => {
         this.meId = me?.id ?? null;
-        this.events.list().pipe(take(1)).subscribe({
-          next: (rows) => {
-            const mine = this.meId != null ? rows.filter(r => r.createdByUserId === this.meId) : rows;
-            this.items.set(mine);
+        this.events.list({ page: 0, size: 200, sort: 'startAt,asc' }).pipe(take(1)).subscribe({
+          next: (resp) => {
+            const rows: EventDto[] = Array.isArray((resp as any)) ? (resp as any as EventDto[]) : (resp?.items ?? []);
+            const mine = this.meId != null ? rows.filter((r: EventDto) => r.createdByUserId === this.meId) : rows;
+            this.items.set(mine as EventDto[]);
             this.loading.set(false);
           },
           error: (err) => { console.error(err); this.error.set('Failed to load events'); this.loading.set(false); }

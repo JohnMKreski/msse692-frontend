@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnDestroy, PLATFORM_ID, ChangeDetectorRef, inject, OnInit, NgZone, AfterViewInit } from '@angular/core';
 import { isPlatformBrowser, NgForOf, NgIf, DatePipe } from '@angular/common';
 import { EventsService } from './events.service';
-import { EventDto } from './event.model';
+import { EventDto, EventPageResponse } from './event.model';
 import { take, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { RouterLink } from '@angular/router';
@@ -98,11 +98,12 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
         console.log('[EventsComponent] loadEvents() start', window ?? {});
         // For debugging: load all events (ignore status/owner) to ensure visibility while unauthenticated
         this.eventsService
-            .list()
+            .list({ page: 0, size: 200, sort: 'startAt,asc' })
             .pipe(take(1))
             .subscribe({
-                next: (items: EventDto[]) => {
+                next: (resp: EventPageResponse) => {
                     this.zone.run(() => {
+                        const items = Array.isArray((resp as any)) ? (resp as any as EventDto[]) : (resp?.items ?? []);
                         console.log('[EventsComponent] loadEvents() success, count=', items?.length ?? 0);
                         const fcEvents = items.map(e => ({
                             id: String(e.eventId),
@@ -150,9 +151,10 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
         console.log('[EventsComponent] loadAllEvents() start');
         this.allLoading = true;
         this.allError = null;
-        this.eventsService.list().pipe(take(1)).subscribe({
-            next: (rows) => {
+        this.eventsService.list({ page: 0, size: 200, sort: 'startAt,asc' }).pipe(take(1)).subscribe({
+            next: (resp) => {
                 this.zone.run(() => {
+                    const rows = Array.isArray((resp as any)) ? (resp as any as EventDto[]) : (resp?.items ?? []);
                     console.log('[EventsComponent] loadAllEvents() success, count=', rows?.length ?? 0);
                     // sort chronologically by startAt ascending
                     this.allEvents = [...rows].sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());

@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { API_URL } from '../../shared/api-tokens';
 import { Observable, Subject } from 'rxjs';
-import { CreateEventRequest, EventDto, UpdateEventRequest, EventAudit } from './event.model';
+import { CreateEventRequest, EventDto, UpdateEventRequest, EventAudit, EventPageResponse } from './event.model';
 
 @Injectable({ providedIn: 'root' })
 export class EventsService {
@@ -15,8 +15,14 @@ export class EventsService {
 
     notifyChanged() { this._changed.next(); }
 
-    list(params?: { page?: number; size?: number; sort?: string }): Observable<EventDto[]> {
-        return this.http.get<EventDto[]>(`${this.baseUrl}/events`, { params: params as any });
+    list(params?: { page?: number; size?: number; sort?: string }): Observable<EventPageResponse> {
+        const safeParams: any = {
+            page: params?.page ?? 0,
+            size: params?.size ?? 50,
+            // Respect backend sort whitelist (e.g., startAt, eventName)
+            sort: params?.sort ?? 'startAt,asc',
+        };
+        return this.http.get<EventPageResponse>(`${this.baseUrl}/events`, { params: safeParams });
     }
 
     listPublicUpcoming(from?: Date, limit: number = 10): Observable<EventDto[]> {

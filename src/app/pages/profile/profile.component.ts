@@ -141,8 +141,9 @@ export class ProfileComponent implements OnInit, OnDestroy {
             this.fetchProfile();
         }
         // Load events
-        this.events.list().subscribe({
-            next: (items: any[]) => {
+        this.events.list({ page: 0, size: 200, sort: 'startAt,asc' }).subscribe({
+            next: (resp) => {
+                const items: any[] = Array.isArray((resp as any)) ? (resp as any as any[]) : (resp?.items ?? []);
                 const normalized = (items ?? []).map((e: any) => {
                     // const id = e?.id ?? e?.eventId ?? e?.slug ?? null;
                     // const title = e?.title ?? e?.eventName ?? '(no title)';
@@ -154,9 +155,10 @@ export class ProfileComponent implements OnInit, OnDestroy {
                 this.allEvents.set(normalized);
                 this.updateMyEventsFilter();
                 if (normalized.length && !this.selectedEventId()) {
-                    const first = normalized.find((x: any) => x?.id != null);
-                    if (first?.id != null) {
-                        this.selectedEventId.set(String(first.id));
+                    const first = normalized.find((x: any) => x?.eventId != null || x?.id != null);
+                    const sel = first?.eventId ?? first?.id;
+                    if (sel != null) {
+                        this.selectedEventId.set(String(sel));
                         this.loadAudits();
                     }
                 }
@@ -276,8 +278,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
             next: (created) => {
                 this.createSuccess.set(`Created event: ${created.eventName ?? created.eventId}`);
                 // refresh list
-                this.events.list().subscribe({
-                    next: (items) => this.myEvents.set(items ?? []),
+                this.events.list({ page: 0, size: 200, sort: 'startAt,asc' }).subscribe({
+                    next: (resp) => this.myEvents.set((resp as any)?.items ?? []),
                     error: () => {},
                 });
                 this.createForm.reset();

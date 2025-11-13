@@ -393,23 +393,15 @@ export class TestApiComponent {
     pingList() {
         this.loading.set(true);
         this.error.set(null);
-        this.eventsService.list().subscribe({
-            next: (data) => {
-                const normalized = (data ?? []).map((e: any) => ({
+        this.eventsService.list({ page: 0, size: 25, sort: 'startAt,asc' }).subscribe({
+            next: (resp) => {
+                const items: any[] = Array.isArray((resp as any)) ? (resp as any as any[]) : (resp?.items ?? []);
+                const normalized = (items ?? []).map((e: any) => ({
                     ...e, // <-- brings in eventId, eventName, startAt, endAt, eventLocation, etc.
-                    // id: e?.id ?? e?.eventId ?? e?.uuid ?? e?.identifier ?? undefined,
-                    // title: e?.title ?? e?.eventName ?? '(no title)',
-                    // type: e?.type ?? e?.typeDisplayName ?? undefined,
-                    // start: e?.start ?? e?.startAt ?? '',
-                    // end: e?.end ?? e?.endAt ?? '',
-                    // location: e?.location ?? e?.eventLocation ?? undefined,
-                    // description: e?.description ?? e?.eventDescription ?? undefined,
-                    // ownerUid: e?.ownerUid ?? e?.createdByUid ?? e?.createdBy ?? undefined,
-                    // ownerEmail: e?.ownerEmail ?? e?.createdByEmail ?? undefined,
                 }));
                 this.events.set(normalized);
                 this.expanded.set(new Array(normalized.length).fill(true));
-                this.lastResponse.set({ ok: true, count: data?.length ?? 0 });
+                this.lastResponse.set({ ok: true, count: items?.length ?? 0 });
                 this.loading.set(false);
             },
             error: (err) => {

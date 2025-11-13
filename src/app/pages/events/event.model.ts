@@ -41,3 +41,17 @@ export interface EventStatusOption {
     value: EventStatusCode;
     label: string;
 }
+
+// Pagination metadata returned by backend for page-wrapped lists
+export interface PageMetadata {
+    number: number;
+    size: number;
+    totalElements: number;
+    totalPages: number;
+}
+
+// Page-wrapped events list
+export interface EventPageResponse {
+    items: EventDto[];
+    page: PageMetadata;
+}
