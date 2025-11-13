@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, signal, WritableSignal } from '@angular/core';
 import { NgIf, NgFor, JsonPipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
+import { formatApiError } from '../../shared/api-error';
 import {
     ReactiveFormsModule,
     NonNullableFormBuilder,
@@ -625,16 +626,7 @@ export class TestApiComponent {
     }
 
     private stringifyError(err: any): string {
-        try {
-            if (err?.error) {
-                return typeof err.error === 'string'
-                    ? err.error
-                    : JSON.stringify(err.error, null, 2);
-            }
-            return JSON.stringify(err, null, 2);
-        } catch {
-            return String(err);
-        }
+        return formatApiError(err);
     }
 
     // Helpers to convert between backend display names and enum constants

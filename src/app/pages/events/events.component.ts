@@ -6,6 +6,7 @@ import { EventDto, EventPageResponse, EventSortField, SortDir } from './event.mo
 import { take, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { RouterLink } from '@angular/router';
+import { formatApiError } from '../../shared/api-error';
 
 // FullCalendar Angular wrapper
 import { FullCalendarModule } from '@fullcalendar/angular';
@@ -147,7 +148,7 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
                 });
             },
             error: (err) => {
-                this.zone.run(() => { this.upcoming = []; this.upcomingError = 'Failed to load'; this.upcomingLoading = false; this.cdr.markForCheck(); });
+                this.zone.run(() => { this.upcoming = []; this.upcomingError = formatApiError(err); this.upcomingLoading = false; this.cdr.markForCheck(); });
             }
         });
     }
@@ -171,7 +172,7 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
             },
             error: (err) => {
                 console.error('[EventsComponent] loadAllEvents() error', err);
-                this.zone.run(() => { this.allEvents = []; this.allError = 'Failed to load all events'; this.allLoading = false; this.cdr.markForCheck(); });
+                this.zone.run(() => { this.allEvents = []; this.allError = formatApiError(err); this.allLoading = false; this.cdr.markForCheck(); });
             }
         });
     }

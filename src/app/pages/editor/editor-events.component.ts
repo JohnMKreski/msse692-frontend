@@ -5,6 +5,7 @@ import { materialImports } from '../../shared/material';
 import { EventsService } from '../events/events.service';
 import { EnumsService } from '../events/enums.service';
 import { EventDto, CreateEventRequest, EventStatusOption, EventStatusCode } from '../events/event.model';
+import { formatApiError } from '../../shared/api-error';
 import { take } from 'rxjs/operators';
 import { AppUserService } from '../../shared/app-user.service';
 import { MatDialog } from '@angular/material/dialog';
@@ -76,7 +77,7 @@ export class EditorEventsComponent implements OnDestroy {
             this.items.set(mine as EventDto[]);
             this.loading.set(false);
           },
-          error: (err) => { console.error(err); this.error.set('Failed to load events'); this.loading.set(false); }
+          error: (err) => { console.error(err); this.error.set(formatApiError(err)); this.loading.set(false); }
         });
       },
       error: (err) => { console.error(err); this.error.set('Failed to load user'); this.loading.set(false); }
@@ -121,7 +122,7 @@ export class EditorEventsComponent implements OnDestroy {
     this.saving.set(true);
     this.events.delete(item.eventId).pipe(take(1)).subscribe({
   next: () => { this.saving.set(false); this.load(); this.events.notifyChanged(); },
-      error: (err) => { console.error(err); this.saving.set(false); this.error.set('Delete failed'); }
+      error: (err) => { console.error(err); this.saving.set(false); this.error.set(formatApiError(err)); }
     });
   }
 
@@ -146,7 +147,7 @@ export class EditorEventsComponent implements OnDestroy {
 
     req$.pipe(take(1)).subscribe({
   next: () => { this.saving.set(false); this.resetForm(); this.load(); this.events.notifyChanged(); },
-      error: (err) => { console.error(err); this.saving.set(false); this.error.set('Save failed'); }
+      error: (err) => { console.error(err); this.saving.set(false); this.error.set(formatApiError(err)); }
     });
   }
 
@@ -156,7 +157,7 @@ export class EditorEventsComponent implements OnDestroy {
       this.saving.set(true);
       this.events.publishEvent(item.eventId).pipe(take(1)).subscribe({
   next: () => { this.saving.set(false); this.load(); this.events.notifyChanged(); },
-        error: (err) => { console.error(err); this.saving.set(false); this.error.set('Publish failed'); }
+        error: (err) => { console.error(err); this.saving.set(false); this.error.set(formatApiError(err)); }
       });
       return;
     }
@@ -164,7 +165,7 @@ export class EditorEventsComponent implements OnDestroy {
       this.saving.set(true);
       this.events.unpublishEvent(item.eventId).pipe(take(1)).subscribe({
   next: () => { this.saving.set(false); this.load(); this.events.notifyChanged(); },
-        error: (err) => { console.error(err); this.saving.set(false); this.error.set('Unpublish failed'); }
+        error: (err) => { console.error(err); this.saving.set(false); this.error.set(formatApiError(err)); }
       });
       return;
     }
@@ -175,7 +176,7 @@ export class EditorEventsComponent implements OnDestroy {
         this.saving.set(true);
         this.events.cancelEvent(item.eventId).pipe(take(1)).subscribe({
           next: () => { this.saving.set(false); this.load(); this.events.notifyChanged(); },
-          error: (err) => { console.error(err); this.saving.set(false); this.error.set('Cancel failed'); }
+          error: (err) => { console.error(err); this.saving.set(false); this.error.set(formatApiError(err)); }
         });
       });
     }

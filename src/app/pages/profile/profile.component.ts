@@ -11,6 +11,7 @@ import { ProfileResponse } from '../../shared/profile.model';
 import { AppUserService } from '../../shared/app-user.service';
 import { AppUserDto } from '../../shared/app-user.model';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { formatApiError } from '../../shared/api-error';
 
 @Component({
     selector: 'app-profile',
@@ -200,7 +201,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
                 // Recompute my events once we know our AppUser ID
                 this.updateMyEventsFilter();
             },
-            error: () => this.appUser.set(null),
+            error: (err) => { console.error(err); this.appUser.set(null); },
         });
     }
 
