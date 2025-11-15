@@ -1,0 +1,21 @@
+.admin {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 1.25rem;
+}
+.muted { color: #666; }
+.subnav {
+  display: flex;
+  gap: 0.75rem;
+  margin: 0.5rem 0 1rem;
+}
+.subnav a {
+  padding: 0.35rem 0.6rem;
+  border-radius: 6px;
+  text-decoration: none;
+  color: var(--mat-sys-primary);
+}
+.subnav a.active {
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+}

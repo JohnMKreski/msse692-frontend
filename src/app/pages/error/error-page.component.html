@@ -1,10 +1,11 @@
-<section class="error-page">
+<section class="error-page" role="alert" aria-live="polite">
   <h1>{{ title }}</h1>
   <p class="message">{{ message }}</p>
-  <ul class="details" *ngIf="details?.length">
-    <li *ngFor="let d of details">{{ d.field ? (d.field + ': ') : ''}}{{ d.message || d }}</li>
-  </ul>
+  <p class="from" *ngIf="from()">Attempted: <code>{{ from() }}</code></p>
   <div class="actions">
-    <a routerLink="/">Home</a>
+    <a routerLink="/" class="btn">Home</a>
+    <a routerLink="/events" class="btn">Events</a>
+    <a [routerLink]="loginLink" class="btn primary" *ngIf="code() === 401">Login</a>
+    <a [routerLink]="loginLink" class="btn" *ngIf="code() !== 401">Login</a>
   </div>
 </section>

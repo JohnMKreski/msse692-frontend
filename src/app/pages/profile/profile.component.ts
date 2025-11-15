@@ -1,9 +1,10 @@
 import { CommonModule } from '@angular/common';
+import { LoadingSkeletonComponent } from '../../components/loading-skeleton/loading-skeleton.component';
 import { Component, OnDestroy, OnInit, computed, signal, WritableSignal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Auth } from '@angular/fire/auth';
 import { onAuthStateChanged, User, getIdTokenResult, signOut } from 'firebase/auth';
-import { ReactiveFormsModule, FormBuilder, Validators, FormGroup } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, Validators, FormGroup, FormControl } from '@angular/forms';
 import { EventsService } from '../events/events.service';
 import { EventDto, EventAudit } from '../events/event.model';
 import { ProfileService } from '../../shared/profile.service';
@@ -16,7 +17,7 @@ import { formatApiError } from '../../shared/api-error';
 @Component({
     selector: 'app-profile',
     standalone: true,
-    imports: [CommonModule, RouterLink, ReactiveFormsModule, MatSnackBarModule],
+    imports: [CommonModule, RouterLink, ReactiveFormsModule, MatSnackBarModule, LoadingSkeletonComponent],
     templateUrl: './profile.component.html',
     styleUrls: ['./profile.component.scss']
     })
@@ -99,6 +100,10 @@ export class ProfileComponent implements OnInit, OnDestroy {
     createError = signal<string | null>(null);
     createSuccess = signal<string | null>(null);
 
+    // Profile upsert UI state
+    profileSaving = signal<boolean>(false);
+    profileName!: FormControl<string>;
+
     private unsub: (() => void) | null = null;
 
     existingProfile = signal<ProfileResponse | null>(null);
@@ -111,6 +116,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
             eventLocation: [''],
             eventDescription: [''],
         });
+        this.profileName = this.fb.nonNullable.control('', { validators: [Validators.required, Validators.minLength(2), Validators.maxLength(200)] });
     }
 
     ngOnInit(): void {
@@ -174,11 +180,19 @@ export class ProfileComponent implements OnInit, OnDestroy {
         this.profiles.getMe().subscribe({
             next: (p) => {
                 this.existingProfile.set(p);
+                // Initialize editable display name from existing profile
+                try {
+                    if (p?.displayName) this.profileName.setValue(p.displayName);
+                } catch {}
             },
             error: (err) => {
                 if (err?.status === 404) {
                     // no profile yet
                     this.existingProfile.set(null);
+                    // Seed editable display name from Firebase or email if available
+                    const u = this.user();
+                    const fallback = (u?.displayName && u.displayName.trim()) || u?.email || '';
+                    try { this.profileName.setValue(fallback); } catch {}
                 } else {
                     this.existingProfile.set(null);
                 }
@@ -249,6 +263,47 @@ export class ProfileComponent implements OnInit, OnDestroy {
         } catch (e) {
             // silent
         }
+    }
+
+    upsertProfileWithCurrentDisplayName(): void {
+        const u = this.user();
+        if (!u) { return; }
+        const name = (u.displayName && u.displayName.trim()) || u.email || 'Unnamed';
+        this.profileSaving.set(true);
+        this.profiles.upsert({ displayName: name }).subscribe({
+            next: (resp) => {
+                this.existingProfile.set(resp);
+                this.snack.open('Profile saved', 'Dismiss', { duration: 2500, horizontalPosition: 'right' });
+                try { if (resp?.displayName) this.profileName.setValue(resp.displayName); } catch {}
+            },
+            error: (err) => {
+                const msg = formatApiError(err) || 'Failed to save profile';
+                this.snack.open(msg, 'Dismiss', { duration: 3500, horizontalPosition: 'right' });
+            },
+            complete: () => this.profileSaving.set(false)
+        });
+    }
+
+    saveProfileName(): void {
+        const raw = this.profileName.value ?? '';
+        const name = String(raw).trim();
+        if (!name || this.profileName.invalid) {
+            this.profileName.markAsTouched();
+            this.snack.open('Please enter a valid display name.', 'Dismiss', { duration: 2500, horizontalPosition: 'right' });
+            return;
+        }
+        this.profileSaving.set(true);
+        this.profiles.upsert({ displayName: name }).subscribe({
+            next: (resp) => {
+                this.existingProfile.set(resp);
+                this.snack.open('Profile updated', 'Dismiss', { duration: 2500, horizontalPosition: 'right' });
+            },
+            error: (err) => {
+                const msg = formatApiError(err) || 'Failed to update profile';
+                this.snack.open(msg, 'Dismiss', { duration: 3500, horizontalPosition: 'right' });
+            },
+            complete: () => this.profileSaving.set(false)
+        });
     }
 
     private decodeAndSetIdTokenParts(token: string | null | undefined): void {
