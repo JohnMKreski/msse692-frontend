@@ -13,6 +13,11 @@ import { EditorEventsComponent } from './pages/editor/editor-events.component';
 import { ErrorPageComponent } from './pages/error/error-page.component';
 import { NotFoundComponent } from './pages/error/not-found.component';
 import { SettingsComponent } from './pages/settings/settings.component';
+import { AdminDashboardComponent } from './pages/admin/admin-dashboard.component';
+import { AdminLogsComponent } from './pages/admin/admin-logs.component';
+import { AdminEventsListComponent } from './pages/admin/admin-events-list.component';
+import { AdminApiComponent } from './pages/admin/admin-api.component';
+import { adminRoleGuard } from './guards/admin-role.guard';
 
 export const routes: Routes = [
     { path: '', component: HomeComponent },
@@ -24,6 +29,17 @@ export const routes: Routes = [
     { path: 'signup', component: SignupComponent },
     { path: 'profile', component: ProfileComponent, canActivate: [requireAuthGuard] },
     { path: 'settings', component: SettingsComponent },
+    {
+        path: 'admin',
+        component: AdminDashboardComponent,
+        canActivate: [requireAuthGuard, adminRoleGuard],
+        children: [
+            { path: '', pathMatch: 'full', redirectTo: 'events' },
+            { path: 'events', component: AdminEventsListComponent },
+            { path: 'api', component: AdminApiComponent },
+            { path: 'logs', component: AdminLogsComponent },
+        ],
+    },
     { path: 'editor/events', component: EditorEventsComponent, canActivate: [requireAuthGuard, editorRoleGuard] },
     { path: 'error', component: ErrorPageComponent },
     { path: 'not-found', component: NotFoundComponent },

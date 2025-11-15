@@ -19,6 +19,7 @@
             </div>
             <a routerLink="/profile" role="menuitem" (click)="closeMenu()" routerLinkActive="active">Profile</a>
             <a routerLink="/settings" role="menuitem" (click)="closeMenu()" routerLinkActive="active">Settings</a>
+            <a *ngIf="isAdmin" routerLink="/admin" role="menuitem" (click)="closeMenu()" routerLinkActive="active">Admin</a>
             <a *ngIf="isEditor" routerLink="/editor/events" role="menuitem" (click)="closeMenu()" routerLinkActive="active">Manage Events</a>
             <button type="button" role="menuitem" (click)="logoutAndClose()">Logout</button>
         </div>

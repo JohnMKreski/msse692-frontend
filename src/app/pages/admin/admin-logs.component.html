@@ -1,0 +1,47 @@
+<section class="admin-logs">
+  <header class="controls">
+    <label>
+      Event
+      <select [value]="selectedEventId() ?? ''" (change)="onEventChange($any($event.target).value)">
+        <option value="" disabled>Select an event</option>
+        <option *ngFor="let e of events()" [value]="e.eventId">{{ e.eventName || e.title || ('#' + e.eventId) }}</option>
+      </select>
+    </label>
+    <label>
+      Limit
+      <select [value]="limit()" (change)="onLimitChange(+($any($event.target).value))">
+        <option [value]="10">10</option>
+        <option [value]="25">25</option>
+        <option [value]="50">50</option>
+        <option [value]="100">100</option>
+      </select>
+    </label>
+    <button type="button" (click)="loadAudits()">Refresh</button>
+  </header>
+
+  <div *ngIf="auditsLoading()">Loading audits…</div>
+  <div *ngIf="auditsError()" class="error">{{ auditsError() }}</div>
+
+  <div *ngIf="!auditsLoading() && !auditsError() && audits().length === 0" class="muted">
+    No audits found for this event.
+  </div>
+
+  <table *ngIf="audits().length" class="audits">
+    <thead>
+      <tr>
+        <th>When</th>
+        <th>Action</th>
+        <th>User</th>
+        <th>Details</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let a of audits()">
+        <td>{{ (a.createdAt || a.timestamp) | date:'short' }}</td>
+        <td>{{ a.action || a.status || a.type }}</td>
+        <td>{{ a.actorDisplayName || a.actorEmail || a.actorUid || '—' }}</td>
+        <td><pre>{{ a | json }}</pre></td>
+      </tr>
+    </tbody>
+  </table>
+</section>
