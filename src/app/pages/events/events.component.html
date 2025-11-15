@@ -7,6 +7,7 @@
             <select [(ngModel)]="sortField" (ngModelChange)="onSortChange()">
                 <option [ngValue]="'startAt'">Start time</option>
                 <option [ngValue]="'eventName'">Name</option>
+                <option [ngValue]="'eventType'">Type</option>
             </select>
         </label>
         <label>
@@ -15,27 +16,31 @@
                 <option [ngValue]="'asc'">Ascending</option>
                 <option [ngValue]="'desc'">Descending</option>
             </select>
+            <select [ngModel]="selectedType" (ngModelChange)="onTypeChange($event)">
+                <option [ngValue]="null">All Types</option>
+                <option *ngFor="let t of (typeOptions$ | async ) ?? []" [ngValue]="t.value">{{ t.label }}</option>
+            </select>
         </label>
     </div>
 
     <!-- Simple chronological list above the calendar -->
     <div class="upcoming-list">
         <h2>Upcoming Events</h2>
-        <app-error-banner *ngIf="upcomingError" [message]="upcomingError" [status]="400" (retry)="loadUpcoming()"></app-error-banner>
+        <app-error-banner *ngIf="upcomingError" [error]="upcomingErrObj" [message]="upcomingError" [status]="upcomingStatus ?? 500" (retry)="loadUpcoming()"></app-error-banner>
         <div *ngIf="upcomingLoading" class="skeleton-wrap">
             <app-loading-skeleton [lines]="3"></app-loading-skeleton>
         </div>
-        <p class="error" *ngIf="upcomingError as err">{{ err }}</p>
+        <!-- <p class="error" *ngIf="upcomingError as err">{{ err }}</p> -->
         <ul *ngIf="!upcomingLoading && !upcomingError && upcoming.length">
             <li *ngFor="let e of upcoming">
                 <a [routerLink]="['/events', e.eventId]">{{ e.eventName }}</a>
                 <span>— {{ e.startAt | date:'medium' }}</span>
             </li>
         </ul>
-        <p *ngIf="!upcomingLoading && !upcomingError && !upcoming.length">No upcoming events found.</p>
+        <!-- <p *ngIf="!upcomingLoading && !upcomingError && !upcoming.length">No upcoming events found.</p> -->
 
-        <h3>All Events</h3>
-        <app-error-banner *ngIf="allError" [message]="allError" [status]="400" (retry)="loadAllEvents()"></app-error-banner>
+        <!-- <h3>All Events</h3>
+        <app-error-banner *ngIf="allError" [error]="allErrObj" [message]="allError" [status]="allStatus ?? 400" (retry)="loadAllEvents()"></app-error-banner>
         <div *ngIf="allLoading" class="skeleton-wrap">
             <app-loading-skeleton [lines]="5" [avatar]="true"></app-loading-skeleton>
         </div>
@@ -46,7 +51,7 @@
                 <span>— {{ e.startAt | date:'medium' }} ({{ e.status }})</span>
             </li>
         </ul>
-        <p *ngIf="!allLoading && !allError && !allEvents.length">No events returned.</p>
+        <p *ngIf="!allLoading && !allError && !allEvents.length">No events returned.</p> -->
     </div>
 
     <!-- Server-side placeholder to keep SSR markup stable -->

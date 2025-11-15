@@ -3,11 +3,12 @@ import { isPlatformBrowser, NgForOf, NgIf, DatePipe } from '@angular/common';
 import { LoadingSkeletonComponent } from '../../components/loading-skeleton/loading-skeleton.component';
 import { FormsModule } from '@angular/forms';
 import { EventsService } from './events.service';
+import { EnumsService } from './enums.service';
 import { EventDto, EventPageResponse, EventSortField, SortDir } from './event.model';
 import { take, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { RouterLink } from '@angular/router';
-import { formatApiError } from '../../shared/api-error';
+import { formatApiError, parseApiError } from '../../shared/api-error';
 import { ErrorBannerComponent } from '../../components/error-banner/error-banner.component';
 
 // FullCalendar Angular wrapper
@@ -33,19 +34,26 @@ import listPlugin from '@fullcalendar/list';
 export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
     private readonly platformId = inject(PLATFORM_ID);
     private readonly eventsService = inject(EventsService);
+    private readonly enumsService = inject(EnumsService);
     private readonly cdr = inject(ChangeDetectorRef);
     private readonly zone = inject(NgZone);
     // UI change bus merged into EventsService
     private readonly destroy$ = new Subject<void>();
     upcomingLoading = false;
     upcomingError: string | null = null;
+    upcomingErrObj: any = null;
+    upcomingStatus: number | null = null;
     upcoming: EventDto[] = [];
     allLoading = false;
     allError: string | null = null;
+    allErrObj: any = null;
+    allStatus: number | null = null;
     allEvents: EventDto[] = [];
     // Sort state (typed to backend whitelist)
     sortField: EventSortField = 'startAt';
     sortDir: SortDir = 'asc';
+    typeOptions$ = this.enumsService.getEventTypes();
+    selectedType: string | null = null;
 
     // Calendar options (updated when events load)
     calendarOptions: CalendarOptions = {
@@ -105,7 +113,7 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
         // For debugging: load all events (ignore status/owner) to ensure visibility while unauthenticated
         const sort = `${this.sortField},${this.sortDir}`;
         this.eventsService
-            .list({ page: 0, size: 100, sort })
+            .list({ page: 0, size: 100, sort, eventType: this.selectedType || undefined })
             .pipe(take(1))
             .subscribe({
                 next: (resp: EventPageResponse) => {
@@ -136,17 +144,28 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
         // For debugging: show all events (no status/owner filter) to validate visibility
         this.upcomingLoading = true;
         this.upcomingError = null;
+        this.upcomingErrObj = null;
+        this.upcomingStatus = null;
+        this.cdr.markForCheck();
         // Use public-upcoming endpoint: PUBLISHED only, future events, ascending, limited
         this.eventsService.listPublicUpcoming(new Date(), 20).pipe(take(1)).subscribe({
             next: (rows) => {
                 this.zone.run(() => {
                     this.upcoming = rows ?? [];
                     this.upcomingLoading = false;
+                    this.upcomingStatus = null;
                     this.cdr.markForCheck();
                 });
             },
             error: (err) => {
-                this.zone.run(() => { this.upcoming = []; this.upcomingError = formatApiError(err); this.upcomingLoading = false; this.cdr.markForCheck(); });
+                this.zone.run(() => {
+                    this.upcoming = [];
+                    this.upcomingError = formatApiError(err);
+                    this.upcomingErrObj = err;
+                    this.upcomingStatus = this.extractStatus(err);
+                    this.upcomingLoading = false;
+                    this.cdr.markForCheck();
+                });
             }
         });
     }
@@ -154,22 +173,44 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
     loadAllEvents() {
         this.allLoading = true;
         this.allError = null;
+        this.allErrObj = null;
+        this.allStatus = null;
+        this.cdr.markForCheck();
         const sort = `${this.sortField},${this.sortDir}`;
-        this.eventsService.list({ page: 0, size: 100, sort }).pipe(take(1)).subscribe({
+        this.eventsService.list({ page: 0, size: 100, sort, eventType: this.selectedType || undefined }).pipe(take(1)).subscribe({
             next: (resp) => {
                 this.zone.run(() => {
                     const rows = Array.isArray((resp as any)) ? (resp as any as EventDto[]) : (resp?.items ?? []);
                     // sort chronologically by startAt ascending
                     // We rely on backend sort; keep a secondary stable sort for startAt asc
-                    this.allEvents = [...rows].sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
+                    if (this.sortField === 'startAt') {
+                        this.allEvents = [...rows].sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
+                    } else {
+                        this.allEvents = rows;
+                    }
                     this.allLoading = false;
+                    this.allStatus = null;
                     this.cdr.markForCheck();
                 });
             },
             error: (err) => {
-                this.zone.run(() => { this.allEvents = []; this.allError = formatApiError(err); this.allLoading = false; this.cdr.markForCheck(); });
+                this.zone.run(() => {
+                    this.allEvents = [];
+                    this.allError = formatApiError(err);
+                    this.allErrObj = err;
+                    this.allStatus = this.extractStatus(err);
+                    this.allLoading = false;
+                    this.cdr.markForCheck();
+                });
             }
         });
+    }
+
+    onTypeChange(v: string | null) { 
+        this.selectedType = v;
+        // Reload both calendar and list when type filter changes
+        this.loadEvents();
+        this.loadAllEvents();
     }
 
     onSortChange() {
@@ -199,5 +240,13 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
     ngOnDestroy(): void {
         this.destroy$.next();
         this.destroy$.complete();
+    }
+
+    // Private method to extract HTTP status from error response
+    private extractStatus(err: any): number {
+        const fromHttp = typeof err?.status === 'number' ? err.status : undefined;
+        if (typeof fromHttp === 'number' && fromHttp > 0) return fromHttp;
+        const parsed = parseApiError(err);
+        return (parsed?.status && parsed.status > 0 ? parsed.status : 500);
     }
 }

@@ -15,7 +15,7 @@ export class EventsService {
 
     notifyChanged() { this._changed.next(); }
 
-    list(params?: { page?: number; size?: number; sort?: string }): Observable<EventPageResponse> {
+    list(params?: { page?: number; size?: number; sort?: string; eventType?: string }): Observable<EventPageResponse> {
         // Backend enforces size 1..100 (@Min/@Max); clamp here to avoid 400s on oversized requests.
         const sizeRaw = params?.size ?? 50;
         const size = Math.min(Math.max(sizeRaw, 1), 100);
@@ -24,13 +24,14 @@ export class EventsService {
             size,
             sort: this.normalizeSort(params?.sort),
         };
+        if (params?.eventType) safeParams.eventType = params.eventType;
         return this.http.get<EventPageResponse>(`${this.baseUrl}/events`, { params: safeParams });
     }
 
     // Enforce backend-allowed sort fields and produce a stable format
     private normalizeSort(input?: string | null): string {
         const DEFAULT = 'startAt,asc';
-        const allowed = new Set(['startAt', 'eventName']);
+        const allowed = new Set(['startAt', 'eventName', 'eventType']);
         if (!input || !input.trim()) return DEFAULT;
         const s = input.trim();
         // Accept forms: "-field", "field,desc", "field,asc", or plain "field"
