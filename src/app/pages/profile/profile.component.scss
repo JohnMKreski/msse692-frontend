@@ -1,8 +1,6 @@
-/* Container */
 .profile {
   max-width: 980px;
   margin: 0 auto 3rem;
-  /* tighter top padding to bring header closer to global app header */
   padding: 0.75rem 1.25rem 3.5rem;
   display: flex;
   flex-direction: column;
@@ -27,7 +25,6 @@
   min-height: 0; /* avoid extra vertical stretch */
 }
 
-/* Overview definition list */
 .overview {
   margin: 0.5rem 0 0;
   display: grid;
@@ -45,7 +42,6 @@
   font-size: 0.75rem;
 }
 
-/* Inline label/value pairs for summary definition lists */
 .overview div,
 .appuser-summary div,
 .profile-summary div {
@@ -84,36 +80,18 @@
   font-size: 0.9rem;
 }
 
-/* Accordion styling */
-section.profile__info,
-section.profile__firebase,
-section.profile__appuser,
-section.profile__data,
-section.profile__events,
-section.profile__allevents,
-section.profile__audits {
+section[class^="profile__"] {
   border: 1px solid rgba(0,0,0,0.08);
   border-radius: 12px;
   background: var(--mat-sys-surface, #fff);
   box-shadow: 0 2px 6px rgba(0,0,0,0.06);
   overflow: hidden;
 }
-section.profile__firebase details,
-section.profile__appuser details,
-section.profile__data details,
-section.profile__events details,
-section.profile__allevents details,
-section.profile__audits details {
+section[class^="profile__"] details {
   padding: 0;
   margin: 0;
 }
-section.profile__info summary,
-section.profile__firebase summary,
-section.profile__appuser summary,
-section.profile__data summary,
-section.profile__events summary,
-section.profile__allevents summary,
-section.profile__audits summary {
+section[class^="profile__"] summary {
   list-style: none;
   cursor: pointer;
   padding: 0.9rem 1.25rem;
@@ -123,22 +101,10 @@ section.profile__audits summary {
   gap: 0.5rem;
   position: relative;
 }
-section.profile__info summary::-webkit-details-marker,
-section.profile__firebase summary::-webkit-details-marker,
-section.profile__appuser summary::-webkit-details-marker,
-section.profile__data summary::-webkit-details-marker,
-section.profile__events summary::-webkit-details-marker,
-section.profile__allevents summary::-webkit-details-marker,
-section.profile__audits summary::-webkit-details-marker { display: none; }
+section[class^="profile__"] summary::-webkit-details-marker { display: none; }
 
 /* Chevron indicator */
-section.profile__info summary::after,
-section.profile__firebase summary::after,
-section.profile__appuser summary::after,
-section.profile__data summary::after,
-section.profile__events summary::after,
-section.profile__allevents summary::after,
-section.profile__audits summary::after {
+section[class^="profile__"] summary::after {
   content: '\25B6';
   font-size: 0.75rem;
   transform: rotate(90deg);
@@ -148,7 +114,6 @@ section.profile__audits summary::after {
 }
 details:not([open]) > summary::after { transform: rotate(0deg); }
 
-/* Details content area */
 details > *:not(summary) {
   padding: 0 1.25rem 1.25rem;
 }
@@ -191,17 +156,10 @@ table.audit-table tbody tr:last-child td { border-bottom: none; }
   font: inherit;
 }
 
-/* Responsive adjustments */
 @media (max-width: 640px) {
   .profile__header { top: 52px; padding: 0.5rem 0.75rem; }
   .avatar { width: 48px; height: 48px; }
   .overview { grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); }
-  section.profile__info summary,
-  section.profile__firebase summary,
-  section.profile__appuser summary,
-  section.profile__data summary,
-  section.profile__events summary,
-  section.profile__allevents summary,
-  section.profile__audits summary { padding: 0.75rem 1rem; }
+  section[class^="profile__"] summary { padding: 0.75rem 1rem; }
   details > *:not(summary) { padding: 0 1rem 1rem; }
 }

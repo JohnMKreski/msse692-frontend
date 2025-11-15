@@ -102,7 +102,6 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     private loadEvents(window?: { from?: string; to?: string }) {
-        console.log('[EventsComponent] loadEvents() start', window ?? {});
         // For debugging: load all events (ignore status/owner) to ensure visibility while unauthenticated
         const sort = `${this.sortField},${this.sortDir}`;
         this.eventsService
@@ -112,7 +111,6 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
                 next: (resp: EventPageResponse) => {
                     this.zone.run(() => {
                         const items = Array.isArray((resp as any)) ? (resp as any as EventDto[]) : (resp?.items ?? []);
-                        console.log('[EventsComponent] loadEvents() success, count=', items?.length ?? 0);
                         const fcEvents = items.map(e => ({
                             id: String(e.eventId),
                             title: e.eventName,
@@ -126,7 +124,6 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
                     });
                 },
                 error: (err) => {
-                    console.error('[EventsComponent] loadEvents() error', err);
                     this.zone.run(() => {
                         this.calendarOptions = { ...this.calendarOptions, events: [] };
                         this.cdr.markForCheck();
@@ -137,7 +134,6 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
 
     loadUpcoming() {
         // For debugging: show all events (no status/owner filter) to validate visibility
-        console.log('[EventsComponent] loadUpcoming() start');
         this.upcomingLoading = true;
         this.upcomingError = null;
         // Use public-upcoming endpoint: PUBLISHED only, future events, ascending, limited
@@ -156,7 +152,6 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     loadAllEvents() {
-        console.log('[EventsComponent] loadAllEvents() start');
         this.allLoading = true;
         this.allError = null;
         const sort = `${this.sortField},${this.sortDir}`;
@@ -164,7 +159,6 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
             next: (resp) => {
                 this.zone.run(() => {
                     const rows = Array.isArray((resp as any)) ? (resp as any as EventDto[]) : (resp?.items ?? []);
-                    console.log('[EventsComponent] loadAllEvents() success, count=', rows?.length ?? 0);
                     // sort chronologically by startAt ascending
                     // We rely on backend sort; keep a secondary stable sort for startAt asc
                     this.allEvents = [...rows].sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
@@ -173,7 +167,6 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
                 });
             },
             error: (err) => {
-                console.error('[EventsComponent] loadAllEvents() error', err);
                 this.zone.run(() => { this.allEvents = []; this.allError = formatApiError(err); this.allLoading = false; this.cdr.markForCheck(); });
             }
         });

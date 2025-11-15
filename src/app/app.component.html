@@ -1,6 +1,11 @@
 <a class="skip-link" href="#main">Skip to content</a>
 <header class="app-header">
-  <app-header></app-header>
+  @defer (on idle) {
+    <app-header></app-header>
+  } @placeholder {
+    <div class="header-skeleton" aria-hidden="true"></div>
+  }
+  
 </header>
 <main id="main" class="content" role="main">
   <router-outlet></router-outlet>
