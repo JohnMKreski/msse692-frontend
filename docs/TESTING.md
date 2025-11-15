@@ -1,92 +1,46 @@
 # Frontend Testing Guide
 
-This project supports both Jest (unit tests in Node/jsdom) and Karma/Jasmine (browser-based) during the transition. Jest is the recommended default.
+We use Karma + Jasmine for unit tests.
 
-## Jest (recommended)
+## Running Tests
 
-- Install deps
+Standard run (watch mode):
 ```
-npm install
-```
-
-- Run once (console output)
-```
-npm run test:jest
+npm test
 ```
 
-- Watch mode (reruns on file change)
-```
-npm run test:jest:watch
-```
-
-- CI-style (single run, coverage)
-```
-npm run test:jest:ci
-```
-
-### Logs and Reports
-
-- Human-readable log (cmd.exe)
-```
-REM Fresh file
-npm run test:jest:ci > logs\jest-run.log 2>&1
-
-REM Append
-npm run test:jest:ci >> logs\jest-run.log 2>&1
-```
-
-- Human-readable log (PowerShell)
-```
-npm run test:jest:ci 2>&1 | Tee-Object -FilePath .\logs\jest-run.log
-```
-
-- JUnit XML (machine-readable for CI)
-```
-npm run test:jest:junit
-```
-Outputs: `logs/junit.xml`
-
-- JSON summary
-```
-npm run test:jest:json
-```
-Outputs: `logs/jest-report.json`
-
-Notes:
-- Create `logs/` once if missing: `mkdir logs`.
-- JUnit reporter is always enabled via `jest.config.js`, writing to `logs/junit.xml`.
-
-## Karma/Jasmine (legacy, optional)
-
-- Default run (uses current Karma config)
-```
-npm run test
-```
-
-- Headless CI run with Edge (if configured)
+Headless CI run with coverage (Firefox headless):
 ```
 npm run test:ci
 ```
 
+Edge headless (fallback if needed):
+```
+npm run test:edge
+```
+
+Firefox headless explicitly:
+```
+npm run test:firefox
+```
+
+## Coverage
+Generated when using `npm run test:ci` (see Karma config). Use those reports for assessing unit test coverage.
+
 ## Troubleshooting
 
-- Jest fails to start or complains about environment:
-  - Ensure `jest-environment-jsdom` is installed and listed in `devDependencies`.
-  - Verify `setup-jest.ts` exists and is referenced by `jest.config.js`.
+- Browser launch issues: ensure Firefox or Edge is installed; update `karma.conf.js` if necessary.
+- Missing dependencies: run `npm install` after pulling changes.
+- Flaky async tests: prefer Angular `fakeAsync` and `tick()` utilities.
 
-- Style or asset import errors in Jest:
-  - CSS/SCSS are mapped via `identity-obj-proxy`.
-  - Files (png/svg/etc.) are stubbed via `__mocks__/fileMock.js`.
+## Secret Handling Reminder
 
-- Angular TestBed issues:
-  - Most Angular specs work unchanged. If timers are involved, prefer Angular’s `fakeAsync/tick` or use `jest.useFakeTimers()` carefully.
+Do NOT commit environment secrets. Store Firebase/API keys in a separate `.env` or use Angular build-time file replacement with non-sensitive placeholders. If a secret was exposed:
+1. Rotate the secret immediately in the provider console.
+2. Remove the key from committed files.
+3. Purge from Git history (see root README security section if added) using `git filter-repo` or BFG.
 
-## CI suggestions
+## Future
 
-- Use Jest for unit tests in pipelines:
-```
-npm ci
-npm run test:jest:ci
-```
-- Publish `logs/junit.xml` as a test report artifact and `coverage-jest/` for coverage.
+When/if we reintroduce alternative runners, they will be documented here. For now, keep tests in Jasmine/Karma only.
 

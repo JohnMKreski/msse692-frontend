@@ -33,10 +33,13 @@ yarn-error.log
 .sass-cache/
 /connect.lock
 /coverage
+/coverage-jest
 /libpeerconnection.log
 testem.log
 /typings
 src/environments
+src/environments/*.ts
+src/environments/*.md
 
 # System files
 .DS_Store
@@ -45,3 +48,7 @@ Thumbs.db
 # Logs
 /logs/*
 !/logs/.gitkeep
+
+# JEST
+/coverage-jest
+/coverage-jest/*
