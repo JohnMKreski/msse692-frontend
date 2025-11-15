@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { Auth } from '@angular/fire/auth';
 import {
     signInWithEmailAndPassword,
@@ -28,7 +28,7 @@ export class LoginComponent implements OnInit, OnDestroy {
 
     private unsub: (() => void) | null = null;
 
-    constructor(private fb: FormBuilder, private auth: Auth) {
+    constructor(private fb: FormBuilder, private auth: Auth, private router: Router) {
         this.form = this.fb.group({
         email: ['', [Validators.required, Validators.email]],
         password: ['', [Validators.required, Validators.minLength(6)]],
@@ -50,6 +50,8 @@ export class LoginComponent implements OnInit, OnDestroy {
         const { email, password } = this.form.value;
         try {
         await signInWithEmailAndPassword(this.auth, email, password);
+        // After successful login, send user to Profile
+        this.router.navigateByUrl('/profile');
         } catch (e: any) {
         this.error.set(e?.message ?? 'Login failed');
         } finally {

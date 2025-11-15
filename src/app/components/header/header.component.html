@@ -4,7 +4,6 @@
         <ul>
             <li><a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" ariaCurrentWhenActive="page">Home</a></li>
             <li><a routerLink="/events" routerLinkActive="active">Events</a></li>
-            <li><a routerLink="/test-api" routerLinkActive="active">Test API</a></li>
         </ul>
     </nav>
     <div class="account-area" *ngIf="user; else loggedOut">

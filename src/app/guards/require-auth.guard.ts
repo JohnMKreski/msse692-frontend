@@ -6,7 +6,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 /**
  * Guard that requires a signed-in Firebase user; otherwise redirects to /login.
  */
-export const requireAuthGuard: CanActivateFn = async (): Promise<boolean | UrlTree> => {
+export const requireAuthGuard: CanActivateFn = async (_route, state): Promise<boolean | UrlTree> => {
   const auth = inject(Auth);
   const router = inject(Router);
 
@@ -17,5 +17,5 @@ export const requireAuthGuard: CanActivateFn = async (): Promise<boolean | UrlTr
     });
   });
 
-  return isAuthed || router.parseUrl('/login');
+  return isAuthed || router.parseUrl(`/error/401?from=${encodeURIComponent(state.url)}`);
 };
