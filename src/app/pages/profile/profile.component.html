@@ -4,7 +4,7 @@
     <div class="profile__header" *ngIf="firebaseInfo() as f; else headerSkeleton">
       <img *ngIf="u.photoURL as photo" [src]="photo" alt="User avatar" class="avatar" />
       <div>
-        <h1 class="title">{{ u.displayName || u.email || 'Your Profile' }}</h1>
+        <h1 class="title">{{ (existingProfile()?.displayName) || u.displayName || u.email || 'Your Profile' }}</h1>
         <dl class="overview" aria-label="Account overview">
           <div><dt>UID</dt><dd>{{ f['uid'] }}</dd></div>
           <div *ngIf="u.email"><dt>Email</dt><dd>{{ f['email'] }}</dd></div>
@@ -99,6 +99,21 @@
     <section class="profile__data" aria-label="Profile data details">
       <details>
         <summary><h2 class="section-title">Profile Data</h2></summary>
+        <!-- Editable public display name -->
+        <div style="margin: 0 1.25rem 0.75rem; display:flex; align-items:flex-end; gap:0.75rem; flex-wrap:wrap;">
+          <label style="display:flex; flex-direction:column; gap:0.25rem; min-width: 260px;">
+            <span class="muted">Public display name</span>
+            <input type="text" [formControl]="profileName" maxlength="200" placeholder="How your name appears publicly" />
+          </label>
+          <button type="button" (click)="saveProfileName()" [disabled]="profileSaving() || profileName.invalid">
+            {{ existingProfile() ? 'Save Changes' : 'Create Profile' }}
+          </button>
+          <div *ngIf="profileName.touched && profileName.invalid" class="error">
+            <span *ngIf="profileName.errors?.['required']">Display name is required.</span>
+            <span *ngIf="profileName.errors?.['minlength']">Must be at least 2 characters.</span>
+            <span *ngIf="profileName.errors?.['maxlength']">Must be 200 characters or less.</span>
+          </div>
+        </div>
         <ng-container *ngIf="existingProfile() as p; else profileSkeleton">
           <dl aria-label="Profile core fields" class="profile-summary">
             <div><dt>Completed</dt><dd>{{ p.completed }}</dd></div>

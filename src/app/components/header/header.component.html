@@ -9,13 +9,13 @@
     </nav>
     <div class="account-area" *ngIf="user; else loggedOut">
         <button class="user-menu__button" (click)="toggleMenu()" aria-haspopup="true" [attr.aria-expanded]="menuOpen" (keydown.escape)="closeMenu()">
-            {{ user.displayName || 'Account' }}
+            {{ profileName || (user.displayName || 'Account') }}
             <span class="visually-hidden" *ngIf="menuOpen">menu expanded</span>
         </button>
         <div class="user-menu__panel" *ngIf="menuOpen" role="menu">
             <div class="user-menu__identity" role="presentation">
-                <strong>{{ user.displayName || user.email || 'Signed in' }}</strong>
-                <div *ngIf="user.email && user.displayName">{{ user.email }}</div>
+                <strong>{{ profileName || user.displayName || user.email || 'Signed in' }}</strong>
+                <div *ngIf="user.email && (user.displayName || profileName)">{{ user.email }}</div>
             </div>
             <a routerLink="/profile" role="menuitem" (click)="closeMenu()" routerLinkActive="active">Profile</a>
             <a routerLink="/settings" role="menuitem" (click)="closeMenu()" routerLinkActive="active">Settings</a>
