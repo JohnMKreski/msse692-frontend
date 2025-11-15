@@ -3,14 +3,60 @@
 
 :root {
     --container-max: 1200px;
+    /* Light theme accessible base colors (WCAG AA compliant) */
+    --header-bg: #156cb7; /* dark enough for white text contrast */
+    --header-link-hover-bg: #4452b8; /* hover shade keeping >4.5 ratio */
+    --header-link-active-outline: #ffffff;
+    --user-menu-bg: #ffffff;
+    --user-menu-text: #1a1a1a;
+    --focus-outline: #ffbf47; /* highly visible focus ring */
+}
+
+/* Dark theme variable overrides */
+.theme-dark {
+    --header-bg: #1b2140;
+    --header-link-hover-bg: #2c3557;
+    --header-link-active-outline: #ffffff;
+    --user-menu-bg: #242a44;
+    --user-menu-text: #f5f6f9;
+    --focus-outline: #ffdd66;
+    --mat-sys-background: #111318;
+    --mat-sys-on-background: #e6e7eb;
+    --mat-sys-surface: #1a1c23;
+    --mat-sys-on-surface: #e6e7eb;
+    --mat-sys-surface-variant: #303544;
+    --mat-sys-on-surface-variant: #d1d5de;
+    --mat-sys-primary: #6ea5ff;
+    --mat-sys-on-primary: #061a33;
+    --mat-sys-secondary-container: #384157;
+    --mat-sys-on-secondary-container: #e3e8f1;
+}
+
+/* Optional high contrast theme */
+.theme-hc {
+    --header-bg: #000000;
+    --header-link-hover-bg: #222222;
+    --header-link-active-outline: #ffff00;
+    --user-menu-bg: #000000;
+    --user-menu-text: #ffffff;
+    --focus-outline: #ffff00;
+    --mat-sys-background: #000000;
+    --mat-sys-on-background: #ffffff;
+    --mat-sys-surface: #000000;
+    --mat-sys-on-surface: #ffffff;
+    --mat-sys-primary: #ffffff;
+    --mat-sys-on-primary: #000000;
+    --mat-sys-secondary-container: #ffffff;
+    --mat-sys-on-secondary-container: #000000;
 }
 
 .app-header {
     position: sticky;
     top: 0;
     z-index: 10;
-    background: var(--mat-sys-surface);
-    color: var(--mat-sys-on-surface);
+    background: var(--header-bg);
+    background-color: var(--header-bg); /* explicit ensure */
+    color: #fff;
     box-shadow: $shadow-sm;
 }
 .app-header__inner {
@@ -36,14 +82,39 @@
     text-decoration: none;
     padding: $spacing-1 $spacing-2;
     border-radius: $radius-sm;
+    position: relative;
 }
 .app-header__inner nav a:hover,
 .app-header__inner nav a:focus-visible {
-    background: var(--mat-sys-surface-variant);
+    background: var(--header-link-hover-bg);
 }
 .app-header__inner nav a.active {
     background: var(--mat-sys-secondary-container);
     color: var(--mat-sys-on-secondary-container);
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.12);
+    outline: 2px solid var(--header-link-active-outline);
+    outline-offset: 2px;
+}
+
+/* Login link (when logged out) styled like nav items */
+.app-header__inner .login-link {
+    color: inherit;
+    text-decoration: none;
+    padding: $spacing-1 $spacing-2;
+    border-radius: $radius-sm;
+    position: relative;
+    display: inline-block;
+}
+.app-header__inner .login-link:hover,
+.app-header__inner .login-link:focus-visible {
+    background: var(--header-link-hover-bg);
+}
+.app-header__inner .login-link.active {
+    background: var(--mat-sys-secondary-container);
+    color: var(--mat-sys-on-secondary-container);
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.12);
+    outline: 2px solid var(--header-link-active-outline);
+    outline-offset: 2px;
 }
 
 .app-main {
@@ -61,4 +132,52 @@
     @include container();
     padding: $spacing-3 0;
     font-size: 0.875rem;
+}
+
+/* Material card theming to respect our CSS variable surfaces */
+.mat-mdc-card {
+    background: var(--mat-sys-surface);
+    color: var(--mat-sys-on-surface);
+    transition: background-color 160ms ease, color 160ms ease;
+}
+.mat-mdc-card .mat-mdc-card-title,
+.mat-mdc-card .mat-mdc-card-subtitle,
+.mat-mdc-card .mat-mdc-card-content {
+    color: inherit;
+}
+.theme-dark .mat-mdc-card {
+    background: var(--mat-sys-surface);
+    color: var(--mat-sys-on-surface);
+}
+.theme-hc .mat-mdc-card {
+    background: #000; /* maximize contrast */
+    color: #fff;
+    border: 2px solid #ffff00;
+}
+.theme-hc .mat-mdc-card .mat-mdc-card-title,
+.theme-hc .mat-mdc-card .mat-mdc-card-subtitle {
+    color: #fff;
+}
+
+/* Skip link accessibility */
+.skip-link {
+    position: absolute;
+    top: -1000px;
+    left: -1000px;
+    background: var(--mat-sys-primary);
+    color: var(--mat-sys-on-primary);
+    padding: $spacing-1 $spacing-2;
+    border-radius: $radius-sm;
+    text-decoration: none;
+    z-index: 100;
+}
+.skip-link:focus-visible {
+    top: 0;
+    left: 0;
+}
+
+/* Global focus outline for keyboard users */
+:root :focus-visible {
+    outline: 2px solid var(--focus-outline);
+    outline-offset: 3px;
 }

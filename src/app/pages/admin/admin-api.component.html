@@ -1,0 +1,165 @@
+<section class="admin-api">
+
+  <!-- Events -->
+  <article class="card">
+    <h2>Events</h2>
+    <!-- Inline GETs -->
+    <div class="actions">
+      <button type="button" (click)="listEvents()">GET /events</button>
+    </div>
+    <form [formGroup]="getForm" (ngSubmit)="getEvent()" class="grid">
+      <label>
+        ID
+        <input type="text" formControlName="id" placeholder="event id" />
+      </label>
+      <button type="submit" [disabled]="getForm.invalid">GET /events/{{ '{' }}id{{ '}' }}</button>
+    </form>
+
+    <!-- Collapsible CRUD -->
+    <details>
+      <summary>Create</summary>
+      <form [formGroup]="createForm" (ngSubmit)="createEvent()" class="grid">
+        <label>Event Name <input type="text" formControlName="eventName" /></label>
+        <label>Type
+          <select formControlName="type">
+            <option *ngFor="let t of typeOptions" [value]="t.value">{{ t.label }}</option>
+          </select>
+        </label>
+        <label>Start <input type="datetime-local" formControlName="startAt" /></label>
+        <label>End <input type="datetime-local" formControlName="endAt" /></label>
+        <label class="span-2">Location <input type="text" formControlName="eventLocation" /></label>
+        <label class="span-2">Description <textarea rows="2" formControlName="eventDescription"></textarea></label>
+        <button type="submit" [disabled]="createForm.invalid">POST /events</button>
+      </form>
+    </details>
+
+    <details>
+      <summary>Update</summary>
+      <form [formGroup]="updateForm" (ngSubmit)="updateEvent()" class="grid">
+        <label class="span-2">ID <input type="text" formControlName="id" /></label>
+        <label>Event Name <input type="text" formControlName="eventName" /></label>
+        <label>Type
+          <select formControlName="type">
+            <option *ngFor="let t of typeOptions" [value]="t.value">{{ t.label }}</option>
+          </select>
+        </label>
+        <label>Start <input type="datetime-local" formControlName="startAt" /></label>
+        <label>End <input type="datetime-local" formControlName="endAt" /></label>
+        <label class="span-2">Location <input type="text" formControlName="eventLocation" /></label>
+        <label class="span-2">Description <textarea rows="2" formControlName="eventDescription"></textarea></label>
+        <button type="submit" [disabled]="updateForm.invalid">PUT /events/{{ '{' }}id{{ '}' }}</button>
+      </form>
+    </details>
+
+    <details>
+      <summary>Delete</summary>
+      <form [formGroup]="deleteForm" (ngSubmit)="deleteEvent()" class="grid">
+        <label class="span-2">ID <input type="text" formControlName="id" /></label>
+        <button type="submit" class="danger" [disabled]="deleteForm.invalid">DELETE /events/{{ '{' }}id{{ '}' }}</button>
+      </form>
+    </details>
+
+    <details>
+      <summary>Status Transitions</summary>
+      <div class="grid">
+        <form [formGroup]="publishForm" (ngSubmit)="publishEvent()">
+          <label>ID <input type="text" formControlName="id" /></label>
+          <button type="submit" [disabled]="publishForm.invalid">POST /events/{{ '{' }}id{{ '}' }}/publish</button>
+        </form>
+        <form [formGroup]="unpublishForm" (ngSubmit)="unpublishEvent()">
+          <label>ID <input type="text" formControlName="id" /></label>
+          <button type="submit" [disabled]="unpublishForm.invalid">POST /events/{{ '{' }}id{{ '}' }}/unpublish</button>
+        </form>
+        <form [formGroup]="cancelForm" (ngSubmit)="cancelEvent()">
+          <label>ID <input type="text" formControlName="id" /></label>
+          <button type="submit" [disabled]="cancelForm.invalid">POST /events/{{ '{' }}id{{ '}' }}/cancel</button>
+        </form>
+      </div>
+    </details>
+
+    <details>
+      <summary>Audits</summary>
+      <form [formGroup]="auditsForm" (ngSubmit)="getAudits()" class="grid">
+        <label>ID <input type="text" formControlName="id" /></label>
+        <label>Limit <input type="number" formControlName="limit" min="1" max="100" /></label>
+        <button type="submit" [disabled]="auditsForm.invalid">GET /events/{{ '{' }}id{{ '}' }}/audits</button>
+      </form>
+      <details *ngIf="audits().length">
+        <summary>Audit Results ({{ audits().length }})</summary>
+        <ul class="plain">
+          <li *ngFor="let a of audits()">
+            <div class="line"><strong>{{ a.action }}</strong> <span class="muted">at {{ a.at | date:'short' }}</span></div>
+            <pre>{{ a | json }}</pre>
+          </li>
+        </ul>
+      </details>
+    </details>
+
+    <!-- Collapsible list results -->
+    <details *ngIf="events().length">
+      <summary>List Results ({{ events().length }})</summary>
+      <ul class="plain">
+        <li *ngFor="let e of events()">
+          <div class="line"><strong>{{ e.eventName }}</strong> <span class="muted">#{{ e.eventId }}</span> <span class="muted" *ngIf="e.startAt">· {{ e.startAt | date:'short' }}</span></div>
+          <pre>{{ e | json }}</pre>
+        </li>
+      </ul>
+    </details>
+  </article>
+
+  <!-- AppUsers -->
+  <article class="card">
+    <h2>AppUsers</h2>
+    <div class="actions"><button type="button" (click)="loadMeAppUser()">GET /app-users/me</button></div>
+    <pre *ngIf="meAppUser()">{{ meAppUser() | json }}</pre>
+  </article>
+
+  <!-- Enums -->
+  <article class="card">
+    <h2>Enums</h2>
+    <div class="actions"><button type="button" (click)="listEvents()">Refresh Options</button></div>
+    <div>
+      <h3>Event Types</h3>
+      <pre>{{ typeOptions | json }}</pre>
+      <h3>Event Statuses</h3>
+      <pre>{{ eventStatuses() | json }}</pre>
+    </div>
+  </article>
+
+  <!-- Profile -->
+  <article class="card">
+    <h2>Profile</h2>
+    <div class="actions"><button type="button" (click)="loadMeProfile()">GET /profile/me</button></div>
+    <form [formGroup]="profileForm" (ngSubmit)="upsertProfile()" class="grid">
+      <label class="span-2">Public display name <input type="text" formControlName="displayName" /></label>
+      <button type="submit" [disabled]="profileForm.invalid">POST /profile</button>
+    </form>
+    <pre *ngIf="meProfile()">{{ meProfile() | json }}</pre>
+  </article>
+
+  <!-- Auth -->
+  <article class="card">
+    <h2>Auth</h2>
+    <div class="actions">
+      <button type="button" (click)="refreshToken()">Refresh ID Token</button>
+    </div>
+    <div *ngIf="tokenPreview()">
+      Token: <code>{{ tokenPreview() }}</code>
+    </div>
+  </article>
+
+  <!-- Admin Users -->
+  <article class="card">
+    <h2>Admin Users</h2>
+    <form [formGroup]="adminForm" (ngSubmit)="getAdminRoles()" class="grid">
+      <label class="span-2">UID <input type="text" formControlName="uid" placeholder="Firebase UID" /></label>
+      <button type="submit" [disabled]="adminForm.invalid">GET /admin/users/{{ '{' }}uid{{ '}' }}/roles</button>
+    </form>
+    <pre *ngIf="adminRoles()">{{ adminRoles() | json }}</pre>
+  </article>
+
+  <div *ngIf="loading()">Loading…</div>
+  <div *ngIf="error()" class="error">{{ error() }}</div>
+  <div *ngIf="last()"><h3>Last Response</h3><pre>{{ last() | json }}</pre></div>
+
+</section>

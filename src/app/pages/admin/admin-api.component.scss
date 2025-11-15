@@ -1,0 +1,13 @@
+.admin-api { display: grid; gap: 1rem; }
+.card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; background: #fff; }
+.actions { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; }
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; align-items: end; }
+.span-2 { grid-column: span 2; }
+label { display: grid; gap: 0.25rem; font-size: 0.9rem; }
+input, select, textarea { padding: 0.4rem; border: 1px solid #d1d5db; border-radius: 6px; }
+.plain { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.5rem; }
+.line { display: flex; gap: 0.5rem; align-items: baseline; }
+.muted { color: #6b7280; }
+.error { color: #b00020; white-space: pre-wrap; }
+pre { background: #f9fafb; padding: 0.5rem; border-radius: 6px; overflow: auto; }
+.danger { background: #fee2e2; }

@@ -1,0 +1,24 @@
+<section class="admin-events-list">
+  <header class="controls">
+    <h2>All Events</h2>
+    <button type="button" (click)="load()">Refresh</button>
+  </header>
+
+  <div *ngIf="loading()">Loading…</div>
+  <div *ngIf="error()" class="error">{{ error() }}</div>
+
+  <div *ngIf="!loading() && !error()">
+    <p class="muted">Count: {{ items().length }}</p>
+    <ul class="plain">
+      <li *ngFor="let e of items()">
+        <div class="line">
+          <strong>{{ e.eventName || 'Event' }}</strong>
+          <span class="muted">#{{ e.eventId }}</span>
+          <span class="muted" *ngIf="e.startAt">· {{ e.startAt | date:'medium' }}</span>
+          <span class="muted" *ngIf="e.endAt">→ {{ e.endAt | date:'shortTime' }}</span>
+        </div>
+        <pre class="json">{{ e | json }}</pre>
+      </li>
+    </ul>
+  </div>
+</section>

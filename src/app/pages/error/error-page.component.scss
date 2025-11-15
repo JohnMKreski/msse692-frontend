@@ -1,5 +1,8 @@
 .error-page { padding: 24px; }
 .error-page h1 { margin: 0 0 8px; }
-.error-page .message { margin: 0 0 12px; }
+.error-page .message { margin: 0 0 8px; }
+.error-page .from { color: #6b7280; margin: 0 0 12px; }
 .error-page .details { padding-left: 18px; }
-.error-page .actions { margin-top: 12px; }
+.error-page .actions { margin-top: 12px; display:flex; gap:8px; }
+.btn { padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 6px; text-decoration: none; }
+.btn.primary { background: var(--mat-sys-primary, #1f6feb); color: #fff; border-color: transparent; }

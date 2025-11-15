@@ -1,0 +1,21 @@
+<section class="settings">
+  <h1>Settings</h1>
+  <h2>Appearance</h2>
+  <div class="setting-row">
+    <label>
+      <span>Color Theme</span>
+      <button type="button" (click)="toggleDark()" [attr.aria-pressed]="theme.isDark()" class="btn-toggle">
+        {{ theme.isDark() ? 'Switch to Light' : 'Switch to Dark' }}
+      </button>
+    </label>
+  </div>
+  <div class="setting-row">
+    <label>
+      <span>High Contrast Mode</span>
+      <button type="button" (click)="toggleHighContrast()" [attr.aria-pressed]="theme.isHighContrast()" class="btn-toggle">
+        {{ theme.isHighContrast() ? 'Disable High Contrast' : 'Enable High Contrast' }}
+      </button>
+    </label>
+  </div>
+  <p class="help">Your preferences are saved locally in this browser.</p>
+</section>
