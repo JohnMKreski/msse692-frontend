@@ -11,7 +11,7 @@ describe('AppUserService', () => {
     TestBed.configureTestingModule({
       providers: [
         provideHttpClientTesting(),
-        { provide: API_URL, useValue: '/api' },
+        { provide: API_URL, useValue: '/api/v1' },
       ],
     });
     svc = TestBed.inject(AppUserService);
@@ -24,7 +24,7 @@ describe('AppUserService', () => {
     const mock = { id: 1, email: 'a@b.com', roles: ['USER'] } as any;
     let result: any;
     svc.getMe().subscribe(r => (result = r));
-    const req = http.expectOne('/api/app-users/me');
+    const req = http.expectOne('/api/v1/app-users/me');
     expect(req.request.method).toBe('GET');
     req.flush(mock);
     expect(result).toEqual(mock);
@@ -33,7 +33,7 @@ describe('AppUserService', () => {
   it('getMe should propagate 404 errors', () => {
     let error: any;
     svc.getMe().subscribe({ error: e => (error = e) });
-    const req = http.expectOne('/api/app-users/me');
+    const req = http.expectOne('/api/v1/app-users/me');
     req.flush({ code: 'NOT_FOUND' }, { status: 404, statusText: 'Not Found' });
     expect(error.status).toBe(404);
   });

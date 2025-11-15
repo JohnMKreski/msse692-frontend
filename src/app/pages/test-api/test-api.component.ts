@@ -23,8 +23,8 @@ import { getIdToken } from 'firebase/auth';
         <section class="test-api">
             <h2>API Connectivity Test</h2>
             <div class="actions">
-                <button (click)="pingList()">GET /api/events</button>
-                <button (click)="createSample()">POST /api/events</button>
+                <button (click)="pingList()">GET /api/v1/events</button>
+                <button (click)="createSample()">POST /api/v1/events</button>
             </div>
 
             <!-- ADMIN: Get Roles by UID -->

@@ -142,7 +142,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
             this.fetchProfile();
         }
         // Load events
-        this.events.list({ page: 0, size: 200, sort: 'startAt,asc' }).subscribe({
+        this.events.list({ page: 0, size: 100, sort: 'startAt,asc' }).subscribe({
             next: (resp) => {
                 const items: any[] = Array.isArray((resp as any)) ? (resp as any as any[]) : (resp?.items ?? []);
                 const normalized = (items ?? []).map((e: any) => {
@@ -279,7 +279,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
             next: (created) => {
                 this.createSuccess.set(`Created event: ${created.eventName ?? created.eventId}`);
                 // refresh list
-                this.events.list({ page: 0, size: 200, sort: 'startAt,asc' }).subscribe({
+                this.events.list({ page: 0, size: 100, sort: 'startAt,asc' }).subscribe({
                     next: (resp) => this.myEvents.set((resp as any)?.items ?? []),
                     error: () => {},
                 });

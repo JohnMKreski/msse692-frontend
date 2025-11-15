@@ -16,9 +16,12 @@ export class EventsService {
     notifyChanged() { this._changed.next(); }
 
     list(params?: { page?: number; size?: number; sort?: string }): Observable<EventPageResponse> {
+        // Backend enforces size 1..100 (@Min/@Max); clamp here to avoid 400s on oversized requests.
+        const sizeRaw = params?.size ?? 50;
+        const size = Math.min(Math.max(sizeRaw, 1), 100);
         const safeParams: any = {
             page: params?.page ?? 0,
-            size: params?.size ?? 50,
+            size,
             sort: this.normalizeSort(params?.sort),
         };
         return this.http.get<EventPageResponse>(`${this.baseUrl}/events`, { params: safeParams });

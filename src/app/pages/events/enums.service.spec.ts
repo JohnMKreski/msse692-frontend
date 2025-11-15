@@ -11,7 +11,7 @@ describe('EnumsService', () => {
     TestBed.configureTestingModule({
       providers: [
         provideHttpClientTesting(),
-        { provide: API_URL, useValue: '/api' },
+        { provide: API_URL, useValue: '/api/v1' },
       ],
     });
     svc = TestBed.inject(EnumsService);
@@ -24,11 +24,11 @@ describe('EnumsService', () => {
     let res1: any, res2: any;
     svc.getEventTypes().subscribe(r => (res1 = r));
     svc.getEventTypes().subscribe(r => (res2 = r));
-    const req = http.expectOne('/api/enums/event-types');
+    const req = http.expectOne('/api/v1/enums/event-types');
     req.flush(null, { status: 500, statusText: 'Server Error' });
     expect(res1).toEqual([]);
     expect(res2).toEqual([]);
-    http.expectNone('/api/enums/event-types');
+    http.expectNone('/api/v1/enums/event-types');
   });
 
   it('getEventStatuses should memoize and return values on success', () => {
@@ -36,10 +36,10 @@ describe('EnumsService', () => {
     let a: any, b: any;
     svc.getEventStatuses().subscribe(r => (a = r));
     svc.getEventStatuses().subscribe(r => (b = r));
-    const req = http.expectOne('/api/enums/event-statuses');
+    const req = http.expectOne('/api/v1/enums/event-statuses');
     req.flush(payload);
     expect(a).toEqual(payload);
     expect(b).toEqual(payload);
-    http.expectNone('/api/enums/event-statuses');
+    http.expectNone('/api/v1/enums/event-statuses');
   });
 });

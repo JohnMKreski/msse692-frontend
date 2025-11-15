@@ -7,6 +7,7 @@
   <div class="event-detail__meta">
     <p><strong>Date:</strong> {{ e.startAt | date:'fullDate' }} <span *ngIf="e.endAt">– {{ e.endAt | date:'shortTime' }}</span></p>
     <p *ngIf="e.eventLocation"><strong>Location:</strong> {{ e.eventLocation }}</p>
+    <p *ngIf="e.createdByUserId"><strong>Created By (User ID):</strong> {{ e.createdByUserId }}</p>
   </div>
 
   <article class="event-detail__description" *ngIf="e.eventDescription">
@@ -14,9 +15,7 @@
   </article>
 
   <div class="event-detail__actions" *ngIf="canManage()">
-    <button mat-raised-button color="primary" (click)="publish()" [disabled]="!canPublish() || saving()">Publish</button>
-    <button mat-stroked-button color="primary" (click)="unpublish()" [disabled]="!canUnpublish() || saving()">Unpublish</button>
-    <button mat-raised-button color="warn" (click)="cancel()" [disabled]="!canCancel() || saving()">Cancel</button>
+    <button mat-raised-button color="primary" (click)="manage()">Manage Event</button>
   </div>
 
   <p class="error" *ngIf="error() as err">{{ err }}</p>
