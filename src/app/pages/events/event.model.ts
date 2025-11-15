@@ -28,7 +28,7 @@ export interface CreateEventRequest {
 
 export type UpdateEventRequest = Partial<CreateEventRequest>;
 
-// Read-only audit entry as returned by backend GET /api/events/{id}/audits
+// Read-only audit entry as returned by backend GET /api/v1/events/{id}/audits
 export interface EventAudit {
     id: number;
     eventId: number;

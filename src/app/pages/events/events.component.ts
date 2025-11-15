@@ -105,7 +105,7 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
         // For debugging: load all events (ignore status/owner) to ensure visibility while unauthenticated
         const sort = `${this.sortField},${this.sortDir}`;
         this.eventsService
-            .list({ page: 0, size: 200, sort })
+            .list({ page: 0, size: 100, sort })
             .pipe(take(1))
             .subscribe({
                 next: (resp: EventPageResponse) => {
@@ -159,7 +159,7 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
         this.allLoading = true;
         this.allError = null;
         const sort = `${this.sortField},${this.sortDir}`;
-        this.eventsService.list({ page: 0, size: 200, sort }).pipe(take(1)).subscribe({
+        this.eventsService.list({ page: 0, size: 100, sort }).pipe(take(1)).subscribe({
             next: (resp) => {
                 this.zone.run(() => {
                     const rows = Array.isArray((resp as any)) ? (resp as any as EventDto[]) : (resp?.items ?? []);
