@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { LoadingSkeletonComponent } from '../../components/loading-skeleton/loading-skeleton.component';
 import { Component, OnDestroy, OnInit, computed, signal, WritableSignal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Auth } from '@angular/fire/auth';
@@ -16,7 +17,7 @@ import { formatApiError } from '../../shared/api-error';
 @Component({
     selector: 'app-profile',
     standalone: true,
-    imports: [CommonModule, RouterLink, ReactiveFormsModule, MatSnackBarModule],
+    imports: [CommonModule, RouterLink, ReactiveFormsModule, MatSnackBarModule, LoadingSkeletonComponent],
     templateUrl: './profile.component.html',
     styleUrls: ['./profile.component.scss']
     })

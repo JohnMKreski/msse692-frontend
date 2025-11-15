@@ -55,10 +55,10 @@ body {
 }
 
 /* Apply Material theme */
-html {
-    color-scheme: light;
+:root {
     @include mat.all-component-themes($my-theme);
 }
+html { color-scheme: light; }
 
 /* Optional: compact toolbar/buttons on small screens */
 @media (max-width: 600px) {

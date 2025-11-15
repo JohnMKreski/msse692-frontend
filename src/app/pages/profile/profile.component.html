@@ -1,132 +1,176 @@
 <section class="profile" *ngIf="!loading(); else loadingTpl">
   <ng-container *ngIf="user() as u; else notSignedIn">
-    <div class="profile__header">
-      <img *ngIf="u.photoURL as photo" [src]="photo" alt="avatar" class="avatar" />
+    <!-- Overview Header (simplified) -->
+    <div class="profile__header" *ngIf="firebaseInfo() as f; else headerSkeleton">
+      <img *ngIf="u.photoURL as photo" [src]="photo" alt="User avatar" class="avatar" />
       <div>
-        <h1 class="title">{{ u.displayName || u.email || 'Your profile' }}</h1>
-        <h2 class="section-title">Info</h2>
-        <p class="muted">UID: {{ u.uid }}</p>
-        <p *ngIf="u.email">Email: {{ u.email }}</p>
+        <h1 class="title">{{ u.displayName || u.email || 'Your Profile' }}</h1>
+        <dl class="overview" aria-label="Account overview">
+          <div><dt>UID</dt><dd>{{ f['uid'] }}</dd></div>
+          <div *ngIf="u.email"><dt>Email</dt><dd>{{ f['email'] }}</dd></div>
+        </dl>
       </div>
     </div>
+    <ng-template #headerSkeleton>
+      <app-loading-skeleton [avatar]="true" [lines]="2"></app-loading-skeleton>
+    </ng-template>
 
-    <!-- Removed inline logout button; logout now handled in header navigation -->
-
-    <!-- Section 1: Firebase Info (full JSON) -->
-    <section class="profile__sec1">
-      <h2 class="section-title">Section 1: Firebase Info (Full JSON)</h2>
-      <ng-container *ngIf="firebaseInfo() as f; else noFirebase">
-        <pre>{{ f | json }}</pre>
-      </ng-container>
-      <ng-template #noFirebase>
-        <p>No Firebase user loaded.</p>
-      </ng-template>
-      <div *ngIf="roles() as r"><strong>Roles ({{ rolesSource() || 'unknown' }}):</strong> {{ r.join(', ') }}</div>
-      <div *ngIf="claims() as c">
-        <strong>Token Claims (JSON):</strong>
-        <pre>{{ c | json }}</pre>
-      </div>
-      <div class="token-decode" *ngIf="idTokenHeader() || idTokenPayload()">
-        <h3 class="section-subtitle">Decoded ID Token</h3>
-        <details open>
-          <summary>Header</summary>
-          <pre>{{ idTokenHeader() | json }}</pre>
-        </details>
-        <details open>
-          <summary>Payload</summary>
-          <pre>{{ idTokenPayload() | json }}</pre>
-        </details>
-        <button type="button" (click)="forceRefreshTokenAndClaims()">Refresh Token & Claims</button>
-      </div>
-    </section>
-
-    <!-- Section 2: AppUser (backend) -->
-    <section class="profile__sec2">
-      <h2 class="section-title">Section 2: Backend AppUser (Full JSON)</h2>
-      <ng-container *ngIf="appUser() as au; else noAppUser">
-        <pre>{{ au | json }}</pre>
-      </ng-container>
-      <ng-template #noAppUser>
-        <p>No backend AppUser found.</p>
-      </ng-template>
-    </section>
-
-    <!-- Section 3: Profile Data (plain text) -->
-    <section class="profile__sec3">
-      <h2 class="section-title">Section 3: Profile Data //TODO</h2>
-      <ng-container *ngIf="existingProfile() as p; else noProfilePlain">
-        <pre>{{ p | json }}</pre>
-        <p class="muted">Completed: {{ p.completed }} | Verified: {{ p.verified }}</p>
-      </ng-container>
-      <ng-template #noProfilePlain>
-        <p>No profile created yet.</p>
-      </ng-template>
-    </section>
-
-  <!-- CRUD Events placeholder -->
-    <section class="profile__crud" *ngIf="canCrud()">
-      <h2 class="section-title">Events</h2>
-      <p class="muted">Inline event management will move to its own page.</p>
-      <div class="row">
-        <button type="button" (click)="showCrudComingSoon()">Manage Events (coming soon)</button>
-        <a class="link" routerLink="/events">Open Calendar</a>
-      </div>
-    </section>
-
-    <!-- Section 4: My Events (Filtered by createdByUserId) -->
-    <section class="profile__mine">
-      <h2 class="section-title">Section 4: My Events (Created By Me)</h2>
-      <p class="muted">Events where createdByUserId matches your AppUser ID.</p>
-      <ng-container *ngIf="myEvents() as my; else noMyEvents">
-        <div *ngIf="my.length; else noMyEventsReal">
-          <div *ngFor="let e of my">
-            <pre>{{ e | json }}</pre>
-          </div>
+    <!-- Profile Information Section: detailed meta + JSON blocks -->
+    <section class="profile__info" aria-label="Profile information details">
+      <details>
+        <summary><h2 class="section-title">Profile Information</h2></summary>
+        <div class="info-grid">
+          <dl class="profile-summary" *ngIf="firebaseInfo() as f">
+            <div *ngIf="f['metadata']?.creationTime"><dt>Created</dt><dd>{{ f['metadata']?.creationTime }}</dd></div>
+            <div *ngIf="f['metadata']?.lastSignInTime"><dt>Last Sign In</dt><dd>{{ f['metadata']?.lastSignInTime }}</dd></div>
+            <div *ngIf="effectiveRoles() as er"><dt>Roles</dt><dd>{{ er.join(', ') }}</dd></div>
+            <div *ngIf="rolesSource() as rs"><dt>Role Source</dt><dd>{{ rs }}</dd></div>
+            <div *ngIf="existingProfile() as p"><dt>Profile Status</dt><dd>{{ p.completed ? 'Completed' : 'Incomplete' }} / {{ p.verified ? 'Verified' : 'Unverified' }}</dd></div>
+            <div><dt>Events Created</dt><dd>{{ (myEvents() || []).length }}</dd></div>
+          </dl>
         </div>
-      </ng-container>
-      <ng-template #noMyEvents>
-        <p>Loading...</p>
-      </ng-template>
-      <ng-template #noMyEventsReal>
-        <p>No events you created yet.</p>
-      </ng-template>
+        <!-- Consolidated full JSON responses -->
+        <ng-container *ngIf="firebaseInfo() as f">
+          <details>
+            <summary>Full Firebase User JSON</summary>
+            <pre>{{ f | json }}</pre>
+          </details>
+        </ng-container>
+        <ng-container *ngIf="appUser() as au">
+          <details>
+            <summary>Full AppUser JSON</summary>
+            <pre>{{ au | json }}</pre>
+          </details>
+        </ng-container>
+        <ng-container *ngIf="existingProfile() as p">
+          <details>
+            <summary>Full Profile JSON</summary>
+            <pre>{{ p | json }}</pre>
+          </details>
+        </ng-container>
+      </details>
     </section>
 
-    <!-- Section 4b: All Events (raw) for visibility during dev -->
-    <section class="profile__allevents" *ngIf="allEvents() as all">
-      <h2 class="section-title">Section 4b: All Events (Dev Visibility)</h2>
-      <p class="muted">Temporary dev section showing all events for comparison.</p>
-      <div *ngIf="all.length; else noAllEvents">
-        <div *ngFor="let e of all"><pre>{{ e | json }}</pre></div>
-      </div>
-      <ng-template #noAllEvents><p>No events returned.</p></ng-template>
+    <!-- Firebase & Token Details -->
+    <section class="profile__firebase" aria-label="Authentication and token details">
+      <details>
+        <summary><h2 class="section-title">Authentication & Token</h2></summary>
+        <ng-container *ngIf="claims() as c; else claimsSkeleton">
+          <details>
+            <summary>Raw Token Claims JSON</summary>
+            <pre>{{ c | json }}</pre>
+          </details>
+        </ng-container>
+        <ng-template #claimsSkeleton>
+          <app-loading-skeleton [lines]="2"></app-loading-skeleton>
+        </ng-template>
+        <div class="token-decode" *ngIf="idTokenHeader() || idTokenPayload()">
+          <details>
+            <summary>Decoded ID Token (Header & Payload)</summary>
+            <h3>Header</h3>
+            <pre>{{ idTokenHeader() | json }}</pre>
+            <h3>Payload</h3>
+            <pre>{{ idTokenPayload() | json }}</pre>
+          </details>
+          <button type="button" (click)="forceRefreshTokenAndClaims()">Refresh Token & Claims</button>
+        </div>
+      </details>
     </section>
 
-    <!-- Section 5: Admin – Event Audits -->
-    <section class="profile__audits" *ngIf="isAdmin()">
-      <h2 class="section-title">Section 5: Event Audits (Admin)</h2>
-      <p class="muted">Recent CREATE / UPDATE / DELETE actions for a selected event.</p>
-      <div class="audit-controls" *ngIf="adminSelectableEvents() as events">
-        <label>
-          <span>Select Event</span>
-          <select (change)="selectedEventId.set($any($event.target).value); loadAudits();">
-            <option *ngFor="let e of events" [value]="e.id">{{ e.title || e.id }}</option>
-          </select>
-        </label>
-        <button type="button" (click)="loadAudits()" [disabled]="auditsLoading()">Reload</button>
-      </div>
-      <div *ngIf="auditsLoading()">Loading audits…</div>
-      <div *ngIf="auditsError() as err" class="error">{{ err }}</div>
-      <ng-container *ngIf="audits() as rows">
-        <table class="audit-table" *ngIf="rows.length; else noAudits">
-          <thead>
-            <tr>
-              <th>When</th>
-              <th>Action</th>
-              <th>Actor User Id</th>
-              <th>Timestamp</th>
-            </tr>
-          </thead>
+    <!-- Backend AppUser Summary -->
+    <section class="profile__appuser" aria-label="Backend user details">
+      <details>
+        <summary><h2 class="section-title">Backend User</h2></summary>
+        <ng-container *ngIf="appUser() as au; else appUserSkeleton">
+          <dl aria-label="Backend user summary" class="appuser-summary">
+            <div><dt>ID</dt><dd>{{ au['id'] }}</dd></div>
+            <div *ngIf="au['roles']"><dt>Roles (Backend)</dt><dd>{{ au['roles'].join(', ') }}</dd></div>
+            <div *ngIf="au['displayName']"><dt>Name</dt><dd>{{ au['displayName'] }}</dd></div>
+            <div *ngIf="au['email']"><dt>Email</dt><dd>{{ au['email'] }}</dd></div>
+          </dl>
+        </ng-container>
+        <ng-template #appUserSkeleton>
+          <app-loading-skeleton [lines]="2"></app-loading-skeleton>
+        </ng-template>
+      </details>
+    </section>
+
+    <!-- Profile Data -->
+    <section class="profile__data" aria-label="Profile data details">
+      <details>
+        <summary><h2 class="section-title">Profile Data</h2></summary>
+        <ng-container *ngIf="existingProfile() as p; else profileSkeleton">
+          <dl aria-label="Profile core fields" class="profile-summary">
+            <div><dt>Completed</dt><dd>{{ p.completed }}</dd></div>
+            <div><dt>Verified</dt><dd>{{ p.verified }}</dd></div>
+          </dl>
+        </ng-container>
+        <ng-template #profileSkeleton>
+          <app-loading-skeleton [lines]="2"></app-loading-skeleton>
+        </ng-template>
+      </details>
+    </section>
+
+    <!-- Events Overview -->
+    <section class="profile__events" aria-label="My events list">
+      <details>
+        <summary><h2 class="section-title">My Events</h2></summary>
+        <ng-container *ngIf="myEvents() as my; else myEventsSkeleton">
+          <p *ngIf="!my.length">You have not created any events yet.</p>
+          <ul *ngIf="my.length">
+            <li *ngFor="let e of my">{{ e.eventName || '(untitled event)' }} (ID: {{ e.eventId }})</li>
+          </ul>
+          <details *ngIf="my.length">
+            <summary>Raw JSON for My Events</summary>
+            <div *ngFor="let e of my"><pre>{{ e | json }}</pre></div>
+          </details>
+        </ng-container>
+        <ng-template #myEventsSkeleton>
+          <app-loading-skeleton [lines]="3"></app-loading-skeleton>
+        </ng-template>
+      </details>
+    </section>
+
+    <!-- Dev Visibility: All Events (collapsible) -->
+    <section class="profile__allevents" *ngIf="allEvents() as all" aria-label="All events developer visibility">
+      <details>
+        <summary><h2 class="section-title">All Events (Developer Visibility)</h2></summary>
+        <p *ngIf="!all.length">No events loaded.</p>
+        <ul *ngIf="all.length">
+          <li *ngFor="let e of all">{{ e.eventName || '(untitled event)' }}</li>
+        </ul>
+        <details *ngIf="all.length">
+          <summary>Raw JSON for All Events</summary>
+          <div *ngFor="let e of all"><pre>{{ e | json }}</pre></div>
+        </details>
+      </details>
+    </section>
+
+    <!-- Admin Audits -->
+    <section class="profile__audits" *ngIf="isAdmin()" aria-label="Admin event audits">
+      <details>
+        <summary><h2 class="section-title">Event Audits (Admin)</h2></summary>
+        <div class="audit-controls" *ngIf="adminSelectableEvents() as events">
+          <label>
+            <span>Select Event</span>
+            <select (change)="selectedEventId.set($any($event.target).value); loadAudits();">
+              <option *ngFor="let e of events" [value]="e.eventId">{{ e.eventName || e.eventId }}</option>
+            </select>
+          </label>
+          <button type="button" (click)="loadAudits()" [disabled]="auditsLoading()">Reload</button>
+        </div>
+        <div *ngIf="auditsLoading()"><app-loading-skeleton [lines]="2"></app-loading-skeleton></div>
+        <div *ngIf="auditsError() as err" class="error">{{ err }}</div>
+        <ng-container *ngIf="audits() as rows">
+          <table class="audit-table" *ngIf="rows.length; else noAudits">
+            <thead>
+              <tr>
+                <th>When</th>
+                <th>Action</th>
+                <th>Actor User Id</th>
+                <th>Timestamp</th>
+              </tr>
+            </thead>
             <tbody>
               <tr *ngFor="let a of rows">
                 <td>{{ relTime(a.at) }}</td>
@@ -135,11 +179,12 @@
                 <td>{{ a.at }}</td>
               </tr>
             </tbody>
-        </table>
-        <ng-template #noAudits>
-          <p class="muted">No audit entries yet for this event.</p>
-        </ng-template>
-      </ng-container>
+          </table>
+          <ng-template #noAudits>
+            <p class="muted">No audit entries yet for this event.</p>
+          </ng-template>
+        </ng-container>
+      </details>
     </section>
   </ng-container>
 
@@ -149,5 +194,5 @@
 </section>
 
 <ng-template #loadingTpl>
-  <p>Loading profile…</p>
-  </ng-template>
+  <app-loading-skeleton [avatar]="true" [lines]="3"></app-loading-skeleton>
+</ng-template>

@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, OnDestroy, PLATFORM_ID, ChangeDetectorRef, inject, OnInit, NgZone, AfterViewInit } from '@angular/core';
 import { isPlatformBrowser, NgForOf, NgIf, DatePipe } from '@angular/common';
+import { LoadingSkeletonComponent } from '../../components/loading-skeleton/loading-skeleton.component';
 import { FormsModule } from '@angular/forms';
 import { EventsService } from './events.service';
 import { EventDto, EventPageResponse, EventSortField, SortDir } from './event.model';
@@ -23,7 +24,7 @@ import listPlugin from '@fullcalendar/list';
 @Component({
     selector: 'app-events',
     standalone: true,
-    imports: [NgIf, NgForOf, DatePipe, RouterLink, FullCalendarModule, FormsModule, ErrorBannerComponent],
+    imports: [NgIf, NgForOf, DatePipe, RouterLink, FullCalendarModule, FormsModule, ErrorBannerComponent, LoadingSkeletonComponent],
     templateUrl: './events.component.html',
     styleUrls: ['./events.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,

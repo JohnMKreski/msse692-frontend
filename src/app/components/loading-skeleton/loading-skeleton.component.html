@@ -1,0 +1,6 @@
+<div class="skeleton" [class.has-avatar]="avatar">
+  <div *ngIf="avatar" class="skeleton__avatar"></div>
+  <div class="skeleton__lines">
+    <div *ngFor="let _ of lineArray; let i = index" class="skeleton__line" [style.width]="width || (i === lineArray.length - 1 ? '70%' : '100%')"></div>
+  </div>
+</div>

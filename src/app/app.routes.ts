@@ -12,6 +12,7 @@ import { editorRoleGuard } from './guards/editor-role.guard';
 import { EditorEventsComponent } from './pages/editor/editor-events.component';
 import { ErrorPageComponent } from './pages/error/error-page.component';
 import { NotFoundComponent } from './pages/error/not-found.component';
+import { SettingsComponent } from './pages/settings/settings.component';
 
 export const routes: Routes = [
     { path: '', component: HomeComponent },
@@ -22,6 +23,7 @@ export const routes: Routes = [
     { path: 'login', component: LoginComponent },
     { path: 'signup', component: SignupComponent },
     { path: 'profile', component: ProfileComponent, canActivate: [requireAuthGuard] },
+    { path: 'settings', component: SettingsComponent },
     { path: 'editor/events', component: EditorEventsComponent, canActivate: [requireAuthGuard, editorRoleGuard] },
     { path: 'error', component: ErrorPageComponent },
     { path: 'not-found', component: NotFoundComponent },
