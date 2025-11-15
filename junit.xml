@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="jest tests" tests="2" failures="1" errors="0" time="3.26">
+  <testsuite name="EventsComponent" errors="0" failures="1" skipped="0" timestamp="2025-11-15T00:25:34" time="1.525" tests="1">
+    <testcase classname="EventsComponent should create" name="EventsComponent should create" time="0.084">
+      <failure>NullInjectorError: R3InjectorError(Standalone[EventsComponent])[EventsService -&gt; EventsService -&gt; _HttpClient -&gt; _HttpClient]: 
+  NullInjectorError: No provider for _HttpClient!
+    at NullInjector.get (D:\School\MSSE 692 - Practicum I\practicum-ave\msse692-frontend\node_modules\@angular\core\fesm2022\core.mjs:1630:27)
+    at R3Injector.get (D:\School\MSSE 692 - Practicum I\practicum-ave\msse692-frontend\node_modules\@angular\core\fesm2022\core.mjs:2159:33)
+    at R3Injector.get (D:\School\MSSE 692 - Practicum I\practicum-ave\msse692-frontend\node_modules\@angular\core\fesm2022\core.mjs:2159:33)
+    at injectInjectorOnly (D:\School\MSSE 692 - Practicum I\practicum-ave\msse692-frontend\node_modules\@angular\core\fesm2022\core.mjs:1125:32)
+    at ɵɵinject (D:\School\MSSE 692 - Practicum I\practicum-ave\msse692-frontend\node_modules\@angular\core\fesm2022\core.mjs:1131:42)
+    at inject (D:\School\MSSE 692 - Practicum I\practicum-ave\msse692-frontend\node_modules\@angular\core\fesm2022\core.mjs:1217:12)
+    at EventsService.&lt;instance_members_initializer&gt; (D:\School\MSSE 692 - Practicum I\practicum-ave\msse692-frontend\src\app\pages\events\events.service.ts:9:35)
+    at new EventsService (D:\School\MSSE 692 - Practicum I\practicum-ave\msse692-frontend\src\app\pages\events\events.service.ts:8:8)
+    at Object.EventsService_Factory [as factory] (ng:///EventsService/ɵfac.js:5:10)
+    at D:\School\MSSE 692 - Practicum I\practicum-ave\msse692-frontend\node_modules\@angular\core\fesm2022\core.mjs:2282:47
+    at runInInjectorProfilerContext (D:\School\MSSE 692 - Practicum I\practicum-ave\msse692-frontend\node_modules\@angular\core\fesm2022\core.mjs:884:9)
+    at R3Injector.hydrate (D:\School\MSSE 692 - Practicum I\practicum-ave\msse692-frontend\node_modules\@angular\core\fesm2022\core.mjs:2281:21)
+    at R3Injector.get (D:\School\MSSE 692 - Practicum I\practicum-ave\msse692-frontend\node_modules\@angular\core\fesm2022\core.mjs:2149:33)
+    at R3Injector.get (D:\School\MSSE 692 - Practicum I\practicum-ave\msse692-frontend\node_modules\@angular\core\fesm2022\core.mjs:2159:33)
+    at ChainedInjector.get (D:\School\MSSE 692 - Practicum I\practicum-ave\msse692-frontend\node_modules\@angular\core\fesm2022\core.mjs:17337:36)
+    at lookupTokenUsingModuleInjector (D:\School\MSSE 692 - Practicum I\practicum-ave\msse692-frontend\node_modules\@angular\core\fesm2022\core.mjs:5081:39)
+    at getOrCreateInjectable (D:\School\MSSE 692 - Practicum I\practicum-ave\msse692-frontend\node_modules\@angular\core\fesm2022\core.mjs:5129:12)
+    at ɵɵdirectiveInject (D:\School\MSSE 692 - Practicum I\practicum-ave\msse692-frontend\node_modules\@angular\core\fesm2022\core.mjs:17388:19)
+    at ɵɵinject (D:\School\MSSE 692 - Practicum I\practicum-ave\msse692-frontend\node_modules\@angular\core\fesm2022\core.mjs:1131:42)
+    at inject (D:\School\MSSE 692 - Practicum I\practicum-ave\msse692-frontend\node_modules\@angular\core\fesm2022\core.mjs:1217:12)
+    at EventsComponent.&lt;instance_members_initializer&gt; (D:\School\MSSE 692 - Practicum I\practicum-ave\msse692-frontend\src\app\pages\events\events.component.ts:34:44)
+    at new EventsComponent (D:\School\MSSE 692 - Practicum I\practicum-ave\msse692-frontend\src\app\pages\events\events.component.ts:73:5)
+    at NodeInjectorFactory.EventsComponent_Factory [as factory] (ng:///EventsComponent/ɵfac.js:5:10)
+    at getNodeInjectable (D:\School\MSSE 692 - Practicum I\practicum-ave\msse692-frontend\node_modules\@angular\core\fesm2022\core.mjs:5341:44)
+    at instantiateAllDirectives (D:\School\MSSE 692 - Practicum I\practicum-ave\msse692-frontend\node_modules\@angular\core\fesm2022\core.mjs:12653:27)
+    at createDirectivesInstances (D:\School\MSSE 692 - Practicum I\practicum-ave\msse692-frontend\node_modules\@angular\core\fesm2022\core.mjs:12443:5)
+    at ComponentFactory2.create (D:\School\MSSE 692 - Practicum I\practicum-ave\msse692-frontend\node_modules\@angular\core\fesm2022\core.mjs:18044:17)
+    at initComponent (D:\School\MSSE 692 - Practicum I\practicum-ave\msse692-frontend\node_modules\@angular\core\fesm2022\testing.mjs:2053:51)
+    at _ZoneDelegate.invoke (D:\School\MSSE 692 - Practicum I\practicum-ave\msse692-frontend\node_modules\zone.js\bundles\zone.umd.js:410:32)
+    at Object.onInvoke (D:\School\MSSE 692 - Practicum I\practicum-ave\msse692-frontend\node_modules\@angular\core\fesm2022\core.mjs:6568:33)
+    at _ZoneDelegate.invoke (D:\School\MSSE 692 - Practicum I\practicum-ave\msse692-frontend\node_modules\zone.js\bundles\zone.umd.js:409:38)
+    at ZoneImpl.run (D:\School\MSSE 692 - Practicum I\practicum-ave\msse692-frontend\node_modules\zone.js\bundles\zone.umd.js:145:47)
+    at NgZone.run (D:\School\MSSE 692 - Practicum I\practicum-ave\msse692-frontend\node_modules\@angular\core\fesm2022\core.mjs:6414:28)
+    at _TestBedImpl.createComponent (D:\School\MSSE 692 - Practicum I\practicum-ave\msse692-frontend\node_modules\@angular\core\fesm2022\testing.mjs:2058:41)
+    at Function.createComponent (D:\School\MSSE 692 - Practicum I\practicum-ave\msse692-frontend\node_modules\@angular\core\fesm2022\testing.mjs:1844:37)
+    at D:\School\MSSE 692 - Practicum I\practicum-ave\msse692-frontend\src\app\pages\events\events.component.spec.ts:15:23</failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="FooterComponent" errors="0" failures="0" skipped="0" timestamp="2025-11-15T00:25:35" time="0.268" tests="1">
+    <testcase classname="FooterComponent should create" name="FooterComponent should create" time="0.027">
+    </testcase>
+  </testsuite>
+</testsuites>
