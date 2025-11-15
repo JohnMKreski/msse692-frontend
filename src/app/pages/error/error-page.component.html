@@ -1,0 +1,10 @@
+<section class="error-page">
+  <h1>{{ title }}</h1>
+  <p class="message">{{ message }}</p>
+  <ul class="details" *ngIf="details?.length">
+    <li *ngFor="let d of details">{{ d.field ? (d.field + ': ') : ''}}{{ d.message || d }}</li>
+  </ul>
+  <div class="actions">
+    <a routerLink="/">Home</a>
+  </div>
+</section>

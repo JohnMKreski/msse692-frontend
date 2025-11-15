@@ -28,7 +28,7 @@ export interface CreateEventRequest {
 
 export type UpdateEventRequest = Partial<CreateEventRequest>;
 
-// Read-only audit entry as returned by backend GET /api/events/{id}/audits
+// Read-only audit entry as returned by backend GET /api/v1/events/{id}/audits
 export interface EventAudit {
     id: number;
     eventId: number;
@@ -40,4 +40,22 @@ export interface EventAudit {
 export interface EventStatusOption {
     value: EventStatusCode;
     label: string;
+}
+
+// Typed sort options aligned with backend whitelist
+export type EventSortField = 'startAt' | 'eventName';
+export type SortDir = 'asc' | 'desc';
+
+// Pagination metadata returned by backend for page-wrapped lists
+export interface PageMetadata {
+    number: number;
+    size: number;
+    totalElements: number;
+    totalPages: number;
+}
+
+// Page-wrapped events list
+export interface EventPageResponse {
+    items: EventDto[];
+    page: PageMetadata;
 }

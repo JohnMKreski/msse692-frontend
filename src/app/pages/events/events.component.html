@@ -1,9 +1,27 @@
 <section class="events-page" ngSkipHydration>
     <h1 class="page-title">Events Calendar</h1>
 
+    <div class="sort-controls" aria-label="Sort events">
+        <label>
+            Sort by
+            <select [(ngModel)]="sortField" (ngModelChange)="onSortChange()">
+                <option [ngValue]="'startAt'">Start time</option>
+                <option [ngValue]="'eventName'">Name</option>
+            </select>
+        </label>
+        <label>
+            Direction
+            <select [(ngModel)]="sortDir" (ngModelChange)="onSortChange()">
+                <option [ngValue]="'asc'">Ascending</option>
+                <option [ngValue]="'desc'">Descending</option>
+            </select>
+        </label>
+    </div>
+
     <!-- Simple chronological list above the calendar -->
     <div class="upcoming-list">
         <h2>Upcoming Events</h2>
+        <app-error-banner *ngIf="upcomingError" [message]="upcomingError" [status]="400" (retry)="loadUpcoming()"></app-error-banner>
         <div *ngIf="upcomingLoading">Loading…</div>
         <p class="error" *ngIf="upcomingError as err">{{ err }}</p>
         <ul *ngIf="!upcomingLoading && !upcomingError && upcoming.length">
@@ -14,7 +32,8 @@
         </ul>
         <p *ngIf="!upcomingLoading && !upcomingError && !upcoming.length">No upcoming events found.</p>
 
-        <h3>All Events (debug)</h3>
+        <h3>All Events</h3>
+        <app-error-banner *ngIf="allError" [message]="allError" [status]="400" (retry)="loadAllEvents()"></app-error-banner>
         <div *ngIf="allLoading">Loading…</div>
         <p class="error" *ngIf="allError as err2">{{ err2 }}</p>
         <ul *ngIf="!allLoading && !allError && allEvents.length">

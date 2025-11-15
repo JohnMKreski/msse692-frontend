@@ -1,10 +1,13 @@
 import { ChangeDetectionStrategy, Component, OnDestroy, PLATFORM_ID, ChangeDetectorRef, inject, OnInit, NgZone, AfterViewInit } from '@angular/core';
 import { isPlatformBrowser, NgForOf, NgIf, DatePipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { EventsService } from './events.service';
-import { EventDto } from './event.model';
+import { EventDto, EventPageResponse, EventSortField, SortDir } from './event.model';
 import { take, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { RouterLink } from '@angular/router';
+import { formatApiError } from '../../shared/api-error';
+import { ErrorBannerComponent } from '../../components/error-banner/error-banner.component';
 
 // FullCalendar Angular wrapper
 import { FullCalendarModule } from '@fullcalendar/angular';
@@ -20,7 +23,7 @@ import listPlugin from '@fullcalendar/list';
 @Component({
     selector: 'app-events',
     standalone: true,
-    imports: [NgIf, NgForOf, DatePipe, RouterLink, FullCalendarModule],
+    imports: [NgIf, NgForOf, DatePipe, RouterLink, FullCalendarModule, FormsModule, ErrorBannerComponent],
     templateUrl: './events.component.html',
     styleUrls: ['./events.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -39,6 +42,9 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
     allLoading = false;
     allError: string | null = null;
     allEvents: EventDto[] = [];
+    // Sort state (typed to backend whitelist)
+    sortField: EventSortField = 'startAt';
+    sortDir: SortDir = 'asc';
 
     // Calendar options (updated when events load)
     calendarOptions: CalendarOptions = {
@@ -97,12 +103,14 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
     private loadEvents(window?: { from?: string; to?: string }) {
         console.log('[EventsComponent] loadEvents() start', window ?? {});
         // For debugging: load all events (ignore status/owner) to ensure visibility while unauthenticated
+        const sort = `${this.sortField},${this.sortDir}`;
         this.eventsService
-            .list()
+            .list({ page: 0, size: 100, sort })
             .pipe(take(1))
             .subscribe({
-                next: (items: EventDto[]) => {
+                next: (resp: EventPageResponse) => {
                     this.zone.run(() => {
+                        const items = Array.isArray((resp as any)) ? (resp as any as EventDto[]) : (resp?.items ?? []);
                         console.log('[EventsComponent] loadEvents() success, count=', items?.length ?? 0);
                         const fcEvents = items.map(e => ({
                             id: String(e.eventId),
@@ -126,7 +134,7 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
             });
     }
 
-    private loadUpcoming() {
+    loadUpcoming() {
         // For debugging: show all events (no status/owner filter) to validate visibility
         console.log('[EventsComponent] loadUpcoming() start');
         this.upcomingLoading = true;
@@ -141,20 +149,23 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
                 });
             },
             error: (err) => {
-                this.zone.run(() => { this.upcoming = []; this.upcomingError = 'Failed to load'; this.upcomingLoading = false; this.cdr.markForCheck(); });
+                this.zone.run(() => { this.upcoming = []; this.upcomingError = formatApiError(err); this.upcomingLoading = false; this.cdr.markForCheck(); });
             }
         });
     }
 
-    private loadAllEvents() {
+    loadAllEvents() {
         console.log('[EventsComponent] loadAllEvents() start');
         this.allLoading = true;
         this.allError = null;
-        this.eventsService.list().pipe(take(1)).subscribe({
-            next: (rows) => {
+        const sort = `${this.sortField},${this.sortDir}`;
+        this.eventsService.list({ page: 0, size: 100, sort }).pipe(take(1)).subscribe({
+            next: (resp) => {
                 this.zone.run(() => {
+                    const rows = Array.isArray((resp as any)) ? (resp as any as EventDto[]) : (resp?.items ?? []);
                     console.log('[EventsComponent] loadAllEvents() success, count=', rows?.length ?? 0);
                     // sort chronologically by startAt ascending
+                    // We rely on backend sort; keep a secondary stable sort for startAt asc
                     this.allEvents = [...rows].sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
                     this.allLoading = false;
                     this.cdr.markForCheck();
@@ -162,9 +173,15 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
             },
             error: (err) => {
                 console.error('[EventsComponent] loadAllEvents() error', err);
-                this.zone.run(() => { this.allEvents = []; this.allError = 'Failed to load all events'; this.allLoading = false; this.cdr.markForCheck(); });
+                this.zone.run(() => { this.allEvents = []; this.allError = formatApiError(err); this.allLoading = false; this.cdr.markForCheck(); });
             }
         });
+    }
+
+    onSortChange() {
+        // Reload both calendar and list to reflect new sort
+        this.loadEvents();
+        this.loadAllEvents();
     }
 
     private applyResponsiveOptions() {

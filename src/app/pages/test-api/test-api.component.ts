@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, signal, WritableSignal } from '@angular/core';
 import { NgIf, NgFor, JsonPipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
+import { formatApiError } from '../../shared/api-error';
 import {
     ReactiveFormsModule,
     NonNullableFormBuilder,
@@ -22,8 +23,8 @@ import { getIdToken } from 'firebase/auth';
         <section class="test-api">
             <h2>API Connectivity Test</h2>
             <div class="actions">
-                <button (click)="pingList()">GET /api/events</button>
-                <button (click)="createSample()">POST /api/events</button>
+                <button (click)="pingList()">GET /api/v1/events</button>
+                <button (click)="createSample()">POST /api/v1/events</button>
             </div>
 
             <!-- ADMIN: Get Roles by UID -->
@@ -393,23 +394,15 @@ export class TestApiComponent {
     pingList() {
         this.loading.set(true);
         this.error.set(null);
-        this.eventsService.list().subscribe({
-            next: (data) => {
-                const normalized = (data ?? []).map((e: any) => ({
+        this.eventsService.list({ page: 0, size: 25, sort: 'startAt,asc' }).subscribe({
+            next: (resp) => {
+                const items: any[] = Array.isArray((resp as any)) ? (resp as any as any[]) : (resp?.items ?? []);
+                const normalized = (items ?? []).map((e: any) => ({
                     ...e, // <-- brings in eventId, eventName, startAt, endAt, eventLocation, etc.
-                    // id: e?.id ?? e?.eventId ?? e?.uuid ?? e?.identifier ?? undefined,
-                    // title: e?.title ?? e?.eventName ?? '(no title)',
-                    // type: e?.type ?? e?.typeDisplayName ?? undefined,
-                    // start: e?.start ?? e?.startAt ?? '',
-                    // end: e?.end ?? e?.endAt ?? '',
-                    // location: e?.location ?? e?.eventLocation ?? undefined,
-                    // description: e?.description ?? e?.eventDescription ?? undefined,
-                    // ownerUid: e?.ownerUid ?? e?.createdByUid ?? e?.createdBy ?? undefined,
-                    // ownerEmail: e?.ownerEmail ?? e?.createdByEmail ?? undefined,
                 }));
                 this.events.set(normalized);
                 this.expanded.set(new Array(normalized.length).fill(true));
-                this.lastResponse.set({ ok: true, count: data?.length ?? 0 });
+                this.lastResponse.set({ ok: true, count: items?.length ?? 0 });
                 this.loading.set(false);
             },
             error: (err) => {
@@ -633,16 +626,7 @@ export class TestApiComponent {
     }
 
     private stringifyError(err: any): string {
-        try {
-            if (err?.error) {
-                return typeof err.error === 'string'
-                    ? err.error
-                    : JSON.stringify(err.error, null, 2);
-            }
-            return JSON.stringify(err, null, 2);
-        } catch {
-            return String(err);
-        }
+        return formatApiError(err);
     }
 
     // Helpers to convert between backend display names and enum constants
