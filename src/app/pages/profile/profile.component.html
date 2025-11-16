@@ -64,6 +64,7 @@
         <ng-template #claimsSkeleton>
           <app-loading-skeleton [lines]="2"></app-loading-skeleton>
         </ng-template>
+        <!--TODO: Remove token from DOM -->
         <div class="token-decode" *ngIf="idTokenHeader() || idTokenPayload()">
           <details>
             <summary>Decoded ID Token (Header & Payload)</summary>

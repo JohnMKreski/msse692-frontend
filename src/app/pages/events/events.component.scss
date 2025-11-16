@@ -11,3 +11,68 @@
     padding: 1rem;
     color: var(--mat-sys-on-surface-variant, #555);
 }
+
+/* Hint interactivity: pointer cursor on calendar events (hover only) */
+:host ::ng-deep .fc .fc-daygrid-event:hover,
+:host ::ng-deep .fc .fc-timegrid-event:hover,
+:host ::ng-deep .fc .fc-list-event:hover {
+    cursor: pointer;
+}
+
+/* Quick, styled tooltip using data-tooltip attribute */
+:host ::ng-deep .fc .fc-daygrid-event,
+:host ::ng-deep .fc .fc-timegrid-event,
+:host ::ng-deep .fc .fc-list-event {
+    position: relative;
+}
+
+:host ::ng-deep .fc .fc-daygrid-event[data-tooltip]::after,
+:host ::ng-deep .fc .fc-timegrid-event[data-tooltip]::after,
+:host ::ng-deep .fc .fc-list-event[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(8px);
+    z-index: 1000;
+    width: 320px;
+    background: var(--mat-sys-surface-container-high, rgba(33,33,33,0.95));
+    color: var(--mat-sys-on-surface, #fff);
+    border: 1px solid rgba(0,0,0,0.2);
+    padding: 6px 8px;
+    border-radius: 6px;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 200ms ease-out, transform 80ms ease-out;
+    font-size: 12px;
+    line-height: 1.2;
+    max-width: 360px;
+}
+
+/* Allow tooltips to escape default overflow clipping in day grid */
+:host ::ng-deep .fc .fc-daygrid-day-events {
+    overflow: visible; 
+}
+
+/* Ensure the hovered event sits above siblings so its pseudo-element isn't obscured */
+:host ::ng-deep .fc .fc-daygrid-event,
+:host ::ng-deep .fc .fc-timegrid-event,
+:host ::ng-deep .fc .fc-list-event {
+    z-index: 2; 
+}
+
+:host ::ng-deep .fc .fc-daygrid-event:hover,
+:host ::ng-deep .fc .fc-timegrid-event:hover,
+:host ::ng-deep .fc .fc-list-event:hover {
+    z-index: 5; 
+}
+
+:host ::ng-deep .fc .fc-daygrid-event[data-tooltip]:hover::after,
+:host ::ng-deep .fc .fc-timegrid-event[data-tooltip]:hover::after,
+:host ::ng-deep .fc .fc-list-event[data-tooltip]:hover::after {
+    opacity: 1;
+    transform: translateX(-50%) translateY(12px);
+}

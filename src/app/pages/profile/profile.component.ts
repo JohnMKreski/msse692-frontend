@@ -26,6 +26,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     roles = signal<string[] | null>(null);
     claims = signal<Record<string, any> | null>(null);
     rolesSource = signal<'firebase-claims' | 'backend-fallback' | null>(null);
+    //TODO: Remove token from DOM
     idTokenHeader = signal<Record<string, any> | null>(null);
     idTokenPayload = signal<Record<string, any> | null>(null);
     loading = signal<boolean>(true);
@@ -50,16 +51,13 @@ export class ProfileComponent implements OnInit, OnDestroy {
         const claimRoles = this.roles();
         if (Array.isArray(claimRoles) && claimRoles.length) return claimRoles;
         const au = this.appUser();
-        console.log('Falling back to AppUser roles:', au); //Log
         const appUserRoles = (au && Array.isArray((au as any).roles) && (au as any).roles.length)
             ? (au as any).roles as string[]
             : null;
-        console.log('isAdmin?', appUserRoles);
         return appUserRoles;
     });
     isAdmin = computed(() => {
         const r = this.effectiveRoles();
-        console.log('isAdmin?', r); //Log
         return Array.isArray(r) && r.includes('ADMIN');
     });
 
@@ -306,6 +304,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
         });
     }
 
+    // TODO: move to utility service?
+    //TODO: Remove token from DOM
     private decodeAndSetIdTokenParts(token: string | null | undefined): void {
         if (!token) { this.idTokenHeader.set(null); this.idTokenPayload.set(null); return; }
         const parts = token.split('.');
@@ -349,7 +349,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
         });
     }
 
-    // Temporary: show toast instead of inline CRUD UI
+    // Temporary: show toast instead of inline CRUD UI 
     showCrudComingSoon(): void {
         this.snack.open('Event management is moving to its own page soon.', 'Dismiss', {
             duration: 3000,
