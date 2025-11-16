@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnDestroy, PLATFORM_ID, ChangeDetectorRef, inject, OnInit, NgZone, AfterViewInit } from '@angular/core';
-import { isPlatformBrowser, NgForOf, NgIf, DatePipe } from '@angular/common';
+import { isPlatformBrowser, NgForOf, NgIf, DatePipe, AsyncPipe } from '@angular/common';
 import { LoadingSkeletonComponent } from '../../components/loading-skeleton/loading-skeleton.component';
 import { FormsModule } from '@angular/forms';
 import { EventsService } from './events.service';
@@ -7,11 +7,12 @@ import { EnumsService } from './enums.service';
 import { EventDto, EventPageResponse, EventSortField, SortDir } from './event.model';
 import { take, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { formatApiError, parseApiError } from '../../shared/api-error';
 import { ErrorBannerComponent } from '../../components/error-banner/error-banner.component';
 
 // FullCalendar Angular wrapper
+// https://github.com/fullcalendar/fullcalendar-angular
 import { FullCalendarModule } from '@fullcalendar/angular';
 import { CalendarOptions } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -25,7 +26,7 @@ import listPlugin from '@fullcalendar/list';
 @Component({
     selector: 'app-events',
     standalone: true,
-    imports: [NgIf, NgForOf, DatePipe, RouterLink, FullCalendarModule, FormsModule, ErrorBannerComponent, LoadingSkeletonComponent],
+    imports: [NgIf, NgForOf, DatePipe, AsyncPipe, RouterLink, FullCalendarModule, FormsModule, ErrorBannerComponent, LoadingSkeletonComponent],
     templateUrl: './events.component.html',
     styleUrls: ['./events.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -37,6 +38,7 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
     private readonly enumsService = inject(EnumsService);
     private readonly cdr = inject(ChangeDetectorRef);
     private readonly zone = inject(NgZone);
+    private readonly router = inject(Router);
     // UI change bus merged into EventsService
     private readonly destroy$ = new Subject<void>();
     upcomingLoading = false;
@@ -54,6 +56,15 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
     sortDir: SortDir = 'asc';
     typeOptions$ = this.enumsService.getEventTypes();
     selectedType: string | null = null;
+    
+    // Tooltip label constants to control line breaks/labels
+    private readonly tooltipLabels = {
+        title: 'Title',
+        location: 'Location',
+        type: 'Type',
+        start: 'Start',
+        end: 'End',
+    } as const;
 
     // Calendar options (updated when events load)
     calendarOptions: CalendarOptions = {
@@ -67,6 +78,7 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
         nowIndicator: true,
         navLinks: true,
         eventClick: (arg) => this.onEventClick(arg),
+        eventDidMount: (arg) => this.onEventDidMount(arg),
         datesSet: (arg) => this.onDatesSet(arg as any),
         dayMaxEvents: true,
         contentHeight: 'auto',
@@ -105,8 +117,40 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     onEventClick(arg: any): void {
-        const title = arg?.event?.title ?? 'Event';
-        alert(title);
+        if (!this.isBrowser()) return;
+        const id = arg?.event?.id ?? arg?.event?.extendedProps?.eventId;
+        if (!id) {
+            return;
+        }
+        // Ensure navigation runs inside Angular zone
+        this.zone.run(() => {
+            this.router.navigate(['/events', String(id)]);
+        });
+    }
+
+    // Attach a styled tooltip via data attribute (CSS renders it)
+    onEventDidMount(arg: any): void {
+        if (!this.isBrowser() || !arg?.el || !arg?.event) return;
+        const e = arg.event;
+        const title = e.title as string | undefined;
+        const loc = e.extendedProps?.location as string | undefined;
+        const type = (e.extendedProps?.typeDisplayName || e.extendedProps?.type) as string | undefined;
+        const start: Date | null = e.start ?? null;
+        const end: Date | null = e.end ?? null;
+        const timeFmt: Intl.DateTimeFormatOptions = { dateStyle: 'medium', timeStyle: 'short' };
+        const startStr = start ? new Date(start).toLocaleString(undefined, timeFmt) : '';
+        const endStr = end ? new Date(end).toLocaleString(undefined, timeFmt) : '';
+        const lines: string[] = [];
+        if (title) lines.push(`${this.tooltipLabels.title}: ${title}`);
+        if (loc) lines.push(`${this.tooltipLabels.location}: ${loc}`);
+        if (type) lines.push(`${this.tooltipLabels.type}: ${type}`);
+        if (startStr) lines.push(`${this.tooltipLabels.start}: ${startStr}`);
+        if (endStr) lines.push(`${this.tooltipLabels.end}: ${endStr}`);
+        if (lines.length) {
+            // Use data-tooltip for CSS-driven tooltip; avoid native title delay
+            arg.el.removeAttribute('title');
+            arg.el.setAttribute('data-tooltip', lines.join('\n'));
+        }
     }
 
     private loadEvents(window?: { from?: string; to?: string }) {
@@ -125,7 +169,12 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
                             start: e.startAt,
                             end: e.endAt,
                             allDay: false,
-                            extendedProps: { location: e.eventLocation, status: e.status }
+                            extendedProps: {
+                                location: e.eventLocation,
+                                status: e.status,
+                                type: e.type,
+                                typeDisplayName: e.typeDisplayName
+                            }
                         }));
                         this.calendarOptions = { ...this.calendarOptions, events: fcEvents };
                         this.cdr.markForCheck();
@@ -224,11 +273,11 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
         const narrow = window.matchMedia('(max-width: 600px)').matches;
         const headerToolbar = narrow
             ? { left: 'prev,next', center: 'title', right: 'today' }
-            : {
-                  left: 'prev,next today',
-                  center: 'title',
-                  right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek',
-              };
+            :  {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek',
+                };
         const initialView = narrow ? 'listWeek' : 'dayGridMonth';
         this.calendarOptions = {
             ...this.calendarOptions,
