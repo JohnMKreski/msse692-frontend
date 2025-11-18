@@ -1,4 +1,7 @@
 import { Routes } from '@angular/router';
+import { requireAuthGuard } from './guards/require-auth.guard';
+import { adminRoleGuard } from './guards/admin-role.guard';
+import { adminRoleMatchGuard } from './guards/admin-role.match-guard';
 // All feature pages are lazy-loaded via loadComponent
 
 export const routes: Routes = [
@@ -10,20 +13,21 @@ export const routes: Routes = [
     { path: 'signup', loadComponent: () => import('./pages/signup/signup.component').then(m => m.SignupComponent) },
     {
         path: 'profile',
+        canActivate: [requireAuthGuard],
         loadComponent: () => import('./pages/profile/profile.component').then(m => m.ProfileComponent),
-        canActivate: [() => import('./guards/require-auth.guard').then(m => m.requireAuthGuard)],
+        
     },
     { path: 'settings', loadComponent: () => import('./pages/settings/settings.component').then(m => m.SettingsComponent) },
     {
         path: 'admin',
         loadComponent: () => import('./pages/admin/admin-dashboard.component').then(m => m.AdminDashboardComponent),
-        canActivate: [
-            () => import('./guards/require-auth.guard').then(m => m.requireAuthGuard),
-            () => import('./guards/admin-role.guard').then(m => m.adminRoleGuard),
-        ],
+        canMatch: [adminRoleMatchGuard],
+        canActivate: [requireAuthGuard, adminRoleGuard],
+        canActivateChild: [requireAuthGuard, adminRoleGuard],
         children: [
             { path: '', pathMatch: 'full', redirectTo: 'events' },
             { path: 'events', loadComponent: () => import('./pages/admin/admin-events-list.component').then(m => m.AdminEventsListComponent) },
+            { path: 'role-requests', loadComponent: () => import('./pages/admin/admin-role-requests-list/admin-role-requests-list.component').then(m => m.AdminRoleRequestsListComponent) },
             { path: 'api', loadComponent: () => import('./pages/admin/admin-api.component').then(m => m.AdminApiComponent) },
             { path: 'logs', loadComponent: () => import('./pages/admin/admin-logs.component').then(m => m.AdminLogsComponent) },
         ],
