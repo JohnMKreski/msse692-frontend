@@ -127,6 +127,45 @@
       </details>
     </section>
 
+    <!-- Role Requests (Editor) -->
+    <section class="profile__role-request" aria-label="Request Editor Role">
+      <details open>
+        <summary><h2 class="section-title">Request Editor Role</h2></summary>
+        <!-- Elevated users -->
+        <ng-container *ngIf="effectiveRoles() as er; else roleReqBlock">
+          <p class="muted" *ngIf="er && (er.includes('ADMIN') || er.includes('EDITOR'))">
+            You already have elevated access.
+          </p>
+        </ng-container>
+        <ng-template #roleReqBlock>
+          <div *ngIf="roleReqLoading()"><app-loading-skeleton [lines]="2"></app-loading-skeleton></div>
+          <div class="error" *ngIf="roleReqError() as err">{{ err }}</div>
+          <ng-container *ngIf="!roleReqLoading()">
+            <!-- Pending request view -->
+            <div *ngIf="latestRoleRequest() as rr; else roleReqForm">
+              <p><strong>Status:</strong> {{ rr.status }}</p>
+              <p><strong>Requested:</strong> {{ rr.requestedRoles.join(', ') }}</p>
+              <p *ngIf="rr.reason"><strong>Reason:</strong> {{ rr.reason }}</p>
+              <button type="button" (click)="cancelPendingRoleRequest()" [disabled]="roleReqLoading()">Cancel Request</button>
+            </div>
+            <!-- Create request form -->
+            <ng-template #roleReqForm>
+              <div style="margin: 0 1.25rem 0.75rem; display:flex; flex-direction:column; gap:0.5rem; max-width:640px;">
+                <label style="display:flex; flex-direction:column; gap:0.25rem;">
+                  <span class="muted">Reason (optional)</span>
+                  <textarea [formControl]="roleReason" rows="3" maxlength="500" placeholder="Tell admins why you need editor access"></textarea>
+                </label>
+                <div style="display:flex; gap:0.75rem; align-items:center;">
+                  <button type="button" (click)="submitRoleRequest()" [disabled]="roleReqLoading() || roleReason.invalid">Request Editor Role</button>
+                  <span class="muted" *ngIf="roleReason.invalid">Max 500 characters.</span>
+                </div>
+              </div>
+            </ng-template>
+          </ng-container>
+        </ng-template>
+      </details>
+    </section>
+
     <!-- Events Overview -->
     <section class="profile__events" aria-label="My events list">
       <details>

@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { API_URL } from '../models/api-tokens';
+import { API_BASE_URL, API_PATH_PREFIX } from '../models/api-tokens';
 import { Page } from '../models/page';
 import { RoleRequest, RoleRequestCreate, RoleRequestDecision } from '../models/role-request';
 import { RoleRequestStatus } from '../models/role-request-status';
@@ -24,11 +24,26 @@ export interface AdminListParams {
 @Injectable({ providedIn: 'root' })
 export class RoleRequestService {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = inject(API_URL);
 
   // Base paths
-  private readonly userBase = `${this.apiUrl}/roles/requests`;
-  private readonly adminBase = `${this.apiUrl}/admin/users/roles/requests`;
+  private readonly apiBase: string = inject(API_BASE_URL);
+  private readonly apiPrefix: string = inject(API_PATH_PREFIX);
+
+  // Helpers to build non-versioned API paths (backend maps RoleRequest under /api not /api/v1)
+  private join(base: string, path: string): string {
+    const b = (base || '').replace(/\/+$/g, '');
+    const p = (path || '').replace(/^\/+/, '');
+    return `${b}/${p}`;
+  }
+
+  private get userBase(): string {
+    const prefix = (this.apiPrefix || '/api').replace(/\/+$/g, '');
+    return this.join(this.join(this.apiBase, prefix), 'roles/requests');
+  }
+  private get adminBase(): string {
+    const prefix = (this.apiPrefix || '/api').replace(/\/+$/g, '');
+    return this.join(this.join(this.apiBase, prefix), 'admin/users/roles/requests');
+  }
 
   // USER endpoints
   create(body: RoleRequestCreate): Observable<RoleRequest> {
@@ -73,7 +88,11 @@ export class RoleRequestService {
     if (st) {
       const list = Array.isArray(st) ? st : [st];
       list.forEach((s) => {
-        if (s) hp = hp.append('status', s);
+        if (!s) return;
+        // Backend likely expects enum names; normalize display labels to uppercase enum values
+        // 'Pending' -> 'PENDING', 'Approved' -> 'APPROVED', 'Rejected' -> 'REJECTED', 'Canceled' -> 'CANCELED'
+        const upper = String(s).toUpperCase();
+        hp = hp.append('status', upper);
       });
     }
 

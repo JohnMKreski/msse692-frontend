@@ -5,7 +5,7 @@ import { getIdToken } from 'firebase/auth';
 import { from, of } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
 import { isPlatformBrowser } from '@angular/common';
-import { API_URL } from '../shared/models/api-tokens';
+import { API_URL, API_BASE_URL, API_PATH_PREFIX, buildApiUrl } from '../shared/models/api-tokens';
 
 /**
  * Appends Authorization: Bearer <id_token> for requests when a user is signed in.
@@ -15,6 +15,9 @@ export const firebaseAuthInterceptor: HttpInterceptorFn = (req, next) => {
     const auth = inject(Auth) as Auth;
     const platformId = inject(PLATFORM_ID);
     const apiUrl = inject(API_URL);
+    const apiBase = inject(API_BASE_URL);
+    const apiPrefix = inject(API_PATH_PREFIX);
+    const apiUrlNoVersion = buildApiUrl(apiBase as string, apiPrefix as string, '');
 
     // Only attach in the browser
     if (!isPlatformBrowser(platformId)) {
@@ -23,7 +26,7 @@ export const firebaseAuthInterceptor: HttpInterceptorFn = (req, next) => {
 
     // Only attach to our API base URL
     const url = req.url || '';
-    if (!url.startsWith(apiUrl)) {
+    if (!(url.startsWith(apiUrl) || url.startsWith(apiUrlNoVersion))) {
         return next(req);
     }
 
