@@ -5,7 +5,7 @@ import { getIdToken } from 'firebase/auth';
 import { from, of } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
 import { isPlatformBrowser } from '@angular/common';
-import { API_URL } from '../shared/api-tokens';
+import { API_URL } from '../shared/models/api-tokens';
 
 /**
  * Appends Authorization: Bearer <id_token> for requests when a user is signed in.

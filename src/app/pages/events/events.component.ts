@@ -8,7 +8,7 @@ import { EventDto, EventPageResponse, EventSortField, SortDir } from './event.mo
 import { take, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { Router, RouterLink } from '@angular/router';
-import { formatApiError, parseApiError } from '../../shared/api-error';
+import { formatApiError, parseApiError } from '../../shared/models/api-error';
 import { ErrorBannerComponent } from '../../components/error-banner/error-banner.component';
 
 // FullCalendar Angular wrapper

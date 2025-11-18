@@ -7,7 +7,7 @@ import { provideFirebaseApp, initializeApp } from '@angular/fire/app';
 import { provideAuth, getAuth } from '@angular/fire/auth';
 import { environment } from '../environments/environment';
 import { RuntimeConfigService } from './shared/runtime-config.service';
-import { API_BASE_URL, API_PATH_PREFIX, API_VERSION, API_URL, buildApiUrl } from './shared/api-tokens';
+import { API_BASE_URL, API_PATH_PREFIX, API_VERSION, API_URL, buildApiUrl } from './shared/models/api-tokens';
 import { firebaseAuthInterceptor } from './interceptors/firebase-auth.interceptor';
 
 export const appConfig: ApplicationConfig = {

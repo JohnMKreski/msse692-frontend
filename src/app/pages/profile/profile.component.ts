@@ -7,12 +7,12 @@ import { onAuthStateChanged, User, getIdTokenResult, signOut } from 'firebase/au
 import { ReactiveFormsModule, FormBuilder, Validators, FormGroup, FormControl } from '@angular/forms';
 import { EventsService } from '../events/events.service';
 import { EventDto, EventAudit } from '../events/event.model';
-import { ProfileService } from '../../shared/profile.service';
-import { ProfileResponse } from '../../shared/profile.model';
-import { AppUserService } from '../../shared/app-user.service';
-import { AppUserDto } from '../../shared/app-user.model';
+import { ProfileService } from '../../shared/services/profile.service';
+import { ProfileResponse } from '../../shared/models/profile.model';
+import { AppUserService } from '../../shared/services/app-user.service';
+import { AppUserDto } from '../../shared/models/app-user.model';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { formatApiError } from '../../shared/api-error';
+import { formatApiError } from '../../shared/models/api-error';
 
 @Component({
     selector: 'app-profile',

@@ -7,8 +7,8 @@ import { materialImports } from '../../shared/material';
 import { StatusBadgeComponent } from '../../components/status-badge/status-badge.component';
 import { take } from 'rxjs/operators';
 import { Auth, onAuthStateChanged } from '@angular/fire/auth';
-import { AppUserService } from '../../shared/app-user.service';
-import { formatApiError } from '../../shared/api-error';
+import { AppUserService } from '../../shared/services/app-user.service';
+import { formatApiError } from '../../shared/models/api-error';
 
 @Component({
   selector: 'app-event-detail',

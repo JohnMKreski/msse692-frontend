@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { EnumsService } from './enums.service';
-import { API_URL } from '../../shared/api-tokens';
+import { API_URL } from '../../shared/models/api-tokens';
 
 describe('EnumsService', () => {
   let svc: EnumsService;

@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { API_URL } from '../../shared/api-tokens';
+import { API_URL } from '../../shared/models/api-tokens';
 import { Observable, Subject } from 'rxjs';
 import { CreateEventRequest, EventDto, UpdateEventRequest, EventAudit, EventPageResponse } from './event.model';
 

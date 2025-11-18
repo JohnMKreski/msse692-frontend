@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { ProfileService } from './profile.service';
-import { API_URL } from './api-tokens';
+import { API_URL } from '../models/api-tokens';
 
 describe('ProfileService', () => {
   let svc: ProfileService;

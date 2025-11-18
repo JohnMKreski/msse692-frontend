@@ -1,8 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { API_URL } from './api-tokens';
+import { API_URL } from '../models/api-tokens';
 import { Observable } from 'rxjs';
-import { ProfileRequest, ProfileResponse } from './profile.model';
+import { ProfileRequest, ProfileResponse } from '../models/profile.model';
 
 @Injectable({ providedIn: 'root' })
 export class ProfileService {
