@@ -11,6 +11,7 @@ export interface RoleRequest {
   approverNote?: string | null;
   createdAt?: string; // ISO-8601
   updatedAt?: string; // ISO-8601
+  decidedAt?: string; // ISO-8601 (admin decisions)
 }
 
 // Request payloads

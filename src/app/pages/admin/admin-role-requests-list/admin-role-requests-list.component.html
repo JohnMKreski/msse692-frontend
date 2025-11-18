@@ -1,4 +1,104 @@
 <section class="admin-role-requests">
   <h2>Role Requests (Admin)</h2>
-  <p class="muted">Coming soon: moderation list, filters, and actions.</p>
+
+  <!-- Filters -->
+  <form class="filters" (ngSubmit)="applyFilters()">
+    <label>
+      <span>Search</span>
+      <input type="text" [(ngModel)]="q" name="q" placeholder="UID, email, etc." />
+    </label>
+    <label>
+      <span>Status</span>
+      <select multiple size="4" [(ngModel)]="statusSel" name="status">
+        <option *ngFor="let s of statusOptions" [ngValue]="s">{{ s }}</option>
+      </select>
+    </label>
+    <label>
+      <span>Sort</span>
+      <select [(ngModel)]="sort" name="sort" (change)="changeSort(sort)">
+        <option value="createdAt,desc">Created desc</option>
+        <option value="createdAt,asc">Created asc</option>
+        <option value="updatedAt,desc">Updated desc</option>
+        <option value="updatedAt,asc">Updated asc</option>
+      </select>
+    </label>
+    <label>
+      <span>Page size</span>
+      <select [(ngModel)]="pageSize" name="size" (change)="changeSize(pageSize)">
+        <option [ngValue]="10">10</option>
+        <option [ngValue]="20">20</option>
+        <option [ngValue]="50">50</option>
+      </select>
+    </label>
+    <button type="submit">Apply</button>
+  </form>
+
+  <!-- Loading/Error -->
+  <div *ngIf="loading()"><app-loading-skeleton [lines]="3"></app-loading-skeleton></div>
+  <div *ngIf="error() as err" class="error">{{ err }}</div>
+
+  <!-- Table -->
+  <ng-container *ngIf="!loading() && page() as p">
+    <p *ngIf="!p.content.length" class="muted">No role requests found.</p>
+    <table class="table" *ngIf="p.content.length">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Requester UID</th>
+          <th>Roles</th>
+          <th>Status</th>
+          <th>Created</th>
+          <th>Decided</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let r of p.content" (click)="onRowClick(r)" [class.selected]="selectedId() === r.id">
+          <td>{{ r.id }}</td>
+          <td>{{ r.requesterUid }}</td>
+          <td>{{ r.requestedRoles.join(', ') }}</td>
+          <td>{{ r.status }}</td>
+          <td>{{ r.createdAt || '—' }}</td>
+          <td>{{ r.decidedAt || r.updatedAt || '—' }}</td>
+          <td>
+            <button type="button" (click)="$event.stopPropagation(); approve(r)" [disabled]="loading() || busyId() === r.id || r.status !== 'Pending'">Approve</button>
+            <button type="button" (click)="$event.stopPropagation(); reject(r)" [disabled]="loading() || busyId() === r.id || r.status !== 'Pending'">Reject</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Details Panel -->
+    <div class="details" *ngIf="selectedId() as sid">
+      <h3>Request Details: {{ sid }}</h3>
+      <div *ngIf="detailLoading()"><app-loading-skeleton [lines]="2"></app-loading-skeleton></div>
+      <div *ngIf="detailError() as derr" class="error">{{ derr }}</div>
+      <ng-container *ngIf="!detailLoading() && detail() as d">
+        <div class="summary">
+          <div><strong>Requester:</strong> {{ d.requesterUid }}</div>
+          <div><strong>Roles:</strong> {{ d.requestedRoles.join(', ') }}</div>
+          <div><strong>Status:</strong> {{ d.status }}</div>
+          <div><strong>Reason:</strong> {{ d.reason || '—' }}</div>
+          <div><strong>Created:</strong> {{ d.createdAt || '—' }}</div>
+          <div><strong>Updated:</strong> {{ d.updatedAt || '—' }}</div>
+          <div><strong>Decided:</strong> {{ d.decidedAt || '—' }}</div>
+          <div><strong>Approver:</strong> {{ d.approverUid || '—' }}</div>
+          <div><strong>Note:</strong> {{ d.approverNote || '—' }}</div>
+        </div>
+        <div class="actions">
+          <button type="button" (click)="approve(d)" [disabled]="loading() || busyId() === d.id || d.status !== 'Pending'">Approve</button>
+          <button type="button" (click)="reject(d)" [disabled]="loading() || busyId() === d.id || d.status !== 'Pending'">Reject</button>
+          <button type="button" (click)="clearSelection()">Close</button>
+        </div>
+        <pre class="json">{{ d | json }}</pre>
+      </ng-container>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pager">
+      <button type="button" (click)="changePage(-1)" [disabled]="p.first || p.number <= 0">Prev</button>
+      <span>Page {{ p.number + 1 }} of {{ p.totalPages }}</span>
+      <button type="button" (click)="changePage(1)" [disabled]="p.last || (p.number + 1) >= p.totalPages">Next</button>
+    </div>
+  </ng-container>
 </section>
