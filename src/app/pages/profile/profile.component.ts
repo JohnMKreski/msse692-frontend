@@ -13,6 +13,8 @@ import { AppUserService } from '../../shared/services/app-user.service';
 import { AppUserDto } from '../../shared/models/app-user.model';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { formatApiError } from '../../shared/models/api-error';
+import { RoleRequestService } from '../../shared/services/role-request.service';
+import { RoleRequest } from '../../shared/models/role-request';
 
 @Component({
     selector: 'app-profile',
@@ -105,7 +107,13 @@ export class ProfileComponent implements OnInit, OnDestroy {
     private unsub: (() => void) | null = null;
 
     existingProfile = signal<ProfileResponse | null>(null);
-    constructor(private auth: Auth, private fb: FormBuilder, private events: EventsService, private profiles: ProfileService, private appUsers: AppUserService, private snack: MatSnackBar) {
+    // Role Request (Editor) UI state
+    roleReqLoading: WritableSignal<boolean> = signal(false);
+    roleReqError: WritableSignal<string | null> = signal(null);
+    latestRoleRequest: WritableSignal<RoleRequest | null> = signal(null);
+    roleReason!: FormControl<string>;
+
+    constructor(private auth: Auth, private fb: FormBuilder, private events: EventsService, private profiles: ProfileService, private appUsers: AppUserService, private snack: MatSnackBar, private roleRequests: RoleRequestService) {
         this.createForm = this.fb.nonNullable.group({
             eventName: ['', [Validators.required, Validators.maxLength(120)]],
             type: ['', [Validators.required, Validators.maxLength(60)]],
@@ -118,6 +126,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     }
 
     ngOnInit(): void {
+        this.roleReason = this.fb.nonNullable.control('', { validators: [Validators.maxLength(500)] });
         this.unsub = onAuthStateChanged(this.auth, async (u) => {
         this.user.set(u);
         this.roles.set(null);
@@ -144,6 +153,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
             // Load backend AppUser & profile (404 -> ignore)
             this.fetchAppUser();
             this.fetchProfile();
+            // Initialize role request state
+            this.refreshRoleRequestState();
         }
         // Load events
         this.events.list({ page: 0, size: 100, sort: 'startAt,asc' }).subscribe({
@@ -171,6 +182,62 @@ export class ProfileComponent implements OnInit, OnDestroy {
             error: () => { this.allEvents.set([]); this.myEvents.set([]); },
         });
         this.loading.set(false);
+        });
+    }
+
+    // ===== Role Request (Editor) =====
+    private refreshRoleRequestState(): void {
+        const r = this.effectiveRoles();
+        if (Array.isArray(r) && (r.includes('ADMIN') || r.includes('EDITOR'))) {
+            this.latestRoleRequest.set(null);
+            return;
+        }
+        this.roleReqLoading.set(true);
+        this.roleReqError.set(null);
+        this.roleRequests.listMy({ status: 'Pending', page: 0, size: 1, sort: 'createdAt,desc' }).subscribe({
+            next: (page) => {
+                const item = (page as any)?.content?.[0] ?? null;
+                this.latestRoleRequest.set(item ?? null);
+            },
+            error: (err) => {
+                this.roleReqError.set(formatApiError(err));
+            },
+            complete: () => this.roleReqLoading.set(false),
+        });
+    }
+
+    submitRoleRequest(): void {
+        const r = this.effectiveRoles();
+        if (Array.isArray(r) && (r.includes('ADMIN') || r.includes('EDITOR'))) return;
+        const reason = (this.roleReason.value || '').trim();
+        this.roleReqLoading.set(true);
+        this.roleReqError.set(null);
+        this.roleRequests.create({ requestedRoles: ['EDITOR'], reason: reason || undefined }).subscribe({
+            next: (req) => {
+                this.latestRoleRequest.set(req);
+                this.snack.open('Role request submitted', 'Dismiss', { duration: 2500, horizontalPosition: 'right' });
+            },
+            error: (err) => {
+                this.roleReqError.set(formatApiError(err));
+            },
+            complete: () => this.roleReqLoading.set(false),
+        });
+    }
+
+    cancelPendingRoleRequest(): void {
+        const cur = this.latestRoleRequest();
+        if (!cur) return;
+        this.roleReqLoading.set(true);
+        this.roleReqError.set(null);
+        this.roleRequests.cancel(cur.id).subscribe({
+            next: (updated) => {
+                this.latestRoleRequest.set(updated);
+                this.snack.open('Role request canceled', 'Dismiss', { duration: 2500, horizontalPosition: 'right' });
+            },
+            error: (err) => {
+                this.roleReqError.set(formatApiError(err));
+            },
+            complete: () => this.roleReqLoading.set(false),
         });
     }
 
