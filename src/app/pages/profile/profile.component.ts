@@ -112,6 +112,10 @@ export class ProfileComponent implements OnInit, OnDestroy {
     roleReqError: WritableSignal<string | null> = signal(null);
     latestRoleRequest: WritableSignal<RoleRequest | null> = signal(null);
     roleReason!: FormControl<string>;
+    // Role request history
+    roleHistoryLoading: WritableSignal<boolean> = signal(false);
+    roleHistoryError: WritableSignal<string | null> = signal(null);
+    roleHistory: WritableSignal<RoleRequest[] | null> = signal(null);
 
     constructor(private auth: Auth, private fb: FormBuilder, private events: EventsService, private profiles: ProfileService, private appUsers: AppUserService, private snack: MatSnackBar, private roleRequests: RoleRequestService) {
         this.createForm = this.fb.nonNullable.group({
@@ -155,6 +159,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
             this.fetchProfile();
             // Initialize role request state
             this.refreshRoleRequestState();
+            this.loadRoleRequestHistory();
         }
         // Load events
         this.events.list({ page: 0, size: 100, sort: 'startAt,asc' }).subscribe({
@@ -206,6 +211,19 @@ export class ProfileComponent implements OnInit, OnDestroy {
         });
     }
 
+    private loadRoleRequestHistory(): void {
+        this.roleHistoryLoading.set(true);
+        this.roleHistoryError.set(null);
+        this.roleRequests.listMy({ page: 0, size: 10, sort: 'createdAt,desc' }).subscribe({
+            next: (page) => {
+                const items = (page as any)?.content ?? [];
+                this.roleHistory.set(Array.isArray(items) ? items : []);
+            },
+            error: (err) => this.roleHistoryError.set(formatApiError(err) || 'Failed to load request history'),
+            complete: () => this.roleHistoryLoading.set(false),
+        });
+    }
+
     submitRoleRequest(): void {
         const r = this.effectiveRoles();
         if (Array.isArray(r) && (r.includes('ADMIN') || r.includes('EDITOR'))) return;
@@ -216,6 +234,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
             next: (req) => {
                 this.latestRoleRequest.set(req);
                 this.snack.open('Role request submitted', 'Dismiss', { duration: 2500, horizontalPosition: 'right' });
+                this.loadRoleRequestHistory();
             },
             error: (err) => {
                 this.roleReqError.set(formatApiError(err));
@@ -233,6 +252,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
             next: (updated) => {
                 this.latestRoleRequest.set(updated);
                 this.snack.open('Role request canceled', 'Dismiss', { duration: 2500, horizontalPosition: 'right' });
+                this.loadRoleRequestHistory();
             },
             error: (err) => {
                 this.roleReqError.set(formatApiError(err));
