@@ -1,0 +1,76 @@
+<div class="admin-users-wrapper" *ngIf="featureEnabled; else disabledTpl">
+  <h2>Admin Users</h2>
+  <form class="filters" (submit)="applyFilters(); $event.preventDefault()">
+    <label>
+      Search:
+      <input type="text" [(ngModel)]="q" name="q" placeholder="name or email" />
+    </label>
+    <fieldset class="roles" *ngIf="roleOptions().length">
+      <legend>Roles</legend>
+      <label *ngFor="let r of roleOptions()" class="role-opt">
+        <input type="checkbox" [checked]="selectedRoles.includes(r)" (change)="toggleRole(r)" /> {{ r }}
+      </label>
+    </fieldset>
+    <button type="submit">Apply</button>
+  </form>
+  <app-loading-skeleton *ngIf="loading()"></app-loading-skeleton>
+  <div *ngIf="error()" class="error">{{ error() }}</div>
+  <table *ngIf="page() && !loading()" class="users-table">
+    <thead>
+      <tr>
+        <th>Display Name</th>
+        <th>Email</th>
+        <th>Roles</th>
+        <th>Created</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let u of page()!.content" (click)="onRowClick(u)" [class.selected]="selectedUid()===u.firebaseUid" title="Click to view details">
+        <td>{{ u.displayName || '(none)' }}</td>
+        <td>{{ u.email || '(none)' }}</td>
+        <td>{{ u.roles.join(', ') || '—' }}</td>
+        <td>{{ u.createdAt | date:'short' }}</td>
+      </tr>
+      <tr *ngIf="page()!.content.length === 0">
+        <td colspan="4" class="empty">No users found.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="pager" *ngIf="page()">
+    <button (click)="changePage(-1)" [disabled]="pageIndex===0">Prev</button>
+    <span>Page {{ pageIndex + 1 }} of {{ page()!.totalPages }}</span>
+    <button (click)="changePage(1)" [disabled]="page()!.last">Next</button>
+    <!-- TODO: Fix -->
+    <!-- <select (change)="changeSize($event.target.value)" [value]="pageSize">
+      <option [value]="10">10</option>
+      <option [value]="20">20</option>
+      <option [value]="50">50</option>
+    </select> -->
+  </div>
+</div>
+<ng-template #disabledTpl>
+  <div class="feature-disabled">
+    <h2>Admin Users</h2>
+    <p>The enhanced Admin Users management feature is currently disabled by configuration.</p>
+    <p>To enable, set <code>"useNewAdminUsersApi": true</code> in <code>public/config.json</code> and reload the application.</p>
+    <p>You can still manage user roles individually using legacy endpoints until this feature is turned on.</p>
+  </div>
+</ng-template>
+
+<aside class="detail-panel" *ngIf="selectedUid()" [class.loading]="detailLoading()">
+  <button class="close-btn" (click)="clearSelection()" aria-label="Close">×</button>
+  <h3>User Detail</h3>
+  <div *ngIf="detailLoading()">Loading details...</div>
+  <div *ngIf="detailError()" class="error">{{ detailError() }}</div>
+  <div *ngIf="detailUser() && !detailLoading()">
+    <dl>
+      <dt>UID</dt><dd>{{ detailUser()!.firebaseUid }}</dd>
+      <dt>Display Name</dt><dd>{{ detailUser()!.displayName || '(none)' }}</dd>
+      <dt>Email</dt><dd>{{ detailUser()!.email || '(none)' }}</dd>
+      <dt>Roles</dt><dd>{{ detailUser()!.roles.join(', ') || '—' }}</dd>
+      <dt>Created</dt><dd>{{ detailUser()!.createdAt | date:'short' }}</dd>
+      <dt>Updated</dt><dd>{{ detailUser()!.updatedAt | date:'short' }}</dd>
+    </dl>
+  </div>
+</aside>

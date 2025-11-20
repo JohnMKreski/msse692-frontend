@@ -20,16 +20,17 @@ export const routes: Routes = [
     { path: 'settings', loadComponent: () => import('./pages/settings/settings.component').then(m => m.SettingsComponent) },
     {
         path: 'admin',
-        loadComponent: () => import('./pages/admin/admin-dashboard.component').then(m => m.AdminDashboardComponent),
+        loadComponent: () => import('./pages/admin/admin-dashboard/admin-dashboard.component').then(m => m.AdminDashboardComponent),
         canMatch: [adminRoleMatchGuard],
         canActivate: [requireAuthGuard, adminRoleGuard],
         canActivateChild: [requireAuthGuard, adminRoleGuard],
         children: [
-            { path: '', pathMatch: 'full', redirectTo: 'events' },
-            { path: 'events', loadComponent: () => import('./pages/admin/admin-events-list.component').then(m => m.AdminEventsListComponent) },
+            // { path: '', pathMatch: 'full', loadComponent: () => import('./pages/admin/admin-dashboard/admin-dashboard.component').then(m => m.AdminDashboardComponent) },
+            { path: 'events', loadComponent: () => import('./pages/admin/admin-events/admin-events-list.component').then(m => m.AdminEventsListComponent) },
             { path: 'role-requests', loadComponent: () => import('./pages/admin/admin-role-requests-list/admin-role-requests-list.component').then(m => m.AdminRoleRequestsListComponent) },
-            { path: 'api', loadComponent: () => import('./pages/admin/admin-api.component').then(m => m.AdminApiComponent) },
-            { path: 'logs', loadComponent: () => import('./pages/admin/admin-logs.component').then(m => m.AdminLogsComponent) },
+            { path: 'users', loadComponent: () => import('./pages/admin/admin-users-list/admin-users-list.component').then(m => m.AdminUsersListComponent) },
+            { path: 'api', loadComponent: () => import('./pages/admin/admin-api/admin-api.component').then(m => m.AdminApiComponent) },
+            { path: 'logs', loadComponent: () => import('./pages/admin/admin-logs/admin-logs.component').then(m => m.AdminLogsComponent) },
         ],
     },
     {
