@@ -6,7 +6,7 @@
       <input type="text" [(ngModel)]="q" name="q" placeholder="name or email" />
     </label>
     <fieldset class="roles" *ngIf="roleOptions().length">
-      <legend>Roles</legend>
+      <legend>Roles (TODO)</legend>
       <label *ngFor="let r of roleOptions()" class="role-opt">
         <input type="checkbox" [checked]="selectedRoles.includes(r)" (change)="toggleRole(r)" /> {{ r }}
       </label>
@@ -40,7 +40,7 @@
   <div class="pager" *ngIf="page()">
     <button (click)="changePage(-1)" [disabled]="pageIndex===0">Prev</button>
     <span>Page {{ pageIndex + 1 }} of {{ page()!.totalPages }}</span>
-    <button (click)="changePage(1)" [disabled]="page()!.last">Next</button>
+    <button (click)="changePage(1)" [disabled]="page()!.last">Next (TODO)</button>
     <!-- TODO: Fix -->
     <!-- <select (change)="changeSize($event.target.value)" [value]="pageSize">
       <option [value]="10">10</option>

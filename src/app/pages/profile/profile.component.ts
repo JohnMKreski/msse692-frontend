@@ -33,6 +33,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     idTokenPayload = signal<Record<string, any> | null>(null);
     loading = signal<boolean>(true);
     myEvents = signal<EventDto[] | null>(null);
+    myEventsError = signal<string | null>(null);
     allEvents = signal<any[] | null>(null);
     appUser = signal<AppUserDto | null>(null);
 
@@ -161,22 +162,13 @@ export class ProfileComponent implements OnInit, OnDestroy {
             this.refreshRoleRequestState();
             this.loadRoleRequestHistory();
         }
-        // Load events
+        // Load all events (admin view) and my events (strict ownership) in parallel
         this.events.list({ page: 0, size: 100, sort: 'startAt,asc' }).subscribe({
             next: (resp) => {
                 const items: any[] = Array.isArray((resp as any)) ? (resp as any as any[]) : (resp?.items ?? []);
-                const normalized = (items ?? []).map((e: any) => {
-                    // const id = e?.id ?? e?.eventId ?? e?.slug ?? null;
-                    // const title = e?.title ?? e?.eventName ?? '(no title)';
-                    // const start = e?.start ?? e?.startAt ?? '';
-                    // const end = e?.end ?? e?.endAt ?? '';
-                    // const location = e?.location ?? e?.eventLocation ?? undefined;
-                    return { ...e };
-                });
-                this.allEvents.set(normalized);
-                this.updateMyEventsFilter();
-                if (normalized.length && !this.selectedEventId()) {
-                    const first = normalized.find((x: any) => x?.eventId != null || x?.id != null);
+                this.allEvents.set(items);
+                if (items.length && !this.selectedEventId()) {
+                    const first = items.find((x: any) => x?.eventId != null || x?.id != null);
                     const sel = first?.eventId ?? first?.id;
                     if (sel != null) {
                         this.selectedEventId.set(String(sel));
@@ -184,7 +176,18 @@ export class ProfileComponent implements OnInit, OnDestroy {
                     }
                 }
             },
-            error: () => { this.allEvents.set([]); this.myEvents.set([]); },
+            error: () => { this.allEvents.set([]); },
+        });
+        this.events.listMine({ page: 0, size: 100, sort: 'startAt,asc' }).subscribe({
+            next: (resp) => { this.myEvents.set(resp?.items ?? []); this.myEventsError.set(null); },
+            error: (err) => {
+                this.myEvents.set([]);
+                if (err?.status === 401 || err?.status === 403) {
+                    this.myEventsError.set('You do not have permission to view your events.');
+                } else {
+                    this.myEventsError.set('Failed to load your events.');
+                }
+            }
         });
         this.loading.set(false);
         });
@@ -297,24 +300,21 @@ export class ProfileComponent implements OnInit, OnDestroy {
                     // If roles already set but source not recorded, assume firebase
                     this.rolesSource.set('firebase-claims');
                 }
-                // Recompute my events once we know our AppUser ID
-                this.updateMyEventsFilter();
+                // Refresh strictly owned events after AppUser resolution (optional if ownership affects visibility)
+                this.events.listMine({ page: 0, size: 100, sort: 'startAt,asc' }).subscribe({
+                    next: (resp) => { this.myEvents.set(resp?.items ?? []); this.myEventsError.set(null); },
+                    error: (err) => {
+                        this.myEvents.set([]);
+                        if (err?.status === 401 || err?.status === 403) {
+                            this.myEventsError.set('You do not have permission to view your events.');
+                        } else {
+                            this.myEventsError.set('Failed to load your events.');
+                        }
+                    }
+                });
             },
             error: (err) => { console.error(err); this.appUser.set(null); },
         });
-    }
-
-    private updateMyEventsFilter() {
-        const all = this.allEvents();
-        const au = this.appUser();
-        if (!Array.isArray(all)) { this.myEvents.set([]); return; }
-        const id = au?.id;
-        if (id == null) { this.myEvents.set([]); return; }
-        const filtered = all.filter((e: any) => {
-            const creator = e?.createdByUserId ?? e?.created_by ?? e?.createdBy ?? null;
-            return creator != null && String(creator) === String(id);
-        });
-        this.myEvents.set(filtered);
     }
 
 
@@ -420,10 +420,17 @@ export class ProfileComponent implements OnInit, OnDestroy {
         this.events.createRaw(payload as any).subscribe({
             next: (created) => {
                 this.createSuccess.set(`Created event: ${created.eventName ?? created.eventId}`);
-                // refresh list
-                this.events.list({ page: 0, size: 100, sort: 'startAt,asc' }).subscribe({
-                    next: (resp) => this.myEvents.set((resp as any)?.items ?? []),
-                    error: () => {},
+                // Refresh strictly owned events from backend
+                this.events.listMine({ page: 0, size: 100, sort: 'startAt,asc' }).subscribe({
+                    next: (resp) => { this.myEvents.set(resp?.items ?? []); this.myEventsError.set(null); },
+                    error: (err) => {
+                        if (err?.status === 401 || err?.status === 403) {
+                            // Permission loss shouldn't block success message
+                            this.myEventsError.set('You do not have permission to view your events.');
+                        } else {
+                            this.myEventsError.set('Failed to refresh your events.');
+                        }
+                    }
                 });
                 this.createForm.reset();
                 // optionally refresh audits if selected event changed

@@ -28,6 +28,21 @@ export class EventsService {
         return this.http.get<EventPageResponse>(`${this.baseUrl}/events`, { params: safeParams });
     }
 
+    /**
+     * Strict ownership listing: returns only events created by the authenticated ADMIN/EDITOR.
+     * Mirrors backend /api/v1/events/mine endpoint shape (EventPageResponse).
+     */
+    listMine(params?: { page?: number; size?: number; sort?: string }): Observable<EventPageResponse> {
+        const sizeRaw = params?.size ?? 50;
+        const size = Math.min(Math.max(sizeRaw, 1), 100);
+        const safeParams: any = {
+            page: params?.page ?? 0,
+            size,
+            sort: this.normalizeSort(params?.sort)
+        };
+        return this.http.get<EventPageResponse>(`${this.baseUrl}/events/mine`, { params: safeParams });
+    }
+
     // Enforce backend-allowed sort fields and produce a stable format
     private normalizeSort(input?: string | null): string {
         const DEFAULT = 'startAt,asc';

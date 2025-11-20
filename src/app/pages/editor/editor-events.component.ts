@@ -7,7 +7,6 @@ import { EnumsService } from '../events/enums.service';
 import { EventDto, CreateEventRequest, EventStatusOption, EventStatusCode } from '../events/event.model';
 import { formatApiError } from '../../shared/models/api-error';
 import { take } from 'rxjs/operators';
-import { AppUserService } from '../../shared/services/app-user.service';
 import { MatDialog } from '@angular/material/dialog';
 import { CancelConfirmDialogComponent } from '../../components/cancel-confirm-dialog/cancel-confirm-dialog.component';
 import { StatusBadgeComponent } from '../../components/status-badge/status-badge.component';
@@ -26,7 +25,6 @@ export class EditorEventsComponent implements OnDestroy {
   private readonly events = inject(EventsService);
   private readonly enums = inject(EnumsService);
   // UI change bus merged into EventsService
-  private readonly users = inject(AppUserService);
   private readonly dialog = inject(MatDialog);
 
   readonly loading = signal<boolean>(true);
@@ -35,7 +33,6 @@ export class EditorEventsComponent implements OnDestroy {
   readonly error = signal<string | null>(null);
   readonly statusOptions = signal<EventStatusOption[]>([]);
   readonly typeOptions = signal<EnumOption[]>([]);
-  private meId: number | null = null;
 
   readonly form = this.fb.group({
     eventName: ['', [Validators.required, Validators.maxLength(200)]],
@@ -66,21 +63,23 @@ export class EditorEventsComponent implements OnDestroy {
 
   load() {
     this.loading.set(true);
-    // Load current user then filter events by createdByUserId === me.id
-    this.users.getMe().pipe(take(1)).subscribe({
-      next: (me) => {
-        this.meId = me?.id ?? null;
-        this.events.list({ page: 0, size: 100, sort: 'startAt,asc' }).pipe(take(1)).subscribe({
-          next: (resp) => {
-            const rows: EventDto[] = Array.isArray((resp as any)) ? (resp as any as EventDto[]) : (resp?.items ?? []);
-            const mine = this.meId != null ? rows.filter((r: EventDto) => r.createdByUserId === this.meId) : rows;
-            this.items.set(mine as EventDto[]);
-            this.loading.set(false);
-          },
-          error: (err) => { console.error(err); this.error.set(formatApiError(err)); this.loading.set(false); }
-        });
+    this.events.listMine({ page: 0, size: 100, sort: 'startAt,asc' }).pipe(take(1)).subscribe({
+      next: (resp) => {
+        const rows: EventDto[] = Array.isArray((resp as any)) ? (resp as any as EventDto[]) : (resp?.items ?? []);
+        this.items.set(rows);
+        this.loading.set(false);
+        this.error.set(null);
       },
-      error: (err) => { console.error(err); this.error.set('Failed to load user'); this.loading.set(false); }
+      error: (err) => {
+        console.error(err);
+        this.items.set([]);
+        if (err?.status === 401 || err?.status === 403) {
+          this.error.set('You do not have permission to view your events.');
+        } else {
+          this.error.set(formatApiError(err) || 'Failed to load events.');
+        }
+        this.loading.set(false);
+      }
     });
   }
 

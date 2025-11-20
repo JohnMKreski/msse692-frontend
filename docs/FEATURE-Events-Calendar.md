@@ -331,6 +331,31 @@ SSR check:
 -   Support recurring events (RRULE) and multi-month overview.
 -   Server pagination and caching; optimistic updates for admin tools.
 
+## Strict Ownership: My Events Endpoint
+
+The calendar and related management UIs now rely on a backend-powered endpoint for owned events: `GET /api/v1/events/mine`.
+
+Rationale:
+- Avoids former client-side filtering of the full events list (which risked showing published events from other users in "My" sections).
+- Ensures consistent security: only events created by the authenticated user are returned, independent of publication status.
+- Reduces payload size and eliminates duplicated filtering logic in multiple components.
+
+Frontend Integration:
+- `EventsService.listMine(params)` issues requests to `/api/v1/events/mine` with paging and sort (e.g. `startAt,asc`).
+- Profile and Editor pages were refactored to call `listMine` directly; they no longer request all events just to filter.
+- Error fallback: 401 or 403 responses surface a permission message instead of generic failure text.
+- Templates display owned event counts and an empty state if none are returned.
+
+Testing Considerations:
+- Add unit tests for `listMine` verifying query params and mapping to `EventPageResponse` items.
+- Component tests should mock a page response (`{ items: EventDto[], page: number, size: number, totalElements: number }`) rather than a raw array.
+- Include a negative test simulating 403 to assert permission fallback messaging.
+
+Future Opportunities:
+- Add a lightweight cache layer so rapid navigations do not refetch owned events.
+- Provide a consolidated events management dashboard combining owned, published, and audit views with role-aware segmentation.
+- Support ownership transfer workflows (e.g., admin reassignment) with clear UI indicators.
+
 ## Appendix: Minimal CSS touch-ups
 
 You can adjust spacing with your existing global styles. Example:

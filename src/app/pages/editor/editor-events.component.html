@@ -6,10 +6,11 @@
 
   <div class="editor__content">
     <div class="editor__list">
-      <h2>My Events</h2>
+      <h2>My Events ({{ items().length }})</h2>
       <div *ngIf="loading()" class="loading">Loading…</div>
       <p class="error" *ngIf="error() as err">{{ err }}</p>
       <div class="list" *ngIf="!loading()">
+        <p class="muted" *ngIf="!error() && items().length === 0">You have not created any events yet.</p>
         <div class="row" *ngFor="let e of items()">
           <div class="col col--name">{{ e.eventName }}</div>
           <div class="col col--date">{{ e.startAt | date:'short' }}</div>
