@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnDestroy, PLATFORM_ID, ChangeDetectorRef, inject, OnInit, NgZone, AfterViewInit } from '@angular/core';
-import { isPlatformBrowser, NgForOf, NgIf, DatePipe, AsyncPipe } from '@angular/common';
+import { isPlatformBrowser, NgForOf, NgIf, DatePipe } from '@angular/common';
 import { LoadingSkeletonComponent } from '../../components/loading-skeleton/loading-skeleton.component';
 import { FormsModule } from '@angular/forms';
 import { EventsService } from './events.service';
@@ -26,7 +26,7 @@ import listPlugin from '@fullcalendar/list';
 @Component({
     selector: 'app-events',
     standalone: true,
-    imports: [NgIf, NgForOf, DatePipe, AsyncPipe, RouterLink, FullCalendarModule, FormsModule, ErrorBannerComponent, LoadingSkeletonComponent],
+    imports: [NgIf, NgForOf, DatePipe, RouterLink, FullCalendarModule, FormsModule, ErrorBannerComponent, LoadingSkeletonComponent],
     templateUrl: './events.component.html',
     styleUrls: ['./events.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -56,6 +56,33 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
     sortDir: SortDir = 'asc';
     typeOptions$ = this.enumsService.getEventTypes();
     selectedType: string | null = null;
+    // View mode toggle: 'PUBLISHED' (public feed) vs 'MINE' (owned events all statuses)
+    viewMode: 'PUBLISHED' | 'MINE' = 'PUBLISHED';
+    // Caches keyed by filter signature (mode|sort|type|range)
+    private publishedCache = new Map<string, EventDto[]>();
+    private mineCache = new Map<string, EventDto[]>();
+    // Permission fallback message when mine unauthorized
+    minePermissionMessage: string | null = null;
+    // Flag to disable Mine mode after authorization failure
+    mineDisabled = false;
+
+    // Exposed color maps for template legends (hoisted from applyCalendarEvents)
+    readonly statusColors: Record<string,string> = {
+        PUBLISHED: '#58a6ff',
+        DRAFT: '#e2c76e',
+        UNPUBLISHED: '#a08fe0',
+        CANCELLED: '#ff6b6b'
+    };
+    readonly typeColors: Record<string,string> = {
+        CONCERT: '#d97706',
+        FESTIVAL: '#2563eb',
+        PARTY: '#059669',
+        OTHER: '#7c3aed'
+    };
+
+    // Legend helper arrays (built once)
+    readonly statusLegend = Object.entries(this.statusColors).map(([key,color]) => ({ key, color, label: key.charAt(0) + key.slice(1).toLowerCase() }));
+    readonly typeLegend = Object.entries(this.typeColors).map(([key,color]) => ({ key, color, label: key.charAt(0) + key.slice(1).toLowerCase() }));
     
     // Tooltip label constants to control line breaks/labels
     private readonly tooltipLabels = {
@@ -84,7 +111,7 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
         contentHeight: 'auto',
         expandRows: true,
         windowResize: () => this.applyResponsiveOptions(),
-        plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin],
+        plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin]
     };
 
     isBrowser(): boolean {
@@ -100,10 +127,16 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
             this.applyResponsiveOptions();
             this.loadEvents();
             this.eventsService.changed$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+                // Clear caches on underlying data change
+                this.publishedCache.clear();
+                this.mineCache.clear();
+                // Allow re-attempt of mine mode after changes
+                this.mineDisabled = false;
+                this.minePermissionMessage = null;
                 this.loadEvents();
             });
             this.loadUpcoming();
-            this.loadAllEvents();
+            // this.loadAllEvents();
         }, 0);
     }
 
@@ -154,39 +187,69 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     private loadEvents(window?: { from?: string; to?: string }) {
-        // For debugging: load all events (ignore status/owner) to ensure visibility while unauthenticated
         const sort = `${this.sortField},${this.sortDir}`;
-        this.eventsService
-            .list({ page: 0, size: 100, sort, eventType: this.selectedType || undefined })
-            .pipe(take(1))
-            .subscribe({
-                next: (resp: EventPageResponse) => {
-                    this.zone.run(() => {
-                        const items = Array.isArray((resp as any)) ? (resp as any as EventDto[]) : (resp?.items ?? []);
-                        const fcEvents = items.map(e => ({
-                            id: String(e.eventId),
-                            title: e.eventName,
-                            start: e.startAt,
-                            end: e.endAt,
-                            allDay: false,
-                            extendedProps: {
-                                location: e.eventLocation,
-                                status: e.status,
-                                type: e.type,
-                                typeDisplayName: e.typeDisplayName
-                            }
-                        }));
-                        this.calendarOptions = { ...this.calendarOptions, events: fcEvents };
-                        this.cdr.markForCheck();
-                    });
-                },
-                error: (err) => {
-                    this.zone.run(() => {
-                        this.calendarOptions = { ...this.calendarOptions, events: [] };
-                        this.cdr.markForCheck();
-                    });
-                },
-            });
+        const key = `${this.viewMode}|${sort}|${this.selectedType || ''}|${window?.from || ''}|${window?.to || ''}`;
+        const cache = this.viewMode === 'PUBLISHED' ? this.publishedCache : this.mineCache;
+        const cached = cache.get(key);
+        if (cached) {
+            this.applyCalendarEvents(cached);
+            return;
+        }
+        const common = { page: 0, size: 200, sort, eventType: this.selectedType || undefined, from: window?.from, to: window?.to };
+        const obs = this.viewMode === 'PUBLISHED'
+            ? this.eventsService.list({ ...common, status: 'PUBLISHED' })
+            : this.eventsService.listMine({ ...common });
+        obs.pipe(take(1)).subscribe({
+            next: (resp: EventPageResponse) => {
+                this.zone.run(() => {
+                    const items = Array.isArray((resp as any)) ? (resp as any as EventDto[]) : (resp?.items ?? []);
+                    cache.set(key, items);
+                    this.minePermissionMessage = null;
+                    if (this.viewMode === 'MINE') {
+                        this.mineDisabled = false; // successful access
+                    }
+                    this.applyCalendarEvents(items);
+                });
+            },
+            error: (err) => {
+                this.zone.run(() => {
+                    if (this.viewMode === 'MINE' && (err?.status === 401 || err?.status === 403)) {
+                        this.minePermissionMessage = 'Not authorized for My Events. Showing published events.';
+                        this.mineDisabled = true; // disable further attempts until refresh or data change
+                        this.viewMode = 'PUBLISHED';
+                        this.loadEvents(window); // retry with published mode
+                        return;
+                    }
+                    this.applyCalendarEvents([]);
+                });
+            }
+        });
+    }
+
+    private applyCalendarEvents(items: EventDto[]) {
+        const fcEvents = items.map(e => {
+            const statusColor = this.statusColors[e.status?.toUpperCase() || ''] || '#58a6ff';
+            const typeColor = e.type ? this.typeColors[e.type.toUpperCase()] : undefined;
+            // Published view: prefer typeColor for quick categorization.
+            // Mine view: emphasize lifecycle/status; ignore type override.
+            const finalColor = this.viewMode === 'MINE' ? statusColor : (typeColor || statusColor);
+            return {
+                id: String(e.eventId),
+                title: e.eventName,
+                start: e.startAt,
+                end: e.endAt,
+                allDay: false,
+                color: finalColor,
+                extendedProps: {
+                    location: e.eventLocation,
+                    status: e.status,
+                    type: e.type,
+                    typeDisplayName: e.typeDisplayName
+                }
+            };
+        });
+        this.calendarOptions = { ...this.calendarOptions, events: fcEvents };
+        this.cdr.markForCheck();
     }
 
     loadUpcoming() {
@@ -219,53 +282,67 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
         });
     }
 
-    loadAllEvents() {
-        this.allLoading = true;
-        this.allError = null;
-        this.allErrObj = null;
-        this.allStatus = null;
-        this.cdr.markForCheck();
-        const sort = `${this.sortField},${this.sortDir}`;
-        this.eventsService.list({ page: 0, size: 100, sort, eventType: this.selectedType || undefined }).pipe(take(1)).subscribe({
-            next: (resp) => {
-                this.zone.run(() => {
-                    const rows = Array.isArray((resp as any)) ? (resp as any as EventDto[]) : (resp?.items ?? []);
-                    // sort chronologically by startAt ascending
-                    // We rely on backend sort; keep a secondary stable sort for startAt asc
-                    if (this.sortField === 'startAt') {
-                        this.allEvents = [...rows].sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
-                    } else {
-                        this.allEvents = rows;
-                    }
-                    this.allLoading = false;
-                    this.allStatus = null;
-                    this.cdr.markForCheck();
-                });
-            },
-            error: (err) => {
-                this.zone.run(() => {
-                    this.allEvents = [];
-                    this.allError = formatApiError(err);
-                    this.allErrObj = err;
-                    this.allStatus = this.extractStatus(err);
-                    this.allLoading = false;
-                    this.cdr.markForCheck();
-                });
-            }
-        });
-    }
+    // loadAllEvents() {
+    //     this.allLoading = true;
+    //     this.allError = null;
+    //     this.allErrObj = null;
+    //     this.allStatus = null;
+    //     this.cdr.markForCheck();
+    //     const sort = `${this.sortField},${this.sortDir}`;
+    //     const obs = this.viewMode === 'PUBLISHED'
+    //         ? this.eventsService.list({ page: 0, size: 200, sort, eventType: this.selectedType || undefined, status: 'PUBLISHED' })
+    //         : this.eventsService.listMine({ page: 0, size: 200, sort, eventType: this.selectedType || undefined });
+    //     obs.pipe(take(1)).subscribe({
+    //         next: (resp) => {
+    //             this.zone.run(() => {
+    //                 const rows = Array.isArray((resp as any)) ? (resp as any as EventDto[]) : (resp?.items ?? []);
+    //                 // sort chronologically by startAt ascending
+    //                 // We rely on backend sort; keep a secondary stable sort for startAt asc
+    //                 if (this.sortField === 'startAt') {
+    //                     this.allEvents = [...rows].sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
+    //                 } else {
+    //                     this.allEvents = rows;
+    //                 }
+    //                 this.allLoading = false;
+    //                 this.allStatus = null;
+    //                 this.cdr.markForCheck();
+    //             });
+    //         },
+    //         error: (err) => {
+    //             this.zone.run(() => {
+    //                 this.allEvents = [];
+    //                 this.allError = formatApiError(err);
+    //                 this.allErrObj = err;
+    //                 this.allStatus = this.extractStatus(err);
+    //                 this.allLoading = false;
+    //                 this.cdr.markForCheck();
+    //             });
+    //         }
+    //     });
+    // }
 
     onTypeChange(v: string | null) { 
         this.selectedType = v;
         // Reload both calendar and list when type filter changes
         this.loadEvents();
-        this.loadAllEvents();
+        // this.loadAllEvents();
     }
 
     onSortChange() {
         // Reload both calendar and list to reflect new sort
         this.loadEvents();
-        this.loadAllEvents();
+        // this.loadAllEvents();
+    }
+
+    onViewModeChange(mode: 'PUBLISHED' | 'MINE') {
+        if (this.viewMode === mode) return;
+        if (mode === 'MINE' && this.mineDisabled) {
+            // Ignore switch when disabled, keep permission message
+            return;
+        }
+        this.viewMode = mode;
+        this.loadEvents();
+        // this.loadAllEvents();
     }
 
     private applyResponsiveOptions() {

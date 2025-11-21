@@ -1,6 +1,19 @@
 <section class="events-page" ngSkipHydration>
     <h1 class="page-title">Events Calendar</h1>
 
+    <div class="view-toggle" aria-label="View mode">
+        <label>
+            <input type="radio" name="viewMode" [value]="'PUBLISHED'" [checked]="viewMode==='PUBLISHED'" (change)="onViewModeChange('PUBLISHED')" style="cursor: pointer;"/>
+            Published
+        </label>
+        <label>
+            <input type="radio" name="viewMode" [value]="'MINE'" [checked]="viewMode==='MINE'" (change)="onViewModeChange('MINE')" [disabled]="mineDisabled" style="cursor: pointer;"/>
+            My Events
+        </label>
+        <span class="permission-msg" *ngIf="minePermissionMessage">{{ minePermissionMessage }}</span>
+    </div>
+
+    <!-- Sort & filter controls deferred to future sprint
     <div class="sort-controls" aria-label="Sort events">
         <label>
             Sort by
@@ -22,10 +35,26 @@
             </select>
         </label>
     </div>
+    -->
+
+    <div class="legend-container">
+        <div *ngIf="viewMode === 'PUBLISHED'" class="legend" aria-label="Event Types Legend">
+            <span class="legend-title">Event Types</span>
+            <span *ngFor="let t of typeLegend" class="legend-item">
+                <span class="color-dot" [style.backgroundColor]="t.color"></span>{{ t.label }}
+            </span>
+        </div>
+        <div *ngIf="viewMode === 'MINE'" class="legend" aria-label="Event Status Legend">
+            <span class="legend-title">Statuses</span>
+            <span *ngFor="let s of statusLegend" class="legend-item">
+                <span class="color-dot" [style.backgroundColor]="s.color"></span>{{ s.label }}
+            </span>
+        </div>
+    </div>
 
     <!-- Simple chronological list above the calendar -->
     <div class="upcoming-list">
-        <h2>Upcoming Events</h2>
+        <h2>{{ viewMode === 'PUBLISHED' ? 'Upcoming Published Events' : 'My Upcoming Events' }}</h2>
         <app-error-banner *ngIf="upcomingError" [error]="upcomingErrObj" [message]="upcomingError" [status]="upcomingStatus ?? 500" (retry)="loadUpcoming()"></app-error-banner>
         <div *ngIf="upcomingLoading" class="skeleton-wrap">
             <app-loading-skeleton [lines]="3"></app-loading-skeleton>

@@ -369,3 +369,74 @@ You can adjust spacing with your existing global styles. Example:
 ```
 
 That’s it—you now have a robust, SSR-safe events calendar page ready to connect to your backend.
+
+## View Mode Toggle (Published vs Mine)
+
+The Events page exposes a toggle between two distinct data scopes:
+
+| Mode | Backend Source | Status Constraint | Visibility | Typical Audience |
+|------|----------------|-------------------|------------|------------------|
+| `PUBLISHED` | `GET /api/v1/events` | `status=PUBLISHED` forced on request | All publicly published events across owners | All users / anonymous |
+| `MINE` | `GET /api/v1/events/mine` | No status constraint (returns all of your events: DRAFT, PUBLISHED, UNPUBLISHED, CANCELLED) | Only events created by the authenticated user | Authenticated ADMIN/EDITOR (per backend rule) |
+
+### Request Parameters
+Both modes accept an aligned set of optional filters (parity maintained intentionally):
+
+- `eventType` – Narrow results by event type code.
+- `from`, `to` – Inclusive date window (mapped to calendar view boundaries).
+- `page`, `size` – Paging values (backend clamps size; front-end requests a larger window for calendar use).
+- `sort` – Normalized to `field,dir` where allowed fields are currently `startAt` and `eventName` (frontend previously exposed `eventType` but removed until backend supports it).
+
+### Caching Strategy
+To avoid redundant network calls when users navigate months or switch back and forth:
+
+- Separate in-memory caches (`publishedCache`, `mineCache`).
+- Cache key format: `mode|field,dir|eventType|from|to`.
+- Cache invalidation triggers:
+    - Any status transition (publish / unpublish / cancel) via `eventsService.notifyChanged()`.
+    - Underlying creation/update/delete flows (can be extended using the same change bus).
+    - Manual type filter changes or calendar date range shifts.
+
+### Permission Fallback Behavior
+If `MINE` is selected and the backend returns `401` or `403`:
+
+- Component displays a permission message (non-fatal, explains lack of access).
+- Automatically switches to `PUBLISHED` mode.
+- Disables further `MINE` attempts (`mineDisabled = true`) until a global data change (e.g. successful status transition or page refresh) resets the flag.
+
+### Color Semantics (Excluded)
+Styling/color rules are intentionally omitted per request. This section focuses only on behavior and data flow; refer to component code if future UX documentation requires visual descriptions.
+
+### Why a Toggle Instead of Separate Pages?
+
+- Reduces navigation friction between public discovery and owner management views.
+- Encourages contextual comparison ("How do my drafts align with the published calendar?").
+- Simplifies stateful filters (date range / type) by keeping them in one place.
+
+### Frontend Implementation Summary
+
+- `viewMode: 'PUBLISHED' | 'MINE'` retained in component state.
+- Mode influences the service call selection and applied status filter (`status=PUBLISHED` injected only in published mode).
+- Legends adjust dynamically (types for published, statuses for mine) without affecting data fetching logic.
+- Robust error handling ensures unauthorized users see a graceful downgrade instead of a blank calendar or repeated failing calls.
+
+### Extension Points (Future Sprints)
+
+- Backend: Add `eventType` sorting or multi-field sorts (e.g., `startAt,asc;eventName,asc`).
+- Frontend: Persist last chosen mode, restore on revisit (localStorage or query param).
+- Analytics: Track mode-switch events for usage insights.
+- Access: Introduce a "My Published" sub-filter to isolate owned public events quickly.
+
+### Testing Recommendations
+
+- Unit test mode switch: ensure two distinct cache maps are used and permission fallback flips mode + disables mine.
+- Simulate a 403 on `/events/mine` and assert published retry occurs exactly once.
+- Verify cache key uniqueness when changing `eventType` or date window.
+- Confirm status transitions clear only the relevant cache (current implementation clears both for simplicity).
+
+### Maintenance Notes
+
+- Keep backend field whitelist for `sort` synchronized with frontend normalization to avoid silent reversion to defaults.
+- Keep filter parity: whenever a new filter is added to `/events` ensure `/events/mine` adds it to preserve UX consistency.
+- Document behavior changes in this section instead of scattering notes across styling or ownership docs.
+
