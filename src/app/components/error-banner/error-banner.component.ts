@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule, NgIf, NgForOf } from '@angular/common';
-import { formatApiError, parseApiError } from '../../shared/api-error';
+import { formatApiError, parseApiError } from '../../shared/models/api-error';
 
 export interface ErrorBannerDetail { field?: string; message: string }
 

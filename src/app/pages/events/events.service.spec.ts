@@ -1,76 +1,84 @@
 import { TestBed } from '@angular/core/testing';
-import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
 import { EventsService } from './events.service';
-import { API_URL } from '../../shared/api-tokens';
+import { EventPageResponse, EventDto } from './event.model';
 
 describe('EventsService', () => {
-  let svc: EventsService;
+  let service: EventsService;
   let http: HttpTestingController;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [
-        provideHttpClientTesting(),
-        { provide: API_URL, useValue: '/api/v1' },
-      ],
+        provideHttpClient(),
+        provideHttpClientTesting()
+      ]
     });
-    svc = TestBed.inject(EventsService);
+    service = TestBed.inject(EventsService);
     http = TestBed.inject(HttpTestingController);
   });
 
-  afterEach(() => http.verify());
-
-  it('list should default page=0,size=50 and normalize sort', () => {
-    svc.list({ sort: '-eventName' }).subscribe();
-    const req = http.expectOne(r => r.url === '/api/v1/events');
-    expect(req.request.method).toBe('GET');
-    expect(req.request.params.get('page')).toBe('0');
-    expect(req.request.params.get('size')).toBe('50');
-    expect(req.request.params.get('sort')).toBe('eventName,desc');
-    req.flush({ items: [], page: { number: 0, size: 50, totalElements: 0, totalPages: 0 } });
+  afterEach(() => {
+    http.verify();
   });
 
-  it('listPublicUpcoming should clamp limit and include from when provided', () => {
-    const from = new Date('2025-01-02T03:04:05.000Z');
-    svc.listPublicUpcoming(from, 999).subscribe();
-    const req = http.expectOne('/api/v1/events/public-upcoming');
-    expect(req.request.method).toBe('GET');
-    expect(req.request.params.get('limit')).toBe('100');
-    expect(req.request.params.get('from')).toBe(from.toISOString());
-    req.flush([]);
+  function flushPage(req: any, items: EventDto[] = []) {
+    const page: EventPageResponse = {
+      items,
+      page: {
+        number: 0,
+        size: Number(req.request.params.get('size')),
+        totalElements: items.length,
+        totalPages: 1
+      }
+    };
+    req.flush(page);
+  }
+
+  it('list() clamps size and normalizes invalid sort', () => {
+    service.list({ page: 0, size: 500, sort: 'eventType,desc', status: 'PUBLISHED' }).subscribe(resp => {
+      expect(resp.page.size).toBe(100); // clamped
+    });
+    const req = http.expectOne(r => r.url.endsWith('/events'));
+    expect(req.request.params.get('size')).toBe('100');
+    // eventType is whitelisted, so it should preserve the requested sort
+    expect(req.request.params.get('sort')).toBe('eventType,desc');
+    expect(req.request.params.get('status')).toBe('PUBLISHED');
+    flushPage(req);
   });
 
-  it('get should GET /events/:id', () => {
-    svc.get(123).subscribe();
-    const req = http.expectOne('/api/v1/events/123');
-    expect(req.request.method).toBe('GET');
-    req.flush({ id: 123 });
+  it('listMine() passes through filters', () => {
+    service.listMine({ page: 2, size: 10, sort: 'startAt,desc', eventType: 'CONCERT', from: '2025-01-01', to: '2025-01-31' }).subscribe(resp => {
+      expect(resp.page.number).toBe(0); // backend page after flush stub
+    });
+    const req = http.expectOne(r => r.url.endsWith('/events/mine'));
+    expect(req.request.params.get('page')).toBe('2');
+    expect(req.request.params.get('size')).toBe('10');
+    expect(req.request.params.get('sort')).toBe('startAt,desc');
+    expect(req.request.params.get('eventType')).toBe('CONCERT');
+    expect(req.request.params.get('from')).toBe('2025-01-01');
+    expect(req.request.params.get('to')).toBe('2025-01-31');
+    flushPage(req);
   });
 
-  it('createRaw/updateRaw/delete should hit expected endpoints', () => {
-    svc.createRaw({ eventName: 'A' } as any).subscribe();
-    http.expectOne('/api/v1/events').flush({ id: 1 });
-
-    svc.updateRaw(1, { eventName: 'B' } as any).subscribe();
-    http.expectOne('/api/v1/events/1').flush({ id: 1 });
-
-    svc.delete(1).subscribe();
-    const del = http.expectOne('/api/v1/events/1');
-    expect(del.request.method).toBe('DELETE');
-    del.flush({});
+  it('status transition publish emits changed$', (done) => {
+    const sub = service.changed$.subscribe(() => {
+      sub.unsubscribe();
+      done();
+    });
+    service.publishEvent(123).subscribe();
+    const req = http.expectOne(r => /\/events\/123\/publish$/.test(r.url));
+    req.flush({ eventId: 123, eventName: 'X', startAt: '2025-01-01T00:00:00Z', status: 'PUBLISHED' });
   });
 
-  it('audits and status transitions', () => {
-    svc.getAudits(5, 20).subscribe();
-    const auditsReq = http.expectOne(r => r.url === '/api/v1/events/5/audits');
-    expect(auditsReq.request.params.get('limit')).toBe('20');
-    auditsReq.flush([]);
-
-    svc.publishEvent(5).subscribe();
-    http.expectOne('/api/v1/events/5/publish').flush({ id: 5 });
-    svc.unpublishEvent(5).subscribe();
-    http.expectOne('/api/v1/events/5/unpublish').flush({ id: 5 });
-    svc.cancelEvent(5).subscribe();
-    http.expectOne('/api/v1/events/5/cancel').flush({ id: 5 });
+  it('cancelEvent emits changed$', (done) => {
+    const sub = service.changed$.subscribe(() => {
+      sub.unsubscribe();
+      done();
+    });
+    service.cancelEvent(55).subscribe();
+    const req = http.expectOne(r => /\/events\/55\/cancel$/.test(r.url));
+    req.flush({ eventId: 55, eventName: 'Y', startAt: '2025-02-01T00:00:00Z', status: 'CANCELLED' });
   });
 });

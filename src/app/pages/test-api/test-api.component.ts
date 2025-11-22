@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, signal, WritableSignal } from '@angular/core';
 import { NgIf, NgFor, JsonPipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { formatApiError } from '../../shared/api-error';
+import { formatApiError } from '../../shared/models/api-error';
 import {
     ReactiveFormsModule,
     NonNullableFormBuilder,

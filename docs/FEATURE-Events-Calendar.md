@@ -331,6 +331,31 @@ SSR check:
 -   Support recurring events (RRULE) and multi-month overview.
 -   Server pagination and caching; optimistic updates for admin tools.
 
+## Strict Ownership: My Events Endpoint
+
+The calendar and related management UIs now rely on a backend-powered endpoint for owned events: `GET /api/v1/events/mine`.
+
+Rationale:
+- Avoids former client-side filtering of the full events list (which risked showing published events from other users in "My" sections).
+- Ensures consistent security: only events created by the authenticated user are returned, independent of publication status.
+- Reduces payload size and eliminates duplicated filtering logic in multiple components.
+
+Frontend Integration:
+- `EventsService.listMine(params)` issues requests to `/api/v1/events/mine` with paging and sort (e.g. `startAt,asc`).
+- Profile and Editor pages were refactored to call `listMine` directly; they no longer request all events just to filter.
+- Error fallback: 401 or 403 responses surface a permission message instead of generic failure text.
+- Templates display owned event counts and an empty state if none are returned.
+
+Testing Considerations:
+- Add unit tests for `listMine` verifying query params and mapping to `EventPageResponse` items.
+- Component tests should mock a page response (`{ items: EventDto[], page: number, size: number, totalElements: number }`) rather than a raw array.
+- Include a negative test simulating 403 to assert permission fallback messaging.
+
+Future Opportunities:
+- Add a lightweight cache layer so rapid navigations do not refetch owned events.
+- Provide a consolidated events management dashboard combining owned, published, and audit views with role-aware segmentation.
+- Support ownership transfer workflows (e.g., admin reassignment) with clear UI indicators.
+
 ## Appendix: Minimal CSS touch-ups
 
 You can adjust spacing with your existing global styles. Example:
@@ -344,3 +369,64 @@ You can adjust spacing with your existing global styles. Example:
 ```
 
 That’s it—you now have a robust, SSR-safe events calendar page ready to connect to your backend.
+
+## Split Pages (Published vs Manage/My Events)
+
+The original single-page toggle has been replaced by two focused pages:
+
+| Page | Route | Scope | Backend Source | Status Constraint | Audience |
+|------|-------|-------|----------------|-------------------|----------|
+| Public Events | `/events` | All published events (cross-owner) | `GET /api/v1/events` | `status=PUBLISHED` enforced | Anonymous + Authenticated |
+| Manage My Events | `/editor/events` (standalone manage view) | Owned events (all statuses) | `GET /api/v1/events/mine` | None (returns DRAFT, PUBLISHED, UNPUBLISHED, CANCELLED) | Authenticated with required roles |
+
+### Rationale for the Split
+- Eliminates permission fallback complexity (public page never attempts privileged scope).
+- Clarifies mental model: discovery vs ownership management.
+- Enables lighter bundle for public calendar (no status legend / action UI).
+- Simplifies caching (single published cache vs dual maps). Mine page can implement its own ownership cache independently.
+
+### Calendar Component Reuse
+Both pages now use `EventsCalendarComponent` with different inputs:
+- Public: `mode="PUBLISHED"`, passes `publishedEvents` array and minimal legend (types only).
+- Manage: `mode="MINE"`, passes owned events plus status color legend and action controls (publish/unpublish/cancel) colocated in manage template.
+
+### Filtering & Parameters
+Public page currently supports: `eventType`, calendar-driven `from`/`to`, normalized `sort` (`startAt,asc|desc` or `eventName`).
+Manage page maintains parity for ownership operations; new filters must be added to both endpoints for consistency.
+
+### Caching (Updated)
+- Public page: month-scoped in-memory `publishedCache` keyed by `YYYY-MM|eventType|sort`; each entry stores timestamp and expires after 5 minutes (TTL).
+- Fetch window auto-expands to full month boundaries to promote cache hits during intra-month navigation.
+- Manage page: may adopt similar month+TTL approach for ownership events (pending task) but remains isolated from public cache invalidations.
+- Invalidation triggers: status change bus (`changed$`) clears entire map; filter changes (type/sort) naturally produce new keys.
+
+### Status & Action UI Relocation
+Status color legend and publish/unpublish/cancel action buttons moved exclusively to the manage page. Public page shows only type legend for visual categorization.
+
+### Removed Behaviors
+- `viewMode` state, permission fallback message, and `mineDisabled` flag.
+- Dual cache invalidation logic tied to mode switching.
+- Mixed color semantics (public now always uses type-based color; manage page applies status color emphasis as needed).
+
+### Testing Adjustments
+- Public Events specs assert: initial load, caching reuse, date-range reload, navigation, upcoming list success/error.
+- Removed: mode switch tests, 403 ownership fallback, cross-mode color divergence.
+- Manage page retains ownership lifecycle tests (status transitions, changed$ events) in its own spec.
+
+### Migration Notes
+1. Remove obsolete toggle markup and bindings from `events.component.html`.
+2. Introduce calendar component import; wire `publishedEvents` and `calendarLoading` properties.
+3. Delete unused status legend/tooltips from public component.
+4. Update specs to reflect published-only behavior.
+5. Move status/action UI & legends into `/editor/events` page.
+
+### Future Opportunities
+- Add lightweight SSR prefetch for first published month.
+- Provide deep-link query params for type and date range (`?type=FESTIVAL&month=2025-02`).
+- Accessibility audit of split pages (focus order, ARIA labeling).
+
+### Maintenance Checklist
+- Keep calendar component API stable; prefer additive changes via optional inputs.
+- Synchronize any new filters with both endpoints and both pages.
+- Document behavior changes here; avoid scattering notes across unrelated feature docs.
+

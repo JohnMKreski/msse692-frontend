@@ -6,10 +6,11 @@
 
   <div class="editor__content">
     <div class="editor__list">
-      <h2>My Events</h2>
+      <h2>My Events ({{ items().length }})</h2>
       <div *ngIf="loading()" class="loading">Loading…</div>
       <p class="error" *ngIf="error() as err">{{ err }}</p>
       <div class="list" *ngIf="!loading()">
+        <p class="muted" *ngIf="!error() && items().length === 0">You have not created any events yet.</p>
         <div class="row" *ngFor="let e of items()">
           <div class="col col--name">{{ e.eventName }}</div>
           <div class="col col--date">{{ e.startAt | date:'short' }}</div>
@@ -80,6 +81,24 @@
           <button mat-button type="button" (click)="resetForm()">Reset</button>
         </div>
       </form>
+    </div>
+    <div class="editor__calendar">
+      <h2>My Events Calendar</h2>
+      <app-events-calendar
+        mode="MINE"
+        [events]="items()"
+        [loading]="loading()"
+        (eventClick)="onCalendarEventClick($event)"
+        (dateRangeChange)="onCalendarRange($event)">
+        <div calendar-legend>
+          <div class="legend" aria-label="Status legend">
+            <span class="legend-title">Statuses</span>
+            <span class="legend-item" *ngFor="let s of ['PUBLISHED','DRAFT','UNPUBLISHED','CANCELLED']">
+              <span class="color-dot" [style.backgroundColor]="statusColors[s]"></span>{{ s.charAt(0) + s.slice(1).toLowerCase() }}
+            </span>
+          </div>
+        </div>
+      </app-events-calendar>
     </div>
   </div>
 </section>

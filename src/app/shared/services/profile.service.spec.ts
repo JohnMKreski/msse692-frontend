@@ -1,7 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
 import { ProfileService } from './profile.service';
-import { API_URL } from './api-tokens';
+import { API_URL } from '../models/api-tokens';
 
 describe('ProfileService', () => {
   let svc: ProfileService;
@@ -10,8 +11,8 @@ describe('ProfileService', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [
+        provideHttpClient(),
         provideHttpClientTesting(),
-        // Include version segment to mirror backend /api/v1
         { provide: API_URL, useValue: '/api/v1' },
       ],
     });

@@ -3,8 +3,8 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { Auth } from '@angular/fire/auth';
 import { onAuthStateChanged, User, signOut } from 'firebase/auth';
-import { AppUserService } from '../../shared/app-user.service';
-import { ProfileService } from '../../shared/profile.service';
+import { AppUserService } from '../../shared/services/app-user.service';
+import { ProfileService } from '../../shared/services/profile.service';
 import { ThemeService } from '../../shared/theme.service';
 
 @Component({
