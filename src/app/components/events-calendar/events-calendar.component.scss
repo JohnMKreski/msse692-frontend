@@ -1,0 +1,8 @@
+.calendar-wrapper { position: relative; }
+.calendar-wrapper.loading { opacity: 0.6; filter: grayscale(0.2); }
+.toolbar { display: flex; gap: .75rem; align-items: center; margin-bottom: .5rem; }
+.refresh-btn { background: #1f6feb; color: #fff; border: none; padding: .4rem .75rem; border-radius: 4px; cursor: pointer; font-size: .8rem; }
+.refresh-btn:hover { background: #2583ff; }
+.loading-indicator { font-size: .75rem; color: #666; }
+[calendar-legend] { margin-top: .5rem; display: block; }
+.fullcalendar, full-calendar { width: 100%; }

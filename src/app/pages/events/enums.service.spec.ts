@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
 import { EnumsService } from './enums.service';
 import { API_URL } from '../../shared/models/api-tokens';
 
@@ -10,6 +11,7 @@ describe('EnumsService', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [
+        provideHttpClient(),
         provideHttpClientTesting(),
         { provide: API_URL, useValue: '/api/v1' },
       ],

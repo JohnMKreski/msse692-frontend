@@ -1,17 +1,7 @@
 <section class="events-page" ngSkipHydration>
     <h1 class="page-title">Events Calendar</h1>
 
-    <div class="view-toggle" aria-label="View mode">
-        <label>
-            <input type="radio" name="viewMode" [value]="'PUBLISHED'" [checked]="viewMode==='PUBLISHED'" (change)="onViewModeChange('PUBLISHED')" style="cursor: pointer;"/>
-            Published
-        </label>
-        <label>
-            <input type="radio" name="viewMode" [value]="'MINE'" [checked]="viewMode==='MINE'" (change)="onViewModeChange('MINE')" [disabled]="mineDisabled" style="cursor: pointer;"/>
-            My Events
-        </label>
-        <span class="permission-msg" *ngIf="minePermissionMessage">{{ minePermissionMessage }}</span>
-    </div>
+    <!-- View toggle removed: /events now shows only Published events -->
 
     <!-- Sort & filter controls deferred to future sprint
     <div class="sort-controls" aria-label="Sort events">
@@ -38,23 +28,17 @@
     -->
 
     <div class="legend-container">
-        <div *ngIf="viewMode === 'PUBLISHED'" class="legend" aria-label="Event Types Legend">
+        <div class="legend" aria-label="Event Types Legend">
             <span class="legend-title">Event Types</span>
             <span *ngFor="let t of typeLegend" class="legend-item">
                 <span class="color-dot" [style.backgroundColor]="t.color"></span>{{ t.label }}
-            </span>
-        </div>
-        <div *ngIf="viewMode === 'MINE'" class="legend" aria-label="Event Status Legend">
-            <span class="legend-title">Statuses</span>
-            <span *ngFor="let s of statusLegend" class="legend-item">
-                <span class="color-dot" [style.backgroundColor]="s.color"></span>{{ s.label }}
             </span>
         </div>
     </div>
 
     <!-- Simple chronological list above the calendar -->
     <div class="upcoming-list">
-        <h2>{{ viewMode === 'PUBLISHED' ? 'Upcoming Published Events' : 'My Upcoming Events' }}</h2>
+        <h2>Upcoming Published Events</h2>
         <app-error-banner *ngIf="upcomingError" [error]="upcomingErrObj" [message]="upcomingError" [status]="upcomingStatus ?? 500" (retry)="loadUpcoming()"></app-error-banner>
         <div *ngIf="upcomingLoading" class="skeleton-wrap">
             <app-loading-skeleton [lines]="3"></app-loading-skeleton>
@@ -66,21 +50,6 @@
                 <span>— {{ e.startAt | date:'medium' }}</span>
             </li>
         </ul>
-        <!-- <p *ngIf="!upcomingLoading && !upcomingError && !upcoming.length">No upcoming events found.</p> -->
-
-        <!-- <h3>All Events</h3>
-        <app-error-banner *ngIf="allError" [error]="allErrObj" [message]="allError" [status]="allStatus ?? 400" (retry)="loadAllEvents()"></app-error-banner>
-        <div *ngIf="allLoading" class="skeleton-wrap">
-            <app-loading-skeleton [lines]="5" [avatar]="true"></app-loading-skeleton>
-        </div>
-        <p class="error" *ngIf="allError as err2">{{ err2 }}</p>
-        <ul *ngIf="!allLoading && !allError && allEvents.length">
-            <li *ngFor="let e of allEvents">
-                <a [routerLink]="['/events', e.eventId]">{{ e.eventName }}</a>
-                <span>— {{ e.startAt | date:'medium' }} ({{ e.status }})</span>
-            </li>
-        </ul>
-        <p *ngIf="!allLoading && !allError && !allEvents.length">No events returned.</p> -->
     </div>
 
     <!-- Server-side placeholder to keep SSR markup stable -->
@@ -88,8 +57,14 @@
         <p>Calendar is available on the client.</p>
     </div>
 
-    <!-- Render FullCalendar only in the browser; skip hydration to avoid mismatches -->
-    <div *ngIf="isBrowser()">
-        <full-calendar ngSkipHydration [options]="calendarOptions"></full-calendar>
+    <!-- Reusable calendar component (Published only) -->
+    <div *ngIf="isBrowser()" class="calendar-wrapper">
+        <app-events-calendar
+            mode="PUBLISHED"
+            [events]="publishedEvents"
+            [loading]="calendarLoading"
+            (dateRangeChange)="onCalendarRange($event)"
+            (eventClick)="onEventIdClick($event)">
+        </app-events-calendar>
     </div>
 </section>
