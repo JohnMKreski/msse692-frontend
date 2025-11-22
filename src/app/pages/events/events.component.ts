@@ -1,9 +1,8 @@
 import { ChangeDetectionStrategy, Component, OnDestroy, PLATFORM_ID, ChangeDetectorRef, inject, OnInit, NgZone, AfterViewInit } from '@angular/core';
-import { isPlatformBrowser, NgForOf, NgIf, DatePipe, AsyncPipe } from '@angular/common';
+import { isPlatformBrowser, NgForOf, NgIf, DatePipe } from '@angular/common';
 import { LoadingSkeletonComponent } from '../../components/loading-skeleton/loading-skeleton.component';
 import { FormsModule } from '@angular/forms';
 import { EventsService } from './events.service';
-import { EnumsService } from './enums.service';
 import { EventDto, EventPageResponse, EventSortField, SortDir } from './event.model';
 import { take, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
@@ -11,22 +10,12 @@ import { Router, RouterLink } from '@angular/router';
 import { formatApiError, parseApiError } from '../../shared/models/api-error';
 import { ErrorBannerComponent } from '../../components/error-banner/error-banner.component';
 
-// FullCalendar Angular wrapper
-// https://github.com/fullcalendar/fullcalendar-angular
-import { FullCalendarModule } from '@fullcalendar/angular';
-import { CalendarOptions } from '@fullcalendar/core';
-import dayGridPlugin from '@fullcalendar/daygrid';
-import timeGridPlugin from '@fullcalendar/timegrid';
-import interactionPlugin from '@fullcalendar/interaction';
-import listPlugin from '@fullcalendar/list';
-
-// Note: some versions of @fullcalendar/angular auto-wire plugins from options.plugins.
-// Passing plugins through calendarOptions directly to avoid relying on static registration APIs.
+import { EventsCalendarComponent } from '../../components/events-calendar/events-calendar.component';
 
 @Component({
     selector: 'app-events',
     standalone: true,
-    imports: [NgIf, NgForOf, DatePipe, AsyncPipe, RouterLink, FullCalendarModule, FormsModule, ErrorBannerComponent, LoadingSkeletonComponent],
+    imports: [NgIf, NgForOf, DatePipe, RouterLink, FormsModule, ErrorBannerComponent, LoadingSkeletonComponent, EventsCalendarComponent],
     templateUrl: './events.component.html',
     styleUrls: ['./events.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -35,7 +24,6 @@ import listPlugin from '@fullcalendar/list';
 export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
     private readonly platformId = inject(PLATFORM_ID);
     private readonly eventsService = inject(EventsService);
-    private readonly enumsService = inject(EnumsService);
     private readonly cdr = inject(ChangeDetectorRef);
     private readonly zone = inject(NgZone);
     private readonly router = inject(Router);
@@ -46,46 +34,28 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
     upcomingErrObj: any = null;
     upcomingStatus: number | null = null;
     upcoming: EventDto[] = [];
-    allLoading = false;
-    allError: string | null = null;
-    allErrObj: any = null;
-    allStatus: number | null = null;
-    allEvents: EventDto[] = [];
+    // Removed "all events" debug list state (published-only page)
     // Sort state (typed to backend whitelist)
     sortField: EventSortField = 'startAt';
     sortDir: SortDir = 'asc';
-    typeOptions$ = this.enumsService.getEventTypes();
     selectedType: string | null = null;
-    
-    // Tooltip label constants to control line breaks/labels
-    private readonly tooltipLabels = {
-        title: 'Title',
-        location: 'Location',
-        type: 'Type',
-        start: 'Start',
-        end: 'End',
-    } as const;
+    // Published-only cache (month-scoped with TTL)
+    private publishedCache = new Map<string, { items: EventDto[]; ts: number }>();
+    private readonly CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+    publishedEvents: EventDto[] = [];
+    calendarLoading = false;
 
-    // Calendar options (updated when events load)
-    calendarOptions: CalendarOptions = {
-        initialView: 'dayGridMonth',
-        headerToolbar: {
-            left: 'prev,next today',
-            center: 'title',
-            right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek',
-        },
-        weekends: true,
-        nowIndicator: true,
-        navLinks: true,
-        eventClick: (arg) => this.onEventClick(arg),
-        eventDidMount: (arg) => this.onEventDidMount(arg),
-        datesSet: (arg) => this.onDatesSet(arg as any),
-        dayMaxEvents: true,
-        contentHeight: 'auto',
-        expandRows: true,
-        windowResize: () => this.applyResponsiveOptions(),
-        plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin],
+    readonly typeColors: Record<string,string> = {
+        CONCERT: '#d97706',
+        FESTIVAL: '#2563eb',
+        PARTY: '#059669',
+        OTHER: '#7c3aed'
     };
+
+    // Legend helper arrays (built once)
+    readonly typeLegend = Object.entries(this.typeColors).map(([key,color]) => ({ key, color, label: key.charAt(0) + key.slice(1).toLowerCase() }));
+
+    // Removed FullCalendarOptions in favor of reusable component inputs/outputs.
 
     isBrowser(): boolean {
         return isPlatformBrowser(this.platformId);
@@ -97,13 +67,13 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
         if (!this.isBrowser()) return;
         // Defer to next tick to ensure hydration is complete before manipulating state
         setTimeout(() => {
-            this.applyResponsiveOptions();
             this.loadEvents();
             this.eventsService.changed$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+                this.publishedCache.clear();
                 this.loadEvents();
             });
             this.loadUpcoming();
-            this.loadAllEvents();
+            // (debug allEvents list removed)
         }, 0);
     }
 
@@ -111,82 +81,55 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
         // no-op
     }
 
-    onDatesSet(arg: any): void {
+    onCalendarRange(range: { start: string; end: string }): void {
         if (!this.isBrowser()) return;
-        this.loadEvents({ from: arg.startStr, to: arg.endStr });
+        this.loadEvents({ from: range.start, to: range.end });
     }
 
-    onEventClick(arg: any): void {
+    onEventIdClick(id: number): void {
         if (!this.isBrowser()) return;
-        const id = arg?.event?.id ?? arg?.event?.extendedProps?.eventId;
-        if (!id) {
-            return;
-        }
-        // Ensure navigation runs inside Angular zone
-        this.zone.run(() => {
-            this.router.navigate(['/events', String(id)]);
-        });
-    }
-
-    // Attach a styled tooltip via data attribute (CSS renders it)
-    onEventDidMount(arg: any): void {
-        if (!this.isBrowser() || !arg?.el || !arg?.event) return;
-        const e = arg.event;
-        const title = e.title as string | undefined;
-        const loc = e.extendedProps?.location as string | undefined;
-        const type = (e.extendedProps?.typeDisplayName || e.extendedProps?.type) as string | undefined;
-        const start: Date | null = e.start ?? null;
-        const end: Date | null = e.end ?? null;
-        const timeFmt: Intl.DateTimeFormatOptions = { dateStyle: 'medium', timeStyle: 'short' };
-        const startStr = start ? new Date(start).toLocaleString(undefined, timeFmt) : '';
-        const endStr = end ? new Date(end).toLocaleString(undefined, timeFmt) : '';
-        const lines: string[] = [];
-        if (title) lines.push(`${this.tooltipLabels.title}: ${title}`);
-        if (loc) lines.push(`${this.tooltipLabels.location}: ${loc}`);
-        if (type) lines.push(`${this.tooltipLabels.type}: ${type}`);
-        if (startStr) lines.push(`${this.tooltipLabels.start}: ${startStr}`);
-        if (endStr) lines.push(`${this.tooltipLabels.end}: ${endStr}`);
-        if (lines.length) {
-            // Use data-tooltip for CSS-driven tooltip; avoid native title delay
-            arg.el.removeAttribute('title');
-            arg.el.setAttribute('data-tooltip', lines.join('\n'));
-        }
+        this.zone.run(() => this.router.navigate(['/events', String(id)]));
     }
 
     private loadEvents(window?: { from?: string; to?: string }) {
-        // For debugging: load all events (ignore status/owner) to ensure visibility while unauthenticated
         const sort = `${this.sortField},${this.sortDir}`;
-        this.eventsService
-            .list({ page: 0, size: 100, sort, eventType: this.selectedType || undefined })
-            .pipe(take(1))
-            .subscribe({
-                next: (resp: EventPageResponse) => {
-                    this.zone.run(() => {
-                        const items = Array.isArray((resp as any)) ? (resp as any as EventDto[]) : (resp?.items ?? []);
-                        const fcEvents = items.map(e => ({
-                            id: String(e.eventId),
-                            title: e.eventName,
-                            start: e.startAt,
-                            end: e.endAt,
-                            allDay: false,
-                            extendedProps: {
-                                location: e.eventLocation,
-                                status: e.status,
-                                type: e.type,
-                                typeDisplayName: e.typeDisplayName
-                            }
-                        }));
-                        this.calendarOptions = { ...this.calendarOptions, events: fcEvents };
-                        this.cdr.markForCheck();
-                    });
-                },
-                error: (err) => {
-                    this.zone.run(() => {
-                        this.calendarOptions = { ...this.calendarOptions, events: [] };
-                        this.cdr.markForCheck();
-                    });
-                },
-            });
+        // Derive month key from provided range or current date
+        const refDateStr = window?.from || window?.to || new Date().toISOString();
+        const refDate = new Date(refDateStr);
+        const monthKey = `${refDate.getFullYear()}-${String(refDate.getMonth()+1).padStart(2,'0')}`;
+        const key = `${monthKey}|${this.selectedType || ''}|${sort}`;
+        const now = Date.now();
+        const cached = this.publishedCache.get(key);
+        if (cached && (now - cached.ts) < this.CACHE_TTL_MS) {
+            this.publishedEvents = cached.items;
+            this.cdr.markForCheck();
+            return;
+        }
+        this.calendarLoading = true;
+        // Expand fetch window to full month boundaries for stable caching
+        const monthStart = new Date(refDate.getFullYear(), refDate.getMonth(), 1);
+        const monthEnd = new Date(refDate.getFullYear(), refDate.getMonth()+1, 0); // last day prev to next month
+        const fromIso = monthStart.toISOString();
+        const toIso = monthEnd.toISOString();
+        const params = { page: 0, size: 500, sort, eventType: this.selectedType || undefined, from: fromIso, to: toIso };
+        this.eventsService.listPublished(params).pipe(take(1)).subscribe({
+            next: (resp: EventPageResponse) => {
+                this.zone.run(() => {
+                    const items = Array.isArray((resp as any)) ? (resp as any as EventDto[]) : (resp?.items ?? []);
+                    this.publishedCache.set(key, { items, ts: now });
+                    this.publishedEvents = items;
+                    this.calendarLoading = false;
+                    this.cdr.markForCheck();
+                });
+            },
+            error: () => {
+                this.zone.run(() => {
+                    this.publishedEvents = [];
+                    this.calendarLoading = false;
+                    this.cdr.markForCheck();
+                });
+            }
+        });
     }
 
     loadUpcoming() {
@@ -219,72 +162,16 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
         });
     }
 
-    loadAllEvents() {
-        this.allLoading = true;
-        this.allError = null;
-        this.allErrObj = null;
-        this.allStatus = null;
-        this.cdr.markForCheck();
-        const sort = `${this.sortField},${this.sortDir}`;
-        this.eventsService.list({ page: 0, size: 100, sort, eventType: this.selectedType || undefined }).pipe(take(1)).subscribe({
-            next: (resp) => {
-                this.zone.run(() => {
-                    const rows = Array.isArray((resp as any)) ? (resp as any as EventDto[]) : (resp?.items ?? []);
-                    // sort chronologically by startAt ascending
-                    // We rely on backend sort; keep a secondary stable sort for startAt asc
-                    if (this.sortField === 'startAt') {
-                        this.allEvents = [...rows].sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
-                    } else {
-                        this.allEvents = rows;
-                    }
-                    this.allLoading = false;
-                    this.allStatus = null;
-                    this.cdr.markForCheck();
-                });
-            },
-            error: (err) => {
-                this.zone.run(() => {
-                    this.allEvents = [];
-                    this.allError = formatApiError(err);
-                    this.allErrObj = err;
-                    this.allStatus = this.extractStatus(err);
-                    this.allLoading = false;
-                    this.cdr.markForCheck();
-                });
-            }
-        });
-    }
-
     onTypeChange(v: string | null) { 
         this.selectedType = v;
-        // Reload both calendar and list when type filter changes
         this.loadEvents();
-        this.loadAllEvents();
     }
 
     onSortChange() {
-        // Reload both calendar and list to reflect new sort
         this.loadEvents();
-        this.loadAllEvents();
     }
 
-    private applyResponsiveOptions() {
-        if (!this.isBrowser()) return;
-        const narrow = window.matchMedia('(max-width: 600px)').matches;
-        const headerToolbar = narrow
-            ? { left: 'prev,next', center: 'title', right: 'today' }
-            :  {
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek',
-                };
-        const initialView = narrow ? 'listWeek' : 'dayGridMonth';
-        this.calendarOptions = {
-            ...this.calendarOptions,
-            headerToolbar,
-            initialView,
-        };
-    }
+    // Responsive calendar adjustments now handled internally by EventsCalendarComponent.
 
     ngOnDestroy(): void {
         this.destroy$.next();

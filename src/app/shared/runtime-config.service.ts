@@ -6,6 +6,7 @@ export interface RuntimeConfig {
   apiBaseUrl?: string;
   apiPathPrefix?: string; // e.g., "/api"
   apiVersion?: string;    // e.g., "v1" or empty for none
+  useNewAdminUsersApi?: boolean; // feature flag to switch to new admin users endpoints
 }
 
 @Injectable({ providedIn: 'root' })

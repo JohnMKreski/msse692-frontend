@@ -291,12 +291,13 @@
     <!-- Events Overview -->
     <section class="profile__events" aria-label="My events list">
       <details>
-        <summary><h2 class="section-title">My Events</h2></summary>
+        <summary><h2 class="section-title">My Events ({{ (myEvents() || []).length }})</h2></summary>
+        <p class="error" *ngIf="myEventsError() as meErr">{{ meErr }}</p>
         <ng-container *ngIf="myEvents() as my; else myEventsSkeleton">
           <!-- <ng-container *ngIf="effectiveRoles() && (effectiveRoles()!.includes('ADMIN') || effectiveRoles()!.includes('EDITOR')); else roleReqBlock">
           <p class="muted">You already have elevated access.</p>
         </ng-container> -->
-          <p *ngIf="!my.length">You have not created any events yet.</p>
+          <p *ngIf="!my.length && !myEventsError()">You have not created any events yet.</p>
           <ul *ngIf="my.length">
             <li *ngFor="let e of my">{{ e.eventName || '(untitled event)' }} (ID: {{ e.eventId }})</li>
           </ul>

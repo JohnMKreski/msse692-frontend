@@ -7,16 +7,16 @@ import { EnumsService } from '../events/enums.service';
 import { EventDto, CreateEventRequest, EventStatusOption, EventStatusCode } from '../events/event.model';
 import { formatApiError } from '../../shared/models/api-error';
 import { take } from 'rxjs/operators';
-import { AppUserService } from '../../shared/services/app-user.service';
 import { MatDialog } from '@angular/material/dialog';
 import { CancelConfirmDialogComponent } from '../../components/cancel-confirm-dialog/cancel-confirm-dialog.component';
 import { StatusBadgeComponent } from '../../components/status-badge/status-badge.component';
+import { EventsCalendarComponent } from '../../components/events-calendar/events-calendar.component';
 import { EnumOption } from '../events/enums.service';
 
 @Component({
   selector: 'app-editor-events',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, materialImports, StatusBadgeComponent],
+  imports: [CommonModule, ReactiveFormsModule, materialImports, StatusBadgeComponent, EventsCalendarComponent],
   templateUrl: './editor-events.component.html',
   styleUrls: ['./editor-events.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -26,7 +26,6 @@ export class EditorEventsComponent implements OnDestroy {
   private readonly events = inject(EventsService);
   private readonly enums = inject(EnumsService);
   // UI change bus merged into EventsService
-  private readonly users = inject(AppUserService);
   private readonly dialog = inject(MatDialog);
 
   readonly loading = signal<boolean>(true);
@@ -35,7 +34,6 @@ export class EditorEventsComponent implements OnDestroy {
   readonly error = signal<string | null>(null);
   readonly statusOptions = signal<EventStatusOption[]>([]);
   readonly typeOptions = signal<EnumOption[]>([]);
-  private meId: number | null = null;
 
   readonly form = this.fb.group({
     eventName: ['', [Validators.required, Validators.maxLength(200)]],
@@ -49,6 +47,13 @@ export class EditorEventsComponent implements OnDestroy {
   });
 
   editId: number | null = null;
+  // Status colors for calendar legend + mapping (Mine view uses status emphasis)
+  readonly statusColors: Record<string,string> = {
+    PUBLISHED: '#58a6ff',
+    DRAFT: '#e2c76e',
+    UNPUBLISHED: '#a08fe0',
+    CANCELLED: '#ff6b6b'
+  };
 
   constructor() {
     this.load();
@@ -64,23 +69,28 @@ export class EditorEventsComponent implements OnDestroy {
 
   ngOnDestroy(): void {}
 
-  load() {
+  load(range?: { start?: string; end?: string }) {
     this.loading.set(true);
-    // Load current user then filter events by createdByUserId === me.id
-    this.users.getMe().pipe(take(1)).subscribe({
-      next: (me) => {
-        this.meId = me?.id ?? null;
-        this.events.list({ page: 0, size: 100, sort: 'startAt,asc' }).pipe(take(1)).subscribe({
-          next: (resp) => {
-            const rows: EventDto[] = Array.isArray((resp as any)) ? (resp as any as EventDto[]) : (resp?.items ?? []);
-            const mine = this.meId != null ? rows.filter((r: EventDto) => r.createdByUserId === this.meId) : rows;
-            this.items.set(mine as EventDto[]);
-            this.loading.set(false);
-          },
-          error: (err) => { console.error(err); this.error.set(formatApiError(err)); this.loading.set(false); }
-        });
+    const params: any = { page: 0, size: 100, sort: 'startAt,asc' };
+    if (range?.start) params.from = range.start;
+    if (range?.end) params.to = range.end;
+    this.events.listMine(params).pipe(take(1)).subscribe({
+      next: (resp) => {
+        const rows: EventDto[] = Array.isArray((resp as any)) ? (resp as any as EventDto[]) : (resp?.items ?? []);
+        this.items.set(rows);
+        this.loading.set(false);
+        this.error.set(null);
       },
-      error: (err) => { console.error(err); this.error.set('Failed to load user'); this.loading.set(false); }
+      error: (err) => {
+        console.error(err);
+        this.items.set([]);
+        if (err?.status === 401 || err?.status === 403) {
+          this.error.set('You do not have permission to view your events.');
+        } else {
+          this.error.set(formatApiError(err) || 'Failed to load events.');
+        }
+        this.loading.set(false);
+      }
     });
   }
 
@@ -115,6 +125,16 @@ export class EditorEventsComponent implements OnDestroy {
       eventLocation: item.eventLocation ?? '',
       eventDescription: item.eventDescription ?? '',
     });
+  }
+
+  onCalendarEventClick(id: number) {
+    const found = this.items().find(e => e.eventId === id);
+    if (found) this.edit(found);
+  }
+
+  onCalendarRange(range: { start: string; end: string }) {
+    // Reload events scoped to visible calendar range (optional enhancement)
+    this.load(range);
   }
 
   delete(item: EventDto) {

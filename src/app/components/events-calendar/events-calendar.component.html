@@ -1,0 +1,9 @@
+<div class="calendar-wrapper" [class.loading]="loading">
+  <div class="toolbar">
+    <ng-content select="[calendar-actions]"></ng-content>
+    <button type="button" class="refresh-btn" (click)="requestRefresh()" *ngIf="!loading">Refresh</button>
+    <span class="loading-indicator" *ngIf="loading">Loading…</span>
+  </div>
+  <full-calendar [options]="calendarOptions"></full-calendar>
+  <ng-content select="[calendar-legend]"></ng-content>
+</div>

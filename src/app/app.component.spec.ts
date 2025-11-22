@@ -20,10 +20,28 @@ describe('AppComponent', () => {
     expect(app.title).toEqual('msse692-frontend');
   });
 
-  it('should render title', () => {
+  it('should expose title property value', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance;
+    expect(app.title).toBe('msse692-frontend');
+  });
+
+  it('should render structural shell elements (skip link, main, footer)', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, msse692-frontend');
+    const el: HTMLElement = fixture.nativeElement;
+    const skip = el.querySelector('a.skip-link');
+    expect(skip).toBeTruthy();
+    expect(skip?.getAttribute('href')).toBe('#main');
+    expect(el.querySelector('main#main')).toBeTruthy();
+    expect(el.querySelector('footer.app-footer')).toBeTruthy();
+  });
+
+  it('main element exposes landmark role="main"', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    fixture.detectChanges();
+    const main = fixture.nativeElement.querySelector('main#main');
+    expect(main).toBeTruthy();
+    expect(main.getAttribute('role')).toBe('main');
   });
 });

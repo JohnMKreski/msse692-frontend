@@ -1,7 +1,7 @@
 import { CommonModule, DatePipe } from '@angular/common';
 import { Component, signal } from '@angular/core';
-import { EventsService } from '../events/events.service';
-import { EventDto } from '../events/event.model';
+import { EventsService } from '../../events/events.service';
+import { EventDto } from '../../events/event.model';
 
 @Component({
   selector: 'app-admin-events-list',

@@ -1,6 +1,6 @@
 import { CommonModule, DatePipe } from '@angular/common';
 import { Component, signal } from '@angular/core';
-import { EventsService } from '../events/events.service';
+import { EventsService } from '../../events/events.service';
 
 @Component({
   selector: 'app-admin-logs',

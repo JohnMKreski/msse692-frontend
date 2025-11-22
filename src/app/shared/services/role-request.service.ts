@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { API_BASE_URL, API_PATH_PREFIX } from '../models/api-tokens';
+import { API_URL } from '../models/api-tokens';
 import { Page } from '../models/page';
 import { RoleRequest, RoleRequestCreate, RoleRequestDecision } from '../models/role-request';
 import { RoleRequestStatus } from '../models/role-request-status';
@@ -26,8 +26,7 @@ export class RoleRequestService {
   private readonly http = inject(HttpClient);
 
   // Base paths
-  private readonly apiBase: string = inject(API_BASE_URL);
-  private readonly apiPrefix: string = inject(API_PATH_PREFIX);
+  private readonly apiUrl: string = inject(API_URL);
 
   // Helpers to build non-versioned API paths (backend maps RoleRequest under /api not /api/v1)
   private join(base: string, path: string): string {
@@ -37,12 +36,10 @@ export class RoleRequestService {
   }
 
   private get userBase(): string {
-    const prefix = (this.apiPrefix || '/api').replace(/\/+$/g, '');
-    return this.join(this.join(this.apiBase, prefix), 'roles/requests');
+    return this.join(this.apiUrl, 'roles/requests');
   }
   private get adminBase(): string {
-    const prefix = (this.apiPrefix || '/api').replace(/\/+$/g, '');
-    return this.join(this.join(this.apiBase, prefix), 'admin/users/roles/requests');
+    return this.join(this.apiUrl, 'admin/users/roles/requests');
   }
 
   // USER endpoints
