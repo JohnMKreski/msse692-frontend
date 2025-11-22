@@ -4,10 +4,114 @@
 .events-page {
     padding: 1rem;
 }
-.page-title {
-    margin: 0 0 1rem;
+/* Removed duplicate early legend styles */
+
+/* Quick, styled tooltip using data-tooltip attribute */
+:host ::ng-deep .fc .fc-daygrid-event,
+:host ::ng-deep .fc .fc-timegrid-event,
+:host ::ng-deep .fc .fc-list-event {
+    position: relative;
+    cursor: pointer; /* indicate clickability for calendar events */
 }
-.calendar-placeholder {
-    padding: 1rem;
-    color: var(--mat-sys-on-surface-variant, #555);
+
+:host ::ng-deep .fc .fc-daygrid-event[data-tooltip]::after,
+:host ::ng-deep .fc .fc-timegrid-event[data-tooltip]::after,
+:host ::ng-deep .fc .fc-list-event[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(8px);
+    z-index: 1000;
+    width: 320px;
+    background: var(--mat-sys-surface-container-high, rgba(33,33,33,0.95));
+    color: var(--mat-sys-on-surface, #fff);
+    border: 1px solid rgba(0,0,0,0.2);
+    padding: 6px 8px;
+    border-radius: 6px;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 200ms ease-out, transform 80ms ease-out;
+    font-size: 12px;
+    line-height: 1.2;
+    max-width: 360px;
+}
+
+/* Allow tooltips to escape default overflow clipping in day grid */
+:host ::ng-deep .fc .fc-daygrid-day-events {
+    overflow: visible; 
+}
+
+/* Ensure the hovered event sits above siblings so its pseudo-element isn't obscured */
+:host ::ng-deep .fc .fc-daygrid-event,
+:host ::ng-deep .fc .fc-timegrid-event,
+:host ::ng-deep .fc .fc-list-event {
+    z-index: 2; 
+}
+
+:host ::ng-deep .fc .fc-daygrid-event:hover,
+:host ::ng-deep .fc .fc-timegrid-event:hover,
+:host ::ng-deep .fc .fc-list-event:hover {
+    z-index: 5; 
+}
+
+:host ::ng-deep .fc .fc-daygrid-event[data-tooltip]:hover::after,
+:host ::ng-deep .fc .fc-timegrid-event[data-tooltip]:hover::after,
+:host ::ng-deep .fc .fc-list-event[data-tooltip]:hover::after {
+    opacity: 1;
+    transform: translateX(-50%) translateY(12px);
+}
+
+/* Minimal styling retained: rely on inline event color assignments. */
+
+/* Legends for event types & statuses */
+.legend-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+    margin: 0.75rem 0 1.25rem;
+}
+.legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+    font-size: 0.75rem;
+    background: #ffffff;
+    border: 1px solid #a3a9ae;
+    padding: 0.55rem 0.85rem;
+    border-radius: 6px;
+}
+.legend-title {
+    font-weight: 600;
+    margin-right: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #111827; /* cleaned high-contrast title on light bg */
+}
+.legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: #374151; /* cleaned readable body text */
+}
+.color-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    box-shadow: 0 0 0 1px #00000022;
+}
+
+@media (max-width: 600px) {
+    .legend-container {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    .legend {
+        font-size: 0.7rem;
+        gap: 0.4rem 0.75rem;
+    }
 }

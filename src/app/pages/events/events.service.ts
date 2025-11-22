@@ -1,7 +1,8 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { API_URL } from '../../shared/api-tokens';
+import { API_URL } from '../../shared/models/api-tokens';
 import { Observable, Subject } from 'rxjs';
+import { tap } from 'rxjs/operators';
 import { CreateEventRequest, EventDto, UpdateEventRequest, EventAudit, EventPageResponse } from './event.model';
 
 @Injectable({ providedIn: 'root' })
@@ -15,7 +16,7 @@ export class EventsService {
 
     notifyChanged() { this._changed.next(); }
 
-    list(params?: { page?: number; size?: number; sort?: string }): Observable<EventPageResponse> {
+    list(params?: { page?: number; size?: number; sort?: string; eventType?: string; status?: string; from?: string; to?: string }): Observable<EventPageResponse> {
         // Backend enforces size 1..100 (@Min/@Max); clamp here to avoid 400s on oversized requests.
         const sizeRaw = params?.size ?? 50;
         const size = Math.min(Math.max(sizeRaw, 1), 100);
@@ -24,13 +25,55 @@ export class EventsService {
             size,
             sort: this.normalizeSort(params?.sort),
         };
+        if (params?.eventType) safeParams.eventType = params.eventType;
+        if (params?.status) safeParams.status = params.status;
+        if (params?.from) safeParams.from = params.from;
+        if (params?.to) safeParams.to = params.to;
         return this.http.get<EventPageResponse>(`${this.baseUrl}/events`, { params: safeParams });
+    }
+
+    /**
+     * Convenience: published-only listing wrapper. Injects status=PUBLISHED and omits caller overrides.
+     * Mirrors normalizeSort + filter handling from generic list().
+     */
+    listPublished(params?: { page?: number; size?: number; sort?: string; eventType?: string; from?: string; to?: string }): Observable<EventPageResponse> {
+        const sizeRaw = params?.size ?? 50;
+        const size = Math.min(Math.max(sizeRaw, 1), 100);
+        const safeParams: any = {
+            page: params?.page ?? 0,
+            size,
+            sort: this.normalizeSort(params?.sort),
+            status: 'PUBLISHED'
+        };
+        if (params?.eventType) safeParams.eventType = params.eventType;
+        if (params?.from) safeParams.from = params.from;
+        if (params?.to) safeParams.to = params.to;
+        return this.http.get<EventPageResponse>(`${this.baseUrl}/events`, { params: safeParams });
+    }
+
+    /**
+     * Strict ownership listing: returns only events created by the authenticated ADMIN/EDITOR.
+     * Mirrors backend /api/v1/events/mine endpoint shape (EventPageResponse).
+     */
+    listMine(params?: { page?: number; size?: number; sort?: string; eventType?: string; status?: string; from?: string; to?: string }): Observable<EventPageResponse> {
+        const sizeRaw = params?.size ?? 50;
+        const size = Math.min(Math.max(sizeRaw, 1), 100);
+        const safeParams: any = {
+            page: params?.page ?? 0,
+            size,
+            sort: this.normalizeSort(params?.sort)
+        };
+        if (params?.eventType) safeParams.eventType = params.eventType;
+        if (params?.status) safeParams.status = params.status;
+        if (params?.from) safeParams.from = params.from;
+        if (params?.to) safeParams.to = params.to;
+        return this.http.get<EventPageResponse>(`${this.baseUrl}/events/mine`, { params: safeParams });
     }
 
     // Enforce backend-allowed sort fields and produce a stable format
     private normalizeSort(input?: string | null): string {
         const DEFAULT = 'startAt,asc';
-        const allowed = new Set(['startAt', 'eventName']);
+        const allowed = new Set(['startAt', 'eventName', 'eventType']);
         if (!input || !input.trim()) return DEFAULT;
         const s = input.trim();
         // Accept forms: "-field", "field,desc", "field,asc", or plain "field"
@@ -82,12 +125,15 @@ export class EventsService {
 
     // ===== Status transitions =====
     publishEvent(id: number | string): Observable<EventDto> {
-        return this.http.post<EventDto>(`${this.baseUrl}/events/${encodeURIComponent(String(id))}/publish`, {});
+        return this.http.post<EventDto>(`${this.baseUrl}/events/${encodeURIComponent(String(id))}/publish`, {})
+            .pipe(tap(() => this.notifyChanged()));
     }
     unpublishEvent(id: number | string): Observable<EventDto> {
-        return this.http.post<EventDto>(`${this.baseUrl}/events/${encodeURIComponent(String(id))}/unpublish`, {});
+        return this.http.post<EventDto>(`${this.baseUrl}/events/${encodeURIComponent(String(id))}/unpublish`, {})
+            .pipe(tap(() => this.notifyChanged()));
     }
     cancelEvent(id: number | string): Observable<EventDto> {
-        return this.http.post<EventDto>(`${this.baseUrl}/events/${encodeURIComponent(String(id))}/cancel`, {});
+        return this.http.post<EventDto>(`${this.baseUrl}/events/${encodeURIComponent(String(id))}/cancel`, {})
+            .pipe(tap(() => this.notifyChanged()));
     }
 }

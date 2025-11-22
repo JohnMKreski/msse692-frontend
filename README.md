@@ -60,7 +60,11 @@ For more information on using the Angular CLI, including detailed command refere
 
 ## Feature Guides
 
--   Events Calendar (FullCalendar + SSR-safe): [docs/FEATURE-Events-Calendar.md](./docs/FEATURE-Events-Calendar.md)
+ -   Events Calendar (FullCalendar + SSR-safe): [docs/FEATURE-Events-Calendar.md](./docs/FEATURE-Events-Calendar.md)
+ -   Admin Role Requests Moderation: [docs/FEATURE-Admin-Role-Requests.md](./docs/FEATURE-Admin-Role-Requests.md)
+ -   Admin Users Management (feature-flagged): [docs/FEATURE-Admin-Users-Management.md](./docs/FEATURE-Admin-Users-Management.md)
+ -   User Deletion & Data Erasure (planned): [docs/FEATURE-User-Deletion.md](./docs/FEATURE-User-Deletion.md)
+ -   My Events Ownership & Endpoint: [docs/FEATURE-My-Events-Ownership.md](./docs/FEATURE-My-Events-Ownership.md)
 
 ## Profile & Onboarding Flow
 

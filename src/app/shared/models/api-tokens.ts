@@ -1,6 +1,6 @@
 import { InjectionToken } from '@angular/core';
-import { RuntimeConfigService } from './runtime-config.service';
-import { environment } from '../../environments/environment';
+import { RuntimeConfigService } from '../runtime-config.service';
+import { environment } from '../../../environments/environment';
 
 export const API_BASE_URL = new InjectionToken<string>('API_BASE_URL', {
   providedIn: 'root',
@@ -25,6 +25,11 @@ export const API_URL = new InjectionToken<string>('API_URL', {
   factory: () => buildApiUrl(environment.apiBaseUrl, environment.apiPathPrefix, environment.apiVersion)
 });
 
+export const USE_NEW_ADMIN_USERS_API = new InjectionToken<boolean>('USE_NEW_ADMIN_USERS_API', {
+  providedIn: 'root',
+  factory: () => false // default off unless runtime config overrides
+});
+
 export function buildApiUrl(base: string, prefix?: string, version?: string): string {
   const trim = (s?: string) => (s ?? '').replace(/\/+$/g, '');
   const lead = (s?: string) => (s ?? '').replace(/^([^/])/, '/$1');
@@ -45,5 +50,6 @@ export function apiProvidersFromRuntime(cfg: RuntimeConfigService) {
     { provide: API_PATH_PREFIX, useValue: prefix },
     { provide: API_VERSION, useValue: version },
     { provide: API_URL, useValue: buildApiUrl(base, prefix, version) },
+    { provide: USE_NEW_ADMIN_USERS_API, useValue: !!cfg.get('useNewAdminUsersApi') },
   ];
 }

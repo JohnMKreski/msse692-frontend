@@ -64,6 +64,7 @@
         <ng-template #claimsSkeleton>
           <app-loading-skeleton [lines]="2"></app-loading-skeleton>
         </ng-template>
+        <!--TODO: Remove token from DOM -->
         <div class="token-decode" *ngIf="idTokenHeader() || idTokenPayload()">
           <details>
             <summary>Decoded ID Token (Header & Payload)</summary>
@@ -126,12 +127,177 @@
       </details>
     </section>
 
+    <!-- Role Requests (Editor) -->
+    <section class="profile__role-request" aria-label="Request Editor Role">
+      <details open>
+        <summary><h2 class="section-title">Request Editor Role</h2></summary>
+        <!-- Elevated users: show access note and history; Non-elevated: show form + current table + history -->
+        <ng-container *ngIf="effectiveRoles() && (effectiveRoles()!.includes('ADMIN') || effectiveRoles()!.includes('EDITOR')); else roleReqBlock">
+          <p class="muted">You already have elevated access.</p>
+          <p class="muted">Current access: {{ effectiveRoles()!.includes('ADMIN') ? 'ADMIN' : 'EDITOR' }}</p>
+          <!-- History subsection for elevated users -->
+          <h3>Request History</h3>
+          <div *ngIf="roleHistoryLoading()"><app-loading-skeleton [lines]="2"></app-loading-skeleton></div>
+          <div class="error" *ngIf="roleHistoryError() as herr">{{ herr }}</div>
+          <ng-container *ngIf="!roleHistoryLoading() && roleHistory() as hist">
+            <p class="muted" *ngIf="!hist.length">No prior role requests.</p>
+            <table class="role-history-table" *ngIf="hist.length">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Requested Roles</th>
+                  <th>Status</th>
+                  <th>Reason</th>
+                  <th>Approver Note</th>
+                  <th>Created</th>
+                  <th>Decided</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let h of hist">
+                  <td>{{ h.id }}</td>
+                  <td>{{ h.requestedRoles.join(', ') }}</td>
+                  <td>{{ h.status }}</td>
+                  <td>{{ h.reason || '—' }}</td>
+                  <td>{{ h.approverNote || '—' }}</td>
+                  <td>{{ h.createdAt || '—' }}</td>
+                  <td>{{ h.decidedAt || h.updatedAt || '—' }}</td>
+                </tr>
+              </tbody>
+            </table>
+            <!-- Details subsection for the latest entry -->
+            <ng-container *ngIf="hist.length">
+              <h3>Details</h3>
+              <dl>
+                <div><dt>Most Recent ID</dt><dd>{{ hist[0].id }}</dd></div>
+                <div><dt>Status</dt><dd>{{ hist[0].status }}</dd></div>
+                <div><dt>Approver Note</dt><dd>{{ hist[0].approverNote || '—' }}</dd></div>
+                <div><dt>Decided At</dt><dd>{{ hist[0].decidedAt || '—' }}</dd></div>
+              </dl>
+            </ng-container>
+          </ng-container>
+        </ng-container>
+
+        <ng-template #roleReqBlock>
+          <!-- Form subsection -->
+          <h3>Form</h3>
+          <div *ngIf="roleReqLoading()"><app-loading-skeleton [lines]="2"></app-loading-skeleton></div>
+          <div class="error" *ngIf="roleReqError() as err">{{ err }}</div>
+          <ng-container *ngIf="!roleReqLoading()">
+            <!-- Current request subsection (single-row table) -->
+            <ng-container *ngIf="latestRoleRequest() as rr; else roleReqForm">
+              <h3>Current Request</h3>
+              <table class="role-req-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Requested Roles</th>
+                    <th>Status</th>
+                    <th>Reason</th>
+                    <th>Created</th>
+                    <th>Updated</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>{{ rr.id }}</td>
+                    <td>{{ rr.requestedRoles.join(', ') }}</td>
+                    <td>{{ rr.status }}</td>
+                    <td>{{ rr.reason || '—' }}</td>
+                    <td>
+                      <ng-container *ngIf="rr.createdAt; else noCreated">
+                        {{ rr.createdAt }} <span class="muted">({{ relTime(rr.createdAt!) }})</span>
+                      </ng-container>
+                      <ng-template #noCreated>—</ng-template>
+                    </td>
+                    <td>
+                      <ng-container *ngIf="rr.updatedAt; else noUpdated">
+                        {{ rr.updatedAt }} <span class="muted">({{ relTime(rr.updatedAt!) }})</span>
+                      </ng-container>
+                      <ng-template #noUpdated>—</ng-template>
+                    </td>
+                    <td>
+                      <button type="button"
+                              (click)="cancelPendingRoleRequest()"
+                              [disabled]="roleReqLoading() || rr.status !== 'Pending'">
+                        Cancel
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </ng-container>
+            <!-- Create request form -->
+            <ng-template #roleReqForm>
+              <div style="margin: 0 1.25rem 0.75rem; display:flex; flex-direction:column; gap:0.5rem; max-width:640px;">
+                <label style="display:flex; flex-direction:column; gap:0.25rem;">
+                  <span class="muted">Reason (optional)</span>
+                  <textarea [formControl]="roleReason" rows="3" maxlength="500" placeholder="Tell admins why you need editor access"></textarea>
+                </label>
+                <div style="display:flex; gap:0.75rem; align-items:center;">
+                  <button type="button" (click)="submitRoleRequest()" [disabled]="roleReqLoading() || roleReason.invalid">Request Editor Role</button>
+                  <span class="muted" *ngIf="roleReason.invalid">Max 500 characters.</span>
+                </div>
+              </div>
+            </ng-template>
+          </ng-container>
+
+          <!-- History subsection -->
+          <h3>Request History</h3>
+          <div *ngIf="roleHistoryLoading()"><app-loading-skeleton [lines]="2"></app-loading-skeleton></div>
+          <div class="error" *ngIf="roleHistoryError() as herr">{{ herr }}</div>
+          <ng-container *ngIf="!roleHistoryLoading() && roleHistory() as hist">
+            <p class="muted" *ngIf="!hist.length">No prior role requests.</p>
+            <table class="role-history-table" *ngIf="hist.length">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Requested Roles</th>
+                  <th>Status</th>
+                  <th>Reason</th>
+                  <th>Approver Note</th>
+                  <th>Created</th>
+                  <th>Decided</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let h of hist">
+                  <td>{{ h.id }}</td>
+                  <td>{{ h.requestedRoles.join(', ') }}</td>
+                  <td>{{ h.status }}</td>
+                  <td>{{ h.reason || '—' }}</td>
+                  <td>{{ h.approverNote || '—' }}</td>
+                  <td>{{ h.createdAt || '—' }}</td>
+                  <td>{{ h.decidedAt || h.updatedAt || '—' }}</td>
+                </tr>
+              </tbody>
+            </table>
+            <!-- Details subsection for the latest entry -->
+            <ng-container *ngIf="hist.length">
+              <h3>Details</h3>
+              <dl>
+                <div><dt>Most Recent ID</dt><dd>{{ hist[0].id }}</dd></div>
+                <div><dt>Status</dt><dd>{{ hist[0].status }}</dd></div>
+                <div><dt>Approver Note</dt><dd>{{ hist[0].approverNote || '—' }}</dd></div>
+                <div><dt>Decided At</dt><dd>{{ hist[0].decidedAt || '—' }}</dd></div>
+              </dl>
+            </ng-container>
+          </ng-container>
+        </ng-template>
+      </details>
+    </section>
+
     <!-- Events Overview -->
     <section class="profile__events" aria-label="My events list">
       <details>
-        <summary><h2 class="section-title">My Events</h2></summary>
+        <summary><h2 class="section-title">My Events ({{ (myEvents() || []).length }})</h2></summary>
+        <p class="error" *ngIf="myEventsError() as meErr">{{ meErr }}</p>
         <ng-container *ngIf="myEvents() as my; else myEventsSkeleton">
-          <p *ngIf="!my.length">You have not created any events yet.</p>
+          <!-- <ng-container *ngIf="effectiveRoles() && (effectiveRoles()!.includes('ADMIN') || effectiveRoles()!.includes('EDITOR')); else roleReqBlock">
+          <p class="muted">You already have elevated access.</p>
+        </ng-container> -->
+          <p *ngIf="!my.length && !myEventsError()">You have not created any events yet.</p>
           <ul *ngIf="my.length">
             <li *ngFor="let e of my">{{ e.eventName || '(untitled event)' }} (ID: {{ e.eventId }})</li>
           </ul>

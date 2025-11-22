@@ -1,15 +1,15 @@
 import { ChangeDetectionStrategy, Component, WritableSignal, signal } from '@angular/core';
 import { CommonModule, JsonPipe, NgFor, NgIf, DatePipe } from '@angular/common';
 import { ReactiveFormsModule, NonNullableFormBuilder, Validators, FormControl, FormGroup } from '@angular/forms';
-import { EventsService } from '../events/events.service';
-import { EnumsService, EnumOption } from '../events/enums.service';
-import { AppUserService } from '../../shared/app-user.service';
-import { ProfileService } from '../../shared/profile.service';
-import { CreateEventRequest, EventDto, EventAudit } from '../events/event.model';
+import { EventsService } from '../../events/events.service';
+import { EnumsService, EnumOption } from '../../events/enums.service';
+import { AppUserService } from '../../../shared/services/app-user.service';
+import { ProfileService } from '../../../shared/services/profile.service';
+import { CreateEventRequest, EventDto, EventAudit } from '../../events/event.model';
 import { HttpClient } from '@angular/common/http';
 import { Auth } from '@angular/fire/auth';
 import { getIdToken } from 'firebase/auth';
-import { formatApiError } from '../../shared/api-error';
+import { formatApiError } from '../../../shared/models/api-error';
 
 @Component({
   selector: 'app-admin-api',

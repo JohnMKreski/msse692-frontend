@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { Auth } from '@angular/fire/auth';
-import { AppUserService } from '../shared/app-user.service';
+import { AppUserService } from '../shared/services/app-user.service';
 import { catchError, map, of } from 'rxjs';
 
 /**
@@ -17,7 +17,6 @@ export const adminRoleGuard: CanActivateFn = (_route, state) => {
   if (!user) {
     return router.parseUrl(`/error/401?from=${encodeURIComponent(state.url)}`);
   }
-
   return users.getMe().pipe(
     map((me) => {
       const roles = me?.roles ?? [];

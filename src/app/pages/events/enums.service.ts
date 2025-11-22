@@ -1,7 +1,7 @@
 // Service to retrieve enum options from the backend. Results are memoized.
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { API_URL } from '../../shared/api-tokens';
+import { API_URL } from '../../shared/models/api-tokens';
 import { Observable, of, map, catchError, shareReplay } from 'rxjs';
 import { EventStatusOption } from './event.model';
 

@@ -7,12 +7,14 @@ import { onAuthStateChanged, User, getIdTokenResult, signOut } from 'firebase/au
 import { ReactiveFormsModule, FormBuilder, Validators, FormGroup, FormControl } from '@angular/forms';
 import { EventsService } from '../events/events.service';
 import { EventDto, EventAudit } from '../events/event.model';
-import { ProfileService } from '../../shared/profile.service';
-import { ProfileResponse } from '../../shared/profile.model';
-import { AppUserService } from '../../shared/app-user.service';
-import { AppUserDto } from '../../shared/app-user.model';
+import { ProfileService } from '../../shared/services/profile.service';
+import { ProfileResponse } from '../../shared/models/profile.model';
+import { AppUserService } from '../../shared/services/app-user.service';
+import { AppUserDto } from '../../shared/models/app-user.model';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { formatApiError } from '../../shared/api-error';
+import { formatApiError } from '../../shared/models/api-error';
+import { RoleRequestService } from '../../shared/services/role-request.service';
+import { RoleRequest } from '../../shared/models/role-request';
 
 @Component({
     selector: 'app-profile',
@@ -26,10 +28,12 @@ export class ProfileComponent implements OnInit, OnDestroy {
     roles = signal<string[] | null>(null);
     claims = signal<Record<string, any> | null>(null);
     rolesSource = signal<'firebase-claims' | 'backend-fallback' | null>(null);
+    //TODO: Remove token from DOM
     idTokenHeader = signal<Record<string, any> | null>(null);
     idTokenPayload = signal<Record<string, any> | null>(null);
     loading = signal<boolean>(true);
     myEvents = signal<EventDto[] | null>(null);
+    myEventsError = signal<string | null>(null);
     allEvents = signal<any[] | null>(null);
     appUser = signal<AppUserDto | null>(null);
 
@@ -50,16 +54,13 @@ export class ProfileComponent implements OnInit, OnDestroy {
         const claimRoles = this.roles();
         if (Array.isArray(claimRoles) && claimRoles.length) return claimRoles;
         const au = this.appUser();
-        console.log('Falling back to AppUser roles:', au); //Log
         const appUserRoles = (au && Array.isArray((au as any).roles) && (au as any).roles.length)
             ? (au as any).roles as string[]
             : null;
-        console.log('isAdmin?', appUserRoles);
         return appUserRoles;
     });
     isAdmin = computed(() => {
         const r = this.effectiveRoles();
-        console.log('isAdmin?', r); //Log
         return Array.isArray(r) && r.includes('ADMIN');
     });
 
@@ -107,7 +108,17 @@ export class ProfileComponent implements OnInit, OnDestroy {
     private unsub: (() => void) | null = null;
 
     existingProfile = signal<ProfileResponse | null>(null);
-    constructor(private auth: Auth, private fb: FormBuilder, private events: EventsService, private profiles: ProfileService, private appUsers: AppUserService, private snack: MatSnackBar) {
+    // Role Request (Editor) UI state
+    roleReqLoading: WritableSignal<boolean> = signal(false);
+    roleReqError: WritableSignal<string | null> = signal(null);
+    latestRoleRequest: WritableSignal<RoleRequest | null> = signal(null);
+    roleReason!: FormControl<string>;
+    // Role request history
+    roleHistoryLoading: WritableSignal<boolean> = signal(false);
+    roleHistoryError: WritableSignal<string | null> = signal(null);
+    roleHistory: WritableSignal<RoleRequest[] | null> = signal(null);
+
+    constructor(private auth: Auth, private fb: FormBuilder, private events: EventsService, private profiles: ProfileService, private appUsers: AppUserService, private snack: MatSnackBar, private roleRequests: RoleRequestService) {
         this.createForm = this.fb.nonNullable.group({
             eventName: ['', [Validators.required, Validators.maxLength(120)]],
             type: ['', [Validators.required, Validators.maxLength(60)]],
@@ -120,6 +131,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     }
 
     ngOnInit(): void {
+        this.roleReason = this.fb.nonNullable.control('', { validators: [Validators.maxLength(500)] });
         this.unsub = onAuthStateChanged(this.auth, async (u) => {
         this.user.set(u);
         this.roles.set(null);
@@ -146,23 +158,17 @@ export class ProfileComponent implements OnInit, OnDestroy {
             // Load backend AppUser & profile (404 -> ignore)
             this.fetchAppUser();
             this.fetchProfile();
+            // Initialize role request state
+            this.refreshRoleRequestState();
+            this.loadRoleRequestHistory();
         }
-        // Load events
+        // Load all events (admin view) and my events (strict ownership) in parallel
         this.events.list({ page: 0, size: 100, sort: 'startAt,asc' }).subscribe({
             next: (resp) => {
                 const items: any[] = Array.isArray((resp as any)) ? (resp as any as any[]) : (resp?.items ?? []);
-                const normalized = (items ?? []).map((e: any) => {
-                    // const id = e?.id ?? e?.eventId ?? e?.slug ?? null;
-                    // const title = e?.title ?? e?.eventName ?? '(no title)';
-                    // const start = e?.start ?? e?.startAt ?? '';
-                    // const end = e?.end ?? e?.endAt ?? '';
-                    // const location = e?.location ?? e?.eventLocation ?? undefined;
-                    return { ...e };
-                });
-                this.allEvents.set(normalized);
-                this.updateMyEventsFilter();
-                if (normalized.length && !this.selectedEventId()) {
-                    const first = normalized.find((x: any) => x?.eventId != null || x?.id != null);
+                this.allEvents.set(items);
+                if (items.length && !this.selectedEventId()) {
+                    const first = items.find((x: any) => x?.eventId != null || x?.id != null);
                     const sel = first?.eventId ?? first?.id;
                     if (sel != null) {
                         this.selectedEventId.set(String(sel));
@@ -170,9 +176,91 @@ export class ProfileComponent implements OnInit, OnDestroy {
                     }
                 }
             },
-            error: () => { this.allEvents.set([]); this.myEvents.set([]); },
+            error: () => { this.allEvents.set([]); },
+        });
+        this.events.listMine({ page: 0, size: 100, sort: 'startAt,asc' }).subscribe({
+            next: (resp) => { this.myEvents.set(resp?.items ?? []); this.myEventsError.set(null); },
+            error: (err) => {
+                this.myEvents.set([]);
+                if (err?.status === 401 || err?.status === 403) {
+                    this.myEventsError.set('You do not have permission to view your events.');
+                } else {
+                    this.myEventsError.set('Failed to load your events.');
+                }
+            }
         });
         this.loading.set(false);
+        });
+    }
+
+    // ===== Role Request (Editor) =====
+    private refreshRoleRequestState(): void {
+        const r = this.effectiveRoles();
+        if (Array.isArray(r) && (r.includes('ADMIN') || r.includes('EDITOR'))) {
+            this.latestRoleRequest.set(null);
+            return;
+        }
+        this.roleReqLoading.set(true);
+        this.roleReqError.set(null);
+        this.roleRequests.listMy({ status: 'Pending', page: 0, size: 1, sort: 'createdAt,desc' }).subscribe({
+            next: (page) => {
+                const item = (page as any)?.content?.[0] ?? null;
+                this.latestRoleRequest.set(item ?? null);
+            },
+            error: (err) => {
+                this.roleReqError.set(formatApiError(err));
+            },
+            complete: () => this.roleReqLoading.set(false),
+        });
+    }
+
+    private loadRoleRequestHistory(): void {
+        this.roleHistoryLoading.set(true);
+        this.roleHistoryError.set(null);
+        this.roleRequests.listMy({ page: 0, size: 10, sort: 'createdAt,desc' }).subscribe({
+            next: (page) => {
+                const items = (page as any)?.content ?? [];
+                this.roleHistory.set(Array.isArray(items) ? items : []);
+            },
+            error: (err) => this.roleHistoryError.set(formatApiError(err) || 'Failed to load request history'),
+            complete: () => this.roleHistoryLoading.set(false),
+        });
+    }
+
+    submitRoleRequest(): void {
+        const r = this.effectiveRoles();
+        if (Array.isArray(r) && (r.includes('ADMIN') || r.includes('EDITOR'))) return;
+        const reason = (this.roleReason.value || '').trim();
+        this.roleReqLoading.set(true);
+        this.roleReqError.set(null);
+        this.roleRequests.create({ requestedRoles: ['EDITOR'], reason: reason || undefined }).subscribe({
+            next: (req) => {
+                this.latestRoleRequest.set(req);
+                this.snack.open('Role request submitted', 'Dismiss', { duration: 2500, horizontalPosition: 'right' });
+                this.loadRoleRequestHistory();
+            },
+            error: (err) => {
+                this.roleReqError.set(formatApiError(err));
+            },
+            complete: () => this.roleReqLoading.set(false),
+        });
+    }
+
+    cancelPendingRoleRequest(): void {
+        const cur = this.latestRoleRequest();
+        if (!cur) return;
+        this.roleReqLoading.set(true);
+        this.roleReqError.set(null);
+        this.roleRequests.cancel(cur.id).subscribe({
+            next: (updated) => {
+                this.latestRoleRequest.set(updated);
+                this.snack.open('Role request canceled', 'Dismiss', { duration: 2500, horizontalPosition: 'right' });
+                this.loadRoleRequestHistory();
+            },
+            error: (err) => {
+                this.roleReqError.set(formatApiError(err));
+            },
+            complete: () => this.roleReqLoading.set(false),
         });
     }
 
@@ -212,24 +300,21 @@ export class ProfileComponent implements OnInit, OnDestroy {
                     // If roles already set but source not recorded, assume firebase
                     this.rolesSource.set('firebase-claims');
                 }
-                // Recompute my events once we know our AppUser ID
-                this.updateMyEventsFilter();
+                // Refresh strictly owned events after AppUser resolution (optional if ownership affects visibility)
+                this.events.listMine({ page: 0, size: 100, sort: 'startAt,asc' }).subscribe({
+                    next: (resp) => { this.myEvents.set(resp?.items ?? []); this.myEventsError.set(null); },
+                    error: (err) => {
+                        this.myEvents.set([]);
+                        if (err?.status === 401 || err?.status === 403) {
+                            this.myEventsError.set('You do not have permission to view your events.');
+                        } else {
+                            this.myEventsError.set('Failed to load your events.');
+                        }
+                    }
+                });
             },
             error: (err) => { console.error(err); this.appUser.set(null); },
         });
-    }
-
-    private updateMyEventsFilter() {
-        const all = this.allEvents();
-        const au = this.appUser();
-        if (!Array.isArray(all)) { this.myEvents.set([]); return; }
-        const id = au?.id;
-        if (id == null) { this.myEvents.set([]); return; }
-        const filtered = all.filter((e: any) => {
-            const creator = e?.createdByUserId ?? e?.created_by ?? e?.createdBy ?? null;
-            return creator != null && String(creator) === String(id);
-        });
-        this.myEvents.set(filtered);
     }
 
 
@@ -306,6 +391,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
         });
     }
 
+    // TODO: move to utility service?
+    //TODO: Remove token from DOM
     private decodeAndSetIdTokenParts(token: string | null | undefined): void {
         if (!token) { this.idTokenHeader.set(null); this.idTokenPayload.set(null); return; }
         const parts = token.split('.');
@@ -333,10 +420,17 @@ export class ProfileComponent implements OnInit, OnDestroy {
         this.events.createRaw(payload as any).subscribe({
             next: (created) => {
                 this.createSuccess.set(`Created event: ${created.eventName ?? created.eventId}`);
-                // refresh list
-                this.events.list({ page: 0, size: 100, sort: 'startAt,asc' }).subscribe({
-                    next: (resp) => this.myEvents.set((resp as any)?.items ?? []),
-                    error: () => {},
+                // Refresh strictly owned events from backend
+                this.events.listMine({ page: 0, size: 100, sort: 'startAt,asc' }).subscribe({
+                    next: (resp) => { this.myEvents.set(resp?.items ?? []); this.myEventsError.set(null); },
+                    error: (err) => {
+                        if (err?.status === 401 || err?.status === 403) {
+                            // Permission loss shouldn't block success message
+                            this.myEventsError.set('You do not have permission to view your events.');
+                        } else {
+                            this.myEventsError.set('Failed to refresh your events.');
+                        }
+                    }
                 });
                 this.createForm.reset();
                 // optionally refresh audits if selected event changed
@@ -349,7 +443,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
         });
     }
 
-    // Temporary: show toast instead of inline CRUD UI
+    // Temporary: show toast instead of inline CRUD UI 
     showCrudComingSoon(): void {
         this.snack.open('Event management is moving to its own page soon.', 'Dismiss', {
             duration: 3000,
