@@ -14,6 +14,12 @@
     grid-template-columns:1fr 1fr;
     gap:1rem
 }
+.editor__calendar{grid-column:1 / -1; width:100%;}
+.editor__calendar h2{margin:0 0 .5rem;}
+.editor__calendar .legend{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-top:.5rem;font-size:.75rem}
+.editor__calendar .legend-title{font-weight:600;margin-right:.5rem}
+.editor__calendar .legend-item{display:flex;align-items:center;gap:.25rem}
+.editor__calendar .color-dot{width:.75rem;height:.75rem;border-radius:50%;display:inline-block}
 
 .list{
     border:1px solid #e5e7eb;

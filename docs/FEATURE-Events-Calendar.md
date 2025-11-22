@@ -370,73 +370,63 @@ You can adjust spacing with your existing global styles. Example:
 
 That’s it—you now have a robust, SSR-safe events calendar page ready to connect to your backend.
 
-## View Mode Toggle (Published vs Mine)
+## Split Pages (Published vs Manage/My Events)
 
-The Events page exposes a toggle between two distinct data scopes:
+The original single-page toggle has been replaced by two focused pages:
 
-| Mode | Backend Source | Status Constraint | Visibility | Typical Audience |
-|------|----------------|-------------------|------------|------------------|
-| `PUBLISHED` | `GET /api/v1/events` | `status=PUBLISHED` forced on request | All publicly published events across owners | All users / anonymous |
-| `MINE` | `GET /api/v1/events/mine` | No status constraint (returns all of your events: DRAFT, PUBLISHED, UNPUBLISHED, CANCELLED) | Only events created by the authenticated user | Authenticated ADMIN/EDITOR (per backend rule) |
+| Page | Route | Scope | Backend Source | Status Constraint | Audience |
+|------|-------|-------|----------------|-------------------|----------|
+| Public Events | `/events` | All published events (cross-owner) | `GET /api/v1/events` | `status=PUBLISHED` enforced | Anonymous + Authenticated |
+| Manage My Events | `/editor/events` (standalone manage view) | Owned events (all statuses) | `GET /api/v1/events/mine` | None (returns DRAFT, PUBLISHED, UNPUBLISHED, CANCELLED) | Authenticated with required roles |
 
-### Request Parameters
-Both modes accept an aligned set of optional filters (parity maintained intentionally):
+### Rationale for the Split
+- Eliminates permission fallback complexity (public page never attempts privileged scope).
+- Clarifies mental model: discovery vs ownership management.
+- Enables lighter bundle for public calendar (no status legend / action UI).
+- Simplifies caching (single published cache vs dual maps). Mine page can implement its own ownership cache independently.
 
-- `eventType` – Narrow results by event type code.
-- `from`, `to` – Inclusive date window (mapped to calendar view boundaries).
-- `page`, `size` – Paging values (backend clamps size; front-end requests a larger window for calendar use).
-- `sort` – Normalized to `field,dir` where allowed fields are currently `startAt` and `eventName` (frontend previously exposed `eventType` but removed until backend supports it).
+### Calendar Component Reuse
+Both pages now use `EventsCalendarComponent` with different inputs:
+- Public: `mode="PUBLISHED"`, passes `publishedEvents` array and minimal legend (types only).
+- Manage: `mode="MINE"`, passes owned events plus status color legend and action controls (publish/unpublish/cancel) colocated in manage template.
 
-### Caching Strategy
-To avoid redundant network calls when users navigate months or switch back and forth:
+### Filtering & Parameters
+Public page currently supports: `eventType`, calendar-driven `from`/`to`, normalized `sort` (`startAt,asc|desc` or `eventName`).
+Manage page maintains parity for ownership operations; new filters must be added to both endpoints for consistency.
 
-- Separate in-memory caches (`publishedCache`, `mineCache`).
-- Cache key format: `mode|field,dir|eventType|from|to`.
-- Cache invalidation triggers:
-    - Any status transition (publish / unpublish / cancel) via `eventsService.notifyChanged()`.
-    - Underlying creation/update/delete flows (can be extended using the same change bus).
-    - Manual type filter changes or calendar date range shifts.
+### Caching (Updated)
+- Public page: month-scoped in-memory `publishedCache` keyed by `YYYY-MM|eventType|sort`; each entry stores timestamp and expires after 5 minutes (TTL).
+- Fetch window auto-expands to full month boundaries to promote cache hits during intra-month navigation.
+- Manage page: may adopt similar month+TTL approach for ownership events (pending task) but remains isolated from public cache invalidations.
+- Invalidation triggers: status change bus (`changed$`) clears entire map; filter changes (type/sort) naturally produce new keys.
 
-### Permission Fallback Behavior
-If `MINE` is selected and the backend returns `401` or `403`:
+### Status & Action UI Relocation
+Status color legend and publish/unpublish/cancel action buttons moved exclusively to the manage page. Public page shows only type legend for visual categorization.
 
-- Component displays a permission message (non-fatal, explains lack of access).
-- Automatically switches to `PUBLISHED` mode.
-- Disables further `MINE` attempts (`mineDisabled = true`) until a global data change (e.g. successful status transition or page refresh) resets the flag.
+### Removed Behaviors
+- `viewMode` state, permission fallback message, and `mineDisabled` flag.
+- Dual cache invalidation logic tied to mode switching.
+- Mixed color semantics (public now always uses type-based color; manage page applies status color emphasis as needed).
 
-### Color Semantics (Excluded)
-Styling/color rules are intentionally omitted per request. This section focuses only on behavior and data flow; refer to component code if future UX documentation requires visual descriptions.
+### Testing Adjustments
+- Public Events specs assert: initial load, caching reuse, date-range reload, navigation, upcoming list success/error.
+- Removed: mode switch tests, 403 ownership fallback, cross-mode color divergence.
+- Manage page retains ownership lifecycle tests (status transitions, changed$ events) in its own spec.
 
-### Why a Toggle Instead of Separate Pages?
+### Migration Notes
+1. Remove obsolete toggle markup and bindings from `events.component.html`.
+2. Introduce calendar component import; wire `publishedEvents` and `calendarLoading` properties.
+3. Delete unused status legend/tooltips from public component.
+4. Update specs to reflect published-only behavior.
+5. Move status/action UI & legends into `/editor/events` page.
 
-- Reduces navigation friction between public discovery and owner management views.
-- Encourages contextual comparison ("How do my drafts align with the published calendar?").
-- Simplifies stateful filters (date range / type) by keeping them in one place.
+### Future Opportunities
+- Add lightweight SSR prefetch for first published month.
+- Provide deep-link query params for type and date range (`?type=FESTIVAL&month=2025-02`).
+- Accessibility audit of split pages (focus order, ARIA labeling).
 
-### Frontend Implementation Summary
-
-- `viewMode: 'PUBLISHED' | 'MINE'` retained in component state.
-- Mode influences the service call selection and applied status filter (`status=PUBLISHED` injected only in published mode).
-- Legends adjust dynamically (types for published, statuses for mine) without affecting data fetching logic.
-- Robust error handling ensures unauthorized users see a graceful downgrade instead of a blank calendar or repeated failing calls.
-
-### Extension Points (Future Sprints)
-
-- Backend: Add `eventType` sorting or multi-field sorts (e.g., `startAt,asc;eventName,asc`).
-- Frontend: Persist last chosen mode, restore on revisit (localStorage or query param).
-- Analytics: Track mode-switch events for usage insights.
-- Access: Introduce a "My Published" sub-filter to isolate owned public events quickly.
-
-### Testing Recommendations
-
-- Unit test mode switch: ensure two distinct cache maps are used and permission fallback flips mode + disables mine.
-- Simulate a 403 on `/events/mine` and assert published retry occurs exactly once.
-- Verify cache key uniqueness when changing `eventType` or date window.
-- Confirm status transitions clear only the relevant cache (current implementation clears both for simplicity).
-
-### Maintenance Notes
-
-- Keep backend field whitelist for `sort` synchronized with frontend normalization to avoid silent reversion to defaults.
-- Keep filter parity: whenever a new filter is added to `/events` ensure `/events/mine` adds it to preserve UX consistency.
-- Document behavior changes in this section instead of scattering notes across styling or ownership docs.
+### Maintenance Checklist
+- Keep calendar component API stable; prefer additive changes via optional inputs.
+- Synchronize any new filters with both endpoints and both pages.
+- Document behavior changes here; avoid scattering notes across unrelated feature docs.
 

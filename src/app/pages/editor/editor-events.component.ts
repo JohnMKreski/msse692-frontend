@@ -10,12 +10,13 @@ import { take } from 'rxjs/operators';
 import { MatDialog } from '@angular/material/dialog';
 import { CancelConfirmDialogComponent } from '../../components/cancel-confirm-dialog/cancel-confirm-dialog.component';
 import { StatusBadgeComponent } from '../../components/status-badge/status-badge.component';
+import { EventsCalendarComponent } from '../../components/events-calendar/events-calendar.component';
 import { EnumOption } from '../events/enums.service';
 
 @Component({
   selector: 'app-editor-events',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, materialImports, StatusBadgeComponent],
+  imports: [CommonModule, ReactiveFormsModule, materialImports, StatusBadgeComponent, EventsCalendarComponent],
   templateUrl: './editor-events.component.html',
   styleUrls: ['./editor-events.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -46,6 +47,13 @@ export class EditorEventsComponent implements OnDestroy {
   });
 
   editId: number | null = null;
+  // Status colors for calendar legend + mapping (Mine view uses status emphasis)
+  readonly statusColors: Record<string,string> = {
+    PUBLISHED: '#58a6ff',
+    DRAFT: '#e2c76e',
+    UNPUBLISHED: '#a08fe0',
+    CANCELLED: '#ff6b6b'
+  };
 
   constructor() {
     this.load();
@@ -61,9 +69,12 @@ export class EditorEventsComponent implements OnDestroy {
 
   ngOnDestroy(): void {}
 
-  load() {
+  load(range?: { start?: string; end?: string }) {
     this.loading.set(true);
-    this.events.listMine({ page: 0, size: 100, sort: 'startAt,asc' }).pipe(take(1)).subscribe({
+    const params: any = { page: 0, size: 100, sort: 'startAt,asc' };
+    if (range?.start) params.from = range.start;
+    if (range?.end) params.to = range.end;
+    this.events.listMine(params).pipe(take(1)).subscribe({
       next: (resp) => {
         const rows: EventDto[] = Array.isArray((resp as any)) ? (resp as any as EventDto[]) : (resp?.items ?? []);
         this.items.set(rows);
@@ -114,6 +125,16 @@ export class EditorEventsComponent implements OnDestroy {
       eventLocation: item.eventLocation ?? '',
       eventDescription: item.eventDescription ?? '',
     });
+  }
+
+  onCalendarEventClick(id: number) {
+    const found = this.items().find(e => e.eventId === id);
+    if (found) this.edit(found);
+  }
+
+  onCalendarRange(range: { start: string; end: string }) {
+    // Reload events scoped to visible calendar range (optional enhancement)
+    this.load(range);
   }
 
   delete(item: EventDto) {
