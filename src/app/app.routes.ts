@@ -11,6 +11,7 @@ export const routes: Routes = [
     { path: 'events/:id', loadComponent: () => import('./pages/events/event-detail.component').then(m => m.EventDetailComponent) },
     { path: 'login', loadComponent: () => import('./pages/login/login.component').then(m => m.LoginComponent) },
     { path: 'signup', loadComponent: () => import('./pages/signup/signup.component').then(m => m.SignupComponent) },
+    { path: 'create-profile', canActivate: [requireAuthGuard], loadComponent: () => import('./pages/create-profile/create-profile.component').then(m => m.CreateProfileComponent) },
     {
         path: 'profile',
         canActivate: [requireAuthGuard],
