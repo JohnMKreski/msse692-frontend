@@ -1,0 +1,5 @@
+.profile-shell { max-width: 980px; margin: 0 auto; padding: 0.75rem 1.25rem; }
+.nav { display:flex; gap:0.75rem; margin-bottom: 0.75rem; }
+.nav a { padding: 0.4rem 0.6rem; border-radius: 8px; text-decoration: none; border:1px solid rgba(0,0,0,0.08); }
+.nav a.active { background: var(--mat-sys-surface-variant, #f1f1f1); }
+.loading { padding: 1rem; }

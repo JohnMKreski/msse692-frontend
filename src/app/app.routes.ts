@@ -15,8 +15,14 @@ export const routes: Routes = [
     {
         path: 'profile',
         canActivate: [requireAuthGuard],
-        loadComponent: () => import('./pages/profile/profile.component').then(m => m.ProfileComponent),
-        
+        loadComponent: () => import('./pages/profile/profile-shell/profile-shell.component').then(m => m.ProfileShellComponent),
+        children: [
+            { path: '', pathMatch: 'full', redirectTo: 'info' },
+            { path: 'info', loadComponent: () => import('./pages/profile/profile-info/profile-info.component').then(m => m.ProfileInfoComponent) },
+            { path: 'requests', loadComponent: () => import('./pages/profile/profile-requests/profile-requests.component').then(m => m.ProfileRequestsComponent) },
+            { path: 'events', loadComponent: () => import('./pages/profile/profile-events/profile-events.component').then(m => m.ProfileEventsComponent) },
+            { path: 'edit', loadComponent: () => import('./pages/profile/profile-edit/profile-edit.component').then(m => m.ProfileEditComponent) },
+        ],
     },
     { path: 'settings', loadComponent: () => import('./pages/settings/settings.component').then(m => m.SettingsComponent) },
     {

@@ -32,7 +32,7 @@ export class CreateProfileComponent implements OnInit {
 
   ngOnInit(): void {
     this.profileForm = this.fb.group({
-      displayName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(80)]],
+      displayName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(200)]],
       profileType: ['ARTIST', Validators.required],
       location: [''], // conditional required when VENUE
       description: [''],
@@ -56,7 +56,7 @@ export class CreateProfileComponent implements OnInit {
     const ctrl = this.profileForm.get('location');
     if (!ctrl) return;
     if (type === 'VENUE') {
-      ctrl.addValidators([Validators.required, Validators.minLength(2), Validators.maxLength(120)]);
+      ctrl.addValidators([Validators.required, Validators.minLength(2), Validators.maxLength(255)]);
     } else {
       ctrl.clearValidators();
     }
@@ -69,18 +69,24 @@ export class CreateProfileComponent implements OnInit {
       return;
     }
     const formValue = this.profileForm.value;
+    const trimmedDisplayName = (formValue.displayName ?? '').trim();
+    const isVenue = formValue.profileType === 'VENUE';
+    const trimmedLocation = isVenue ? (formValue.location ?? '').trim() : undefined;
     const req: ProfileRequest = {
-      displayName: formValue.displayName,
+      displayName: trimmedDisplayName,
       profileType: formValue.profileType,
-      location: formValue.profileType === 'VENUE' ? formValue.location : undefined,
-      description: formValue.description || undefined,
-      socials: (formValue.socials || []).filter((s: string) => !!s),
-      websites: (formValue.websites || []).filter((w: string) => !!w)
+      location: isVenue ? trimmedLocation : undefined,
+      description: (formValue.description ?? '').trim() || undefined,
+      socials: (formValue.socials || [])
+        .map((s: string) => (s ?? '').trim())
+        .filter((s: string) => !!s),
+      websites: (formValue.websites || [])
+        .map((w: string) => (w ?? '').trim())
+        .filter((w: string) => !!w)
     };
-    // NOTE: Backend currently only supports displayName; extra fields are sent optimistically.
     this.submitting = true;
     this.submitError = null;
-    this.profiles.upsert(req).subscribe({
+    this.profiles.create(req).subscribe({
       next: () => {
         this.submitting = false;
         // Navigate to profile page after creation

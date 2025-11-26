@@ -85,37 +85,7 @@ section[class^="profile__"] {
   border-radius: 12px;
   background: var(--mat-sys-surface, #fff);
   box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-  overflow: hidden;
-}
-section[class^="profile__"] details {
-  padding: 0;
-  margin: 0;
-}
-section[class^="profile__"] summary {
-  list-style: none;
-  cursor: pointer;
   padding: 0.9rem 1.25rem;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  position: relative;
-}
-section[class^="profile__"] summary::-webkit-details-marker { display: none; }
-
-/* Chevron indicator */
-section[class^="profile__"] summary::after {
-  content: '\25B6';
-  font-size: 0.75rem;
-  transform: rotate(90deg);
-  transition: transform 140ms ease;
-  margin-left: auto;
-  color: var(--mat-sys-on-surface-variant, #666);
-}
-details:not([open]) > summary::after { transform: rotate(0deg); }
-
-details > *:not(summary) {
-  padding: 0 1.25rem 1.25rem;
 }
 
 pre {
@@ -128,38 +98,17 @@ pre {
   max-height: 360px;
 }
 
-table.audit-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.75rem;
-}
-table.audit-table th,
-table.audit-table td {
-  padding: 0.5rem 0.6rem;
-  border-bottom: 1px solid rgba(0,0,0,0.08);
-  text-align: left;
-}
-table.audit-table thead th {
-  background: var(--mat-sys-surface-variant, #ececec);
-  font-weight: 600;
-}
-table.audit-table tbody tr:last-child td { border-bottom: none; }
-
-.audit-controls {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-  margin-bottom: 0.75rem;
-}
-.audit-controls select {
-  padding: 0.35rem 0.5rem;
-  font: inherit;
-}
+/* Simplified utility styles */
+.section-title { margin: 0 0 0.5rem; }
+.inline-form { margin: 0 1.25rem 0.75rem; display:flex; align-items:flex-end; gap:0.75rem; flex-wrap:wrap; }
+.stack-form { margin: 0 1.25rem 0.75rem; display:flex; flex-direction:column; gap:0.5rem; max-width:640px; }
+.stack-label { display:flex; flex-direction:column; gap:0.25rem; min-width: 260px; }
+.subhead { margin:0.25rem 0; font-size:0.95rem; }
+.bulleted { margin:0; padding-left:1rem; }
+.link-grid { margin-top:0.5rem; display:grid; grid-template-columns: repeat(auto-fit,minmax(240px,1fr)); gap:0.75rem; }
 
 @media (max-width: 640px) {
   .profile__header { top: 52px; padding: 0.5rem 0.75rem; }
   .avatar { width: 48px; height: 48px; }
   .overview { grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); }
-  section[class^="profile__"] summary { padding: 0.75rem 1rem; }
-  details > *:not(summary) { padding: 0 1rem 1rem; }
 }

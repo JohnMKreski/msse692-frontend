@@ -28,27 +28,12 @@ export class ProfileComponent implements OnInit, OnDestroy {
     roles = signal<string[] | null>(null);
     claims = signal<Record<string, any> | null>(null);
     rolesSource = signal<'firebase-claims' | 'backend-fallback' | null>(null);
-    //TODO: Remove token from DOM
-    idTokenHeader = signal<Record<string, any> | null>(null);
-    idTokenPayload = signal<Record<string, any> | null>(null);
     loading = signal<boolean>(true);
     myEvents = signal<EventDto[] | null>(null);
     myEventsError = signal<string | null>(null);
-    allEvents = signal<any[] | null>(null);
     appUser = signal<AppUserDto | null>(null);
 
-    // Admin-only audit section state
-    audits = signal<EventAudit[] | null>(null);
-    auditsLoading = signal<boolean>(false);
-    auditsError = signal<string | null>(null);
-    selectedEventId = signal<string | null>(null);
-    // Admin event list: prefer my events, else fall back to all events
-    adminSelectableEvents = computed(() => {
-        const mine = this.myEvents();
-        if (Array.isArray(mine) && mine.length) return mine;
-        const all = this.allEvents();
-        return Array.isArray(all) ? all : [];
-    });
+    // Removed admin audits/all-events section for simplified profile page
     // If Firebase token claims don't include roles, fall back to backend AppUser.roles
     effectiveRoles = computed(() => {
         const claimRoles = this.roles();
@@ -65,30 +50,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     });
 
     // Firebase user as a comprehensive JSON with nulls for missing fields
-    firebaseInfo = computed<Record<string, any> | null>(() => {
-        const u = this.user();
-        if (!u) return null;
-        const anyU: any = u as any;
-        return {
-            uid: u.uid ?? null,
-            email: u.email ?? null,
-            emailVerified: u.emailVerified ?? null,
-            displayName: u.displayName ?? null,
-            photoURL: u.photoURL ?? null,
-            phoneNumber: anyU.phoneNumber ?? null,
-            isAnonymous: anyU.isAnonymous ?? null,
-            providerId: u.providerId ?? null,
-            tenantId: anyU.tenantId ?? null,
-            refreshToken: anyU.refreshToken ?? null,
-            providerData: Array.isArray(u.providerData) ? u.providerData : (u.providerData ?? null),
-            metadata: u.metadata
-                ? {
-                      creationTime: u.metadata.creationTime ?? null,
-                      lastSignInTime: u.metadata.lastSignInTime ?? null,
-                  }
-                : null,
-        };
-    });
+    // Removed firebaseInfo JSON expose for simplified UI
 
     canCrud = computed(() => {
         const r = this.roles();
@@ -149,8 +111,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
                 this.roles.set(null);
                 this.rolesSource.set(null); // might become backend fallback later
             }
-            // Decode JWT header/payload (omit signature) for visibility
-            this.decodeAndSetIdTokenParts(tokenResult.token);
             } catch {
             // ignore claim fetch errors; show basic profile
             }
@@ -162,22 +122,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
             this.refreshRoleRequestState();
             this.loadRoleRequestHistory();
         }
-        // Load all events (admin view) and my events (strict ownership) in parallel
-        this.events.list({ page: 0, size: 100, sort: 'startAt,asc' }).subscribe({
-            next: (resp) => {
-                const items: any[] = Array.isArray((resp as any)) ? (resp as any as any[]) : (resp?.items ?? []);
-                this.allEvents.set(items);
-                if (items.length && !this.selectedEventId()) {
-                    const first = items.find((x: any) => x?.eventId != null || x?.id != null);
-                    const sel = first?.eventId ?? first?.id;
-                    if (sel != null) {
-                        this.selectedEventId.set(String(sel));
-                        this.loadAudits();
-                    }
-                }
-            },
-            error: () => { this.allEvents.set([]); },
-        });
+        // Load my events only (strict ownership)
         this.events.listMine({ page: 0, size: 100, sort: 'startAt,asc' }).subscribe({
             next: (resp) => { this.myEvents.set(resp?.items ?? []); this.myEventsError.set(null); },
             error: (err) => {
@@ -326,44 +271,27 @@ export class ProfileComponent implements OnInit, OnDestroy {
         await signOut(this.auth);
     }
 
-    async forceRefreshTokenAndClaims(): Promise<void> {
-        const current = this.user();
-        if (!current) return;
-        try {
-            const tokenResult = await getIdTokenResult(current, /*force*/ true);
-            const c = tokenResult.claims || {};
-            this.claims.set(c);
-            const r = Array.isArray(c['roles']) ? (c['roles'] as string[]) : (typeof c['roles'] === 'string' ? [c['roles']] : []);
-            if (r.length) {
-                this.roles.set(r);
-                this.rolesSource.set('firebase-claims');
-            } else {
-                // keep existing fallback if present
-                if (!this.roles() || this.rolesSource() === 'firebase-claims') {
-                    this.roles.set(null);
-                    this.rolesSource.set(null);
-                }
-            }
-            this.decodeAndSetIdTokenParts(tokenResult.token);
-        } catch (e) {
-            // silent
-        }
-    }
+    // Removed token decode/refresh utilities from simplified UI
 
     upsertProfileWithCurrentDisplayName(): void {
         const u = this.user();
         if (!u) { return; }
         const name = (u.displayName && u.displayName.trim()) || u.email || 'Unnamed';
         this.profileSaving.set(true);
-        this.profiles.upsert({ displayName: name }).subscribe({
+        // Use patch to update display name; if profile does not exist, prompt to create
+        this.profiles.patch({ displayName: name }).subscribe({
             next: (resp) => {
                 this.existingProfile.set(resp);
-                this.snack.open('Profile saved', 'Dismiss', { duration: 2500, horizontalPosition: 'right' });
+                this.snack.open('Profile updated', 'Dismiss', { duration: 2500, horizontalPosition: 'right' });
                 try { if (resp?.displayName) this.profileName.setValue(resp.displayName); } catch {}
             },
             error: (err) => {
-                const msg = formatApiError(err) || 'Failed to save profile';
-                this.snack.open(msg, 'Dismiss', { duration: 3500, horizontalPosition: 'right' });
+                if (err?.status === 404) {
+                    this.snack.open('No profile found. Please create your profile first.', 'Dismiss', { duration: 3500, horizontalPosition: 'right' });
+                } else {
+                    const msg = formatApiError(err) || 'Failed to update profile';
+                    this.snack.open(msg, 'Dismiss', { duration: 3500, horizontalPosition: 'right' });
+                }
             },
             complete: () => this.profileSaving.set(false)
         });
@@ -378,35 +306,24 @@ export class ProfileComponent implements OnInit, OnDestroy {
             return;
         }
         this.profileSaving.set(true);
-        this.profiles.upsert({ displayName: name }).subscribe({
+        this.profiles.patch({ displayName: name }).subscribe({
             next: (resp) => {
                 this.existingProfile.set(resp);
                 this.snack.open('Profile updated', 'Dismiss', { duration: 2500, horizontalPosition: 'right' });
             },
             error: (err) => {
-                const msg = formatApiError(err) || 'Failed to update profile';
-                this.snack.open(msg, 'Dismiss', { duration: 3500, horizontalPosition: 'right' });
+                if (err?.status === 404) {
+                    this.snack.open('No profile found. Use Create Profile to get started.', 'Dismiss', { duration: 3500, horizontalPosition: 'right' });
+                } else {
+                    const msg = formatApiError(err) || 'Failed to update profile';
+                    this.snack.open(msg, 'Dismiss', { duration: 3500, horizontalPosition: 'right' });
+                }
             },
             complete: () => this.profileSaving.set(false)
         });
     }
 
-    // TODO: move to utility service?
-    //TODO: Remove token from DOM
-    private decodeAndSetIdTokenParts(token: string | null | undefined): void {
-        if (!token) { this.idTokenHeader.set(null); this.idTokenPayload.set(null); return; }
-        const parts = token.split('.');
-        if (parts.length !== 3) { this.idTokenHeader.set(null); this.idTokenPayload.set(null); return; }
-        try {
-            if (typeof window === 'undefined') return; // SSR guard
-            const decode = (s: string) => JSON.parse(atob(s.replace(/-/g, '+').replace(/_/g, '/')));
-            this.idTokenHeader.set(decode(parts[0]));
-            this.idTokenPayload.set(decode(parts[1]));
-        } catch {
-            this.idTokenHeader.set(null);
-            this.idTokenPayload.set(null);
-        }
-    }
+    // Removed token decode function
 
     async submitCreate(): Promise<void> {
         this.createError.set(null);
@@ -433,8 +350,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
                     }
                 });
                 this.createForm.reset();
-                // optionally refresh audits if selected event changed
-                if (this.selectedEventId()) this.loadAudits();
             },
             error: (err) => {
                 this.createError.set(err?.error?.message || 'Failed to create event.');
@@ -452,19 +367,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
         });
     }
 
-    // ===== Admin audit utilities =====
-    loadAudits(limit: number = 10): void {
-        if (!this.isAdmin()) return; // guard
-        const id = this.selectedEventId();
-        if (!id) { this.audits.set([]); return; }
-        this.auditsLoading.set(true);
-        this.auditsError.set(null);
-        this.events.getAudits(id, limit).subscribe({
-            next: (rows) => this.audits.set(rows || []),
-            error: (err) => this.auditsError.set(err?.error?.message || 'Failed to load audits'),
-            complete: () => this.auditsLoading.set(false),
-        });
-    }
+    // Removed admin audit utilities
 
     relTime(iso: string): string {
         if (!iso) return '';
@@ -479,5 +382,13 @@ export class ProfileComponent implements OnInit, OnDestroy {
             const days = Math.floor(hrs / 24);
             return `${days}d ago`;
         } catch { return iso; }
+    }
+
+    linkUrl(s: string | null | undefined): string | null {
+        if (!s) return null;
+        const t = s.trim();
+        if (!t) return null;
+        if (/^https?:\/\//i.test(t)) return t;
+        return `https://${t}`;
     }
 }

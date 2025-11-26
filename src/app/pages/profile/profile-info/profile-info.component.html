@@ -1,0 +1,20 @@
+<section class="profile-info">
+  <h2 class="section-title">Profile Info</h2>
+
+  <ng-container *ngIf="existingProfile() as p">
+    <h3 class="subhead">Profile</h3>
+    <dl aria-label="Profile fields" class="profile-summary one-column">
+      <div><dt>Display Name</dt><dd>{{ p.displayName || '—' }}</dd></div>
+      <div><dt>Type</dt><dd>{{ p.profileType || '—' }}</dd></div>
+      <div><dt>Loc</dt><dd>{{ p.location || '—' }}</dd></div>
+      <div><dt>Desc</dt><dd>{{ p.description || '—' }}</dd></div>
+      <div><dt>UID</dt><dd>{{ p.userId || '—' }}</dd></div>
+    </dl>
+
+    <h3 class="subhead">Account</h3>
+    <dl aria-label="Account fields" class="profile-summary one-column">
+      <div><dt>Full Name</dt><dd>{{ appUser()?.displayName || '—' }}</dd></div>
+      <div><dt>Email</dt><dd>{{ appUser()?.email || '—' }}</dd></div>
+      <div><dt>Role</dt><dd>{{ rolesText() }}</dd></div>
+    </dl>
+  </ng-container>
