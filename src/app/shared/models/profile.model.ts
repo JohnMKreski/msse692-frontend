@@ -4,7 +4,7 @@ export type ProfileType = 'VENUE' | 'ARTIST' | 'OTHER';
 
 export interface ProfileResponse {
   id: number;
-  userId: number; // note: backend may send as user_id
+  user_id: number; // note: backend may send as user_id
   displayName: string;
   profileType: ProfileType;
   location?: string | null;

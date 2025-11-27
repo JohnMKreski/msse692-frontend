@@ -6,3 +6,13 @@
 .loading-indicator { font-size: .75rem; color: #666; }
 [calendar-legend] { margin-top: .5rem; display: block; }
 .fullcalendar, full-calendar { width: 100%; }
+
+/* Debug: ensure timegrid slots have sufficient pixel height to reflect durations */
+:host ::ng-deep .fc .fc-timegrid-slot {
+	/* Increase slot row height so multi-slot events visibly span longer */
+	height: 28px; /* default can be ~18px depending on theme; bump to reduce compression */
+}
+
+:host ::ng-deep .fc .fc-timegrid-slot-label {
+	line-height: 28px; /* keep labels aligned with increased slot height */
+}

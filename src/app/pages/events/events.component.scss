@@ -10,7 +10,7 @@
 :host ::ng-deep .fc .fc-daygrid-event,
 :host ::ng-deep .fc .fc-timegrid-event,
 :host ::ng-deep .fc .fc-list-event {
-    position: relative;
+    // position: relative;
     cursor: pointer; /* indicate clickability for calendar events */
 }
 

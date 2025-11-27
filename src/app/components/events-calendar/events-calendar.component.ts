@@ -52,12 +52,24 @@ export class EventsCalendarComponent implements OnInit {
   @Output() refreshRequested = new EventEmitter<void>();
 
   calendarOptions: CalendarOptions = {
+    timeZone: 'local',
     initialView: 'dayGridMonth',
     headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek' },
     nowIndicator: true,
     dayMaxEvents: true,
     navLinks: true,
     expandRows: true,
+    height: 'auto',
+    contentHeight: 700,
+    slotDuration: '00:30:00',
+    slotMinTime: '06:00:00',
+    slotMaxTime: '24:00:00',
+    scrollTime: '09:00:00',
+    defaultTimedEventDuration: '00:30:00',
+    forceEventDuration: true,
+    eventDurationEditable: false,
+    displayEventEnd: true,
+    eventTimeFormat: { hour: 'numeric', minute: '2-digit', meridiem: true },
     eventClick: (arg) => this.onCalendarEventClick(arg),
     eventDidMount: (arg) => this.onEventDidMount(arg),
     datesSet: (arg) => this.onDatesSet(arg),
@@ -83,11 +95,26 @@ export class EventsCalendarComponent implements OnInit {
       const statusColor = this.statusColors[e.status?.toUpperCase() || ''] || '#58a6ff';
       const typeColor = e.type ? this.typeColors[e.type.toUpperCase()] : undefined;
       const finalColor = this.mode === 'MINE' ? statusColor : (typeColor || statusColor);
+      // Ensure end time is present and after start for proper span; if missing or invalid, default to +1 hour
+      const startMs = Date.parse(e.startAt);
+      const endMsRaw = e.endAt ? Date.parse(e.endAt) : NaN;
+      const startDate = !isNaN(startMs) ? new Date(startMs) : new Date(e.startAt);
+      let endDate: Date | undefined = undefined;
+      if (!isNaN(endMsRaw)) {
+        endDate = new Date(endMsRaw);
+        if (!isNaN(startMs) && endDate.getTime() <= startMs) {
+          endDate = new Date(startMs + 30 * 60 * 1000); // minimum 30m span
+        }
+      } else {
+        // No end provided. Keep undefined to avoid forcing 1h default.
+        // If needed later, we can restore a fallback like +60m.
+        endDate = undefined;
+      }
       return {
         id: String(e.eventId),
         title: e.eventName,
-        start: e.startAt,
-        end: e.endAt,
+        start: startDate,
+        end: endDate,
         allDay: false,
         color: finalColor,
         extendedProps: {
@@ -122,6 +149,27 @@ export class EventsCalendarComponent implements OnInit {
   private onEventDidMount(arg: any): void {
     if (!arg?.el || !arg?.event) return;
     const e = arg.event;
+    // Debug: log parsed start/end for diagnosing one-hour span issue
+    try {
+      const s: Date | null = e.start ?? null;
+      const en: Date | null = e.end ?? null;
+      const durMs = (s && en) ? (en.getTime() - s.getTime()) : null;
+      const durMinProp = e.extendedProps?.__durationMinutes ?? null;
+      // Only log a few events to avoid noise
+      if ((window as any).__fcDebugLoggedCount == null) (window as any).__fcDebugLoggedCount = 0;
+      if ((window as any).__fcDebugLoggedCount < 10) {
+        (window as any).__fcDebugLoggedCount++;
+        console.log('[CalendarDebug] Event span', {
+          id: e.id,
+          title: e.title,
+          start: s,
+          end: en,
+          durationMinutes: durMs != null ? Math.round(durMs / 60000) : null,
+          durationMinutesProp: durMinProp,
+          extended: e.extendedProps
+        });
+      }
+    } catch {}
     const title = e.title as string | undefined;
     const loc = e.extendedProps?.location as string | undefined;
     const type = (e.extendedProps?.typeDisplayName || e.extendedProps?.type) as string | undefined;
