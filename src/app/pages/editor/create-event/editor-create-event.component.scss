@@ -1,0 +1,18 @@
+.editor-create {
+  display: grid;
+  gap: 16px;
+}
+.header { display: flex; align-items: center; gap: 12px; }
+.header .spacer { flex: 1; }
+.form { display: grid; gap: 12px; }
+
+/* Reuse datetime layout styling similar to manage page */
+.datetime-layout { display: grid; gap: 12px; }
+.datetime-layout .row { display: grid; align-items: center; gap: 12px; }
+.datetime-layout .row.start-row,
+.datetime-layout .row.end-row { grid-template-columns: 1fr 1fr auto; }
+.datetime-layout .row.middle-row { grid-template-columns: 1fr; }
+.period-toggle { display: flex; gap: 8px; justify-content: center; align-items: center; }
+.period-toggle button.active { background-color: var(--mdc-filled-button-container-color, #1976d2); color: #fff; border-color: transparent; }
+.quick-durations { display: flex; align-items: center; gap: 8px; }
+.duration-preview { margin-top: 4px; }

@@ -1,0 +1,56 @@
+<div class="create-profile">
+	<h1>Create Your Profile</h1>
+	<form [formGroup]="profileForm" (ngSubmit)="submit()" novalidate>
+		<div class="form-row">
+			<label for="displayName">Display Name *</label>
+			<input id="displayName" type="text" formControlName="displayName" [class.invalid]="profileForm.get('displayName')?.invalid && profileForm.get('displayName')?.touched" />
+			<div class="error" *ngIf="profileForm.get('displayName')?.touched && profileForm.get('displayName')?.invalid">
+				Display name is required (2-80 chars).
+			</div>
+		</div>
+
+		<div class="form-row">
+			<label for="profileType">Profile Type *</label>
+			<select id="profileType" formControlName="profileType">
+				<option *ngFor="let t of profileTypes" [value]="t.value">{{ t.label }}</option>
+			</select>
+		</div>
+
+		<div class="form-row" *ngIf="profileForm.get('profileType')?.value === 'VENUE'">
+			<label for="location">Location *</label>
+			<input id="location" type="text" formControlName="location" [class.invalid]="profileForm.get('location')?.invalid && profileForm.get('location')?.touched" />
+			<div class="error" *ngIf="profileForm.get('location')?.touched && profileForm.get('location')?.invalid">
+				Location required for Venue.
+			</div>
+		</div>
+
+		<div class="form-row">
+			<label for="description">Description</label>
+			<textarea id="description" rows="4" formControlName="description" placeholder="Tell people about yourself or your venue"></textarea>
+		</div>
+
+		<fieldset class="form-array" formArrayName="socials">
+			<legend>Social Profiles</legend>
+			<div *ngFor="let ctrl of socialsArray.controls; let i = index" class="array-row">
+				<input type="url" [formControlName]="i" placeholder="https://social.example/your-handle" />
+				<button type="button" (click)="removeSocial(i)" aria-label="Remove social">✕</button>
+			</div>
+			<button type="button" (click)="addSocial()">Add Social</button>
+		</fieldset>
+
+		<fieldset class="form-array" formArrayName="websites">
+			<legend>Websites</legend>
+			<div *ngFor="let ctrl of websitesArray.controls; let i = index" class="array-row">
+				<input type="url" [formControlName]="i" placeholder="https://your-site.example" />
+				<button type="button" (click)="removeWebsite(i)" aria-label="Remove website">✕</button>
+			</div>
+			<button type="button" (click)="addWebsite()">Add Website</button>
+		</fieldset>
+
+		<div class="actions">
+			<button type="submit" [disabled]="submitting || profileForm.invalid">{{ submitting ? 'Saving...' : 'Create Profile' }}</button>
+			<div class="error" *ngIf="submitError">{{ submitError }}</div>
+		</div>
+	</form>
+	<p class="note">Fields marked * are required.</p>
+</div>

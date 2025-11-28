@@ -1,0 +1,7 @@
+.editor-calendar { display: grid; gap: 12px; }
+.header { display: flex; align-items: center; }
+.content { display: block; }
+.legend { display: flex; align-items: center; gap: 12px; }
+.legend .legend-title { font-weight: 600; }
+.legend .legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.legend .color-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }

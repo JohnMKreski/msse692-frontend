@@ -2,7 +2,115 @@
     display: block;
 }
 .events-page {
-    padding: 1rem;
+    /* Further tightened top & bottom padding to align with compact calendar header */
+    padding: .5rem 1.1rem 1.5rem;
+    max-width: 1180px; /* slight width reduction for tighter feel */
+    margin: 0 auto;
+}
+ .page-title {
+     margin: 0 0 .75rem;
+     font-size: 1.9rem;
+     font-weight: 600;
+     letter-spacing: .5px;
+ }
+.page-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: .75rem;
+    margin-bottom: .35rem; /* tighter below header */
+}
+.page-header .page-title { margin: 0; }
+.refresh-btn {
+    background: #1f6feb;
+    color: #fff;
+    border: none;
+    padding: .42rem .8rem; /* slightly reduced vertical space */
+    border-radius: 6px;
+    font-size: .72rem;
+    font-weight: 600;
+    letter-spacing: .5px;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,.12);
+    transition: background .15s ease, box-shadow .15s ease;
+    line-height: 1.05;
+}
+.refresh-btn:hover:not(:disabled) { background: #2583ff; }
+.refresh-btn:active:not(:disabled) { background: #1d5fbf; box-shadow: 0 1px 2px rgba(0,0,0,.18); }
+.refresh-btn:disabled { opacity: .55; cursor: default; }
+ .calendar-wrapper {
+     background: #ffffff;
+     border: 1px solid #d1d5db;
+     border-radius: 10px;
+     padding: .4rem .5rem .65rem; /* reduced internal padding */
+    box-shadow: 0 2px 4px rgba(0,0,0,.04);
+    height: 770px; /* expanded to fit 6-row month view without vertical scroll */
+     display: flex;
+     flex-direction: column;
+    overflow: visible; /* allow tooltips & full month grid without clipping */
+  }
+
+/* Allow FullCalendar to flex within the frame */
+.calendar-wrapper ::ng-deep .fc {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+.calendar-wrapper ::ng-deep .fc-view-harness {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+.calendar-wrapper ::ng-deep .fc-view-harness-active {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+/* Enable vertical scroll ONLY for time-based (week/day) and list views */
+.calendar-wrapper ::ng-deep .fc-timegrid-body,
+.calendar-wrapper ::ng-deep .fc-list-scroller {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    padding-bottom: .5rem;
+}
+
+/* Month (dayGrid) view should remain static (no vertical scroll) */
+.calendar-wrapper ::ng-deep .fc-daygrid,
+.calendar-wrapper ::ng-deep .fc-daygrid .fc-scroller,
+.calendar-wrapper ::ng-deep .fc-daygrid-body {
+    overflow: visible !important;
+}
+
+/* Ensure harness and view can shrink horizontally to avoid x scroll */
+.calendar-wrapper ::ng-deep .fc-view-harness,
+.calendar-wrapper ::ng-deep .fc-view-harness-active,
+.calendar-wrapper ::ng-deep .fc {
+    min-width: 0;
+}
+
+/* Timegrid specific body sometimes forces horizontal scroll; constrain it */
+.calendar-wrapper ::ng-deep .fc-timegrid-body {
+    width: 100% !important;
+}
+
+/* Daygrid event rows: allow vertical overflow, but hide accidental horizontal overflow */
+.calendar-wrapper ::ng-deep .fc-daygrid-body {
+    overflow-x: hidden;
+}
+
+/* Prevent horizontal overflow jitter */
+.calendar-wrapper ::ng-deep .fc-scroller {
+    margin-right: 0;
+}
+
+@media (max-width: 900px) {
+    .calendar-wrapper { height: 620px; }
+}
+@media (max-width: 600px) {
+    .calendar-wrapper { height: 520px; }
 }
 /* Removed duplicate early legend styles */
 
@@ -10,7 +118,7 @@
 :host ::ng-deep .fc .fc-daygrid-event,
 :host ::ng-deep .fc .fc-timegrid-event,
 :host ::ng-deep .fc .fc-list-event {
-    position: relative;
+    // position: relative;
     cursor: pointer; /* indicate clickability for calendar events */
 }
 
@@ -71,32 +179,32 @@
 .legend-container {
     display: flex;
     flex-wrap: wrap;
-    gap: 1.25rem;
-    margin: 0.75rem 0 1.25rem;
+    gap: 1.1rem;
+    margin: .25rem 0 1.25rem;
 }
 .legend {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.5rem 1rem;
-    font-size: 0.75rem;
+    gap: .45rem .9rem;
+    font-size: .7rem;
     background: #ffffff;
-    border: 1px solid #a3a9ae;
-    padding: 0.55rem 0.85rem;
+    border: 1px solid #c3c7cb;
+    padding: .5rem .75rem;
     border-radius: 6px;
 }
 .legend-title {
     font-weight: 600;
-    margin-right: 0.6rem;
+    margin-right: .5rem;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: #111827; /* cleaned high-contrast title on light bg */
+    letter-spacing: .5px;
+    color: #111827;
 }
 .legend-item {
     display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
-    color: #374151; /* cleaned readable body text */
+    gap: .35rem;
+    color: #374151;
 }
 .color-dot {
     width: 12px;

@@ -1,5 +1,8 @@
 <section class="events-page" ngSkipHydration>
-    <h1 class="page-title">Events Calendar</h1>
+    <div class="page-header">
+        <h1 class="page-title">Events Calendar</h1>
+        <button type="button" class="refresh-btn" (click)="onRefreshClick()" [disabled]="calendarLoading" *ngIf="isBrowser()">Refresh</button>
+    </div>
 
     <!-- View toggle removed: /events now shows only Published events -->
 
@@ -36,29 +39,15 @@
         </div>
     </div>
 
-    <!-- Simple chronological list above the calendar -->
-    <div class="upcoming-list">
-        <h2>Upcoming Published Events</h2>
-        <app-error-banner *ngIf="upcomingError" [error]="upcomingErrObj" [message]="upcomingError" [status]="upcomingStatus ?? 500" (retry)="loadUpcoming()"></app-error-banner>
-        <div *ngIf="upcomingLoading" class="skeleton-wrap">
-            <app-loading-skeleton [lines]="3"></app-loading-skeleton>
-        </div>
-        <!-- <p class="error" *ngIf="upcomingError as err">{{ err }}</p> -->
-        <ul *ngIf="!upcomingLoading && !upcomingError && upcoming.length">
-            <li *ngFor="let e of upcoming">
-                <a [routerLink]="['/events', e.eventId]">{{ e.eventName }}</a>
-                <span>— {{ e.startAt | date:'medium' }}</span>
-            </li>
-        </ul>
-    </div>
+    <!-- Upcoming list removed per request -->
 
     <!-- Server-side placeholder to keep SSR markup stable -->
     <div *ngIf="!isBrowser()" class="calendar-placeholder" aria-hidden="true">
         <p>Calendar is available on the client.</p>
     </div>
 
-    <!-- Reusable calendar component (Published only) -->
-    <div *ngIf="isBrowser()" class="calendar-wrapper">
+    <!-- Reusable calendar component (Published only) with fixed frame -->
+    <div *ngIf="isBrowser()" class="calendar-wrapper" aria-label="Events calendar">
         <app-events-calendar
             mode="PUBLISHED"
             [events]="publishedEvents"
