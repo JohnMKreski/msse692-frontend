@@ -15,7 +15,7 @@ import { EventsCalendarComponent } from '../../components/events-calendar/events
 @Component({
     selector: 'app-events',
     standalone: true,
-    imports: [NgIf, NgForOf, DatePipe, RouterLink, FormsModule, ErrorBannerComponent, LoadingSkeletonComponent, EventsCalendarComponent],
+    imports: [NgIf, NgForOf, FormsModule, EventsCalendarComponent],
     templateUrl: './events.component.html',
     styleUrls: ['./events.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -131,6 +131,13 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
                 });
             }
         });
+    }
+
+    onRefreshClick(): void {
+        if (!this.isBrowser()) return;
+        // Clear cache and reload current month (based on today or last viewed window start if desired)
+        this.publishedCache.clear();
+        this.loadEvents();
     }
 
     loadUpcoming() {

@@ -51,17 +51,18 @@ export class EventsCalendarComponent implements OnInit {
   /** Parent may request a refresh (e.g., re-fetch) */
   @Output() refreshRequested = new EventEmitter<void>();
 
-  calendarOptions: CalendarOptions = {
+    calendarOptions: CalendarOptions = {
     timeZone: 'local',
     initialView: 'dayGridMonth',
     headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek' },
     nowIndicator: true,
     dayMaxEvents: true,
     navLinks: true,
-    expandRows: true,
-      height: 'auto',
-      contentHeight: 'auto',
-      slotDuration: '00:30:00',
+    expandRows: true, // keep month view fully expanded within fixed height
+    height: 700, // Option B: fixed total calendar height for all views (header + view)
+    slotDuration: '00:30:00',
+    // Optional: initial scroll position for timeGrid views (morning focus)
+    scrollTime: '06:00:00',
     // Minimal defaults (use library defaults for time range/scroll/timed duration)
     eventClick: (arg) => this.onCalendarEventClick(arg),
     eventDidMount: (arg) => this.onEventDidMount(arg),

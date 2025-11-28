@@ -1,4 +1,10 @@
 <section class="event-detail" *ngIf="event() as e; else loadingOrErrorTpl">
+  <nav class="event-detail__back" aria-label="Back navigation">
+    <a mat-button color="primary" routerLink="/events" routerLinkActive="active" class="back-link">
+      <mat-icon fontIcon="arrow_back" aria-hidden="true"></mat-icon>
+      <span>Back to Calendar</span>
+    </a>
+  </nav>
   <div class="event-detail__card">
     <header class="event-detail__header">
       <div class="event-detail__title-group">

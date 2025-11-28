@@ -1,11 +1,35 @@
-<div class="app-footer__inner">
-    <span>&copy; {{ currentYear }} Ark Valley Events</span>
-    <span class="spacer">
-    <nav aria-label="Footer" class="footer-nav">
-        <a routerLink="/about" routerLinkActive="active">About</a>
-        <a routerLink="/contact" routerLinkActive="active">Contact</a>
-        <a routerLink="/privacy" routerLinkActive="active">Privacy Policy</a>
-        <a routerLink="/terms" routerLinkActive="active">Terms of Service</a>
-    </nav>
-    </span>
-</div>
+<footer class="app-footer__inner" aria-label="Site footer">
+    <div class="footer__top">
+        <div class="brand-block">
+            <div class="logo-text">Ark Valley Events</div>
+            <div class="copyright">&copy; {{ currentYear }} Ark Valley Events</div>
+        </div>
+        <nav class="link-groups" aria-label="Footer navigation">
+            <div class="link-group">
+                <h3 class="group-title">Platform</h3>
+                <a routerLink="/about" routerLinkActive="active">About</a>
+                <a routerLink="/contact" routerLinkActive="active">Contact</a>
+            </div>
+            <div class="link-group">
+                <h3 class="group-title">Legal</h3>
+                <a routerLink="/privacy" routerLinkActive="active">Privacy Policy</a>
+                <a routerLink="/terms" routerLinkActive="active">Terms of Service</a>
+            </div>
+            <div class="link-group">
+                <h3 class="group-title">Future Links</h3>
+                <a tabindex="-1" class="pending" aria-disabled="true">Events Guide</a>
+                <a tabindex="-1" class="pending" aria-disabled="true">Help Center</a>
+            </div>
+        </nav>
+    </div>
+    <div class="footer__bottom">
+        <div class="fine-print">
+            <span>All times local unless noted.</span>
+            <span>Beta preview release.</span>
+        </div>
+        <div class="social" aria-label="Social links">
+            <a href="#" class="icon-link" aria-label="Facebook (coming soon)" tabindex="-1" aria-disabled="true">Fb</a>
+            <a href="#" class="icon-link" aria-label="Instagram (coming soon)" tabindex="-1" aria-disabled="true">Ig</a>
+        </div>
+    </div>
+</footer>
