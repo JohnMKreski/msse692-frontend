@@ -10,7 +10,7 @@
     "test:edge": "ng test --browsers EdgeHeadless",
     "test:firefox": "ng test --browsers FirefoxHeadless",
     "test:ci": "ng test --browsers FirefoxHeadless --watch=false --code-coverage",
-    "build:ssr": "ng build && ng run msse692-frontend:server",
+    "build:ssr": "ng build",
     "serve:ssr": "node dist/msse692-frontend/server/server.mjs",
     "dev:ssr": "npm run build:ssr && npm run serve:ssr"
   },
