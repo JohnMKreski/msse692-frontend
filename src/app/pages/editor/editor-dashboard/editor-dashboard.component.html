@@ -1,0 +1,14 @@
+<section class="editor-shell">
+  <header class="shell__header">
+    <h1>Editor Dashboard</h1>
+    <nav class="shell__nav" aria-label="Editor sub pages">
+      <a mat-button routerLink="manage" routerLinkActive="active">Manage Events</a>
+      <a mat-button routerLink="create" routerLinkActive="active">Create Event</a>
+      <a mat-button routerLink="calendar" routerLinkActive="active">My Events Calendar</a>
+    </nav>
+  </header>
+
+  <div class="shell__content">
+    <router-outlet></router-outlet>
+  </div>
+</section>

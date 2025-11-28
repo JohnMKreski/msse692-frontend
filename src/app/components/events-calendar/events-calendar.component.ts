@@ -59,17 +59,10 @@ export class EventsCalendarComponent implements OnInit {
     dayMaxEvents: true,
     navLinks: true,
     expandRows: true,
-    height: 'auto',
-    contentHeight: 700,
-    slotDuration: '00:30:00',
-    slotMinTime: '06:00:00',
-    slotMaxTime: '24:00:00',
-    scrollTime: '09:00:00',
-    defaultTimedEventDuration: '00:30:00',
-    forceEventDuration: true,
-    eventDurationEditable: false,
-    displayEventEnd: true,
-    eventTimeFormat: { hour: 'numeric', minute: '2-digit', meridiem: true },
+      height: 'auto',
+      contentHeight: 'auto',
+      slotDuration: '00:30:00',
+    // Minimal defaults (use library defaults for time range/scroll/timed duration)
     eventClick: (arg) => this.onCalendarEventClick(arg),
     eventDidMount: (arg) => this.onEventDidMount(arg),
     datesSet: (arg) => this.onDatesSet(arg),
@@ -149,27 +142,6 @@ export class EventsCalendarComponent implements OnInit {
   private onEventDidMount(arg: any): void {
     if (!arg?.el || !arg?.event) return;
     const e = arg.event;
-    // Debug: log parsed start/end for diagnosing one-hour span issue
-    try {
-      const s: Date | null = e.start ?? null;
-      const en: Date | null = e.end ?? null;
-      const durMs = (s && en) ? (en.getTime() - s.getTime()) : null;
-      const durMinProp = e.extendedProps?.__durationMinutes ?? null;
-      // Only log a few events to avoid noise
-      if ((window as any).__fcDebugLoggedCount == null) (window as any).__fcDebugLoggedCount = 0;
-      if ((window as any).__fcDebugLoggedCount < 10) {
-        (window as any).__fcDebugLoggedCount++;
-        console.log('[CalendarDebug] Event span', {
-          id: e.id,
-          title: e.title,
-          start: s,
-          end: en,
-          durationMinutes: durMs != null ? Math.round(durMs / 60000) : null,
-          durationMinutesProp: durMinProp,
-          extended: e.extendedProps
-        });
-      }
-    } catch {}
     const title = e.title as string | undefined;
     const loc = e.extendedProps?.location as string | undefined;
     const type = (e.extendedProps?.typeDisplayName || e.extendedProps?.type) as string | undefined;

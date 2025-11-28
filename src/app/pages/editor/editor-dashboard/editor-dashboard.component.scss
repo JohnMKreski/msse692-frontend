@@ -1,0 +1,24 @@
+.editor-shell {
+  display: grid;
+  gap: 16px;
+}
+.shell__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.shell__nav {
+  display: flex;
+  gap: 8px;
+}
+.shell__nav a.active {
+  background-color: var(--mdc-filled-button-container-color, #1976d2);
+  color: #fff;
+}
+.shell__nav a.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+.shell__content {
+  display: block;
+}

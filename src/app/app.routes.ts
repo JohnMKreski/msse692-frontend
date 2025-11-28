@@ -41,13 +41,25 @@ export const routes: Routes = [
         ],
     },
     {
-        path: 'editor/events',
-        loadComponent: () => import('./pages/editor/editor-events.component').then(m => m.EditorEventsComponent),
+        path: 'editor',
+        loadComponent: () => import('./pages/editor/editor-dashboard/editor-dashboard.component').then(m => m.EditorDashboardComponent),
         canActivate: [
             () => import('./guards/require-auth.guard').then(m => m.requireAuthGuard),
             () => import('./guards/editor-role.guard').then(m => m.editorRoleGuard),
         ],
+        canActivateChild: [
+            () => import('./guards/require-auth.guard').then(m => m.requireAuthGuard),
+            () => import('./guards/editor-role.guard').then(m => m.editorRoleGuard),
+        ],
+        children: [
+            { path: '', pathMatch: 'full', redirectTo: 'manage' },
+            { path: 'manage', loadComponent: () => import('./pages/editor/editor-events.component').then(m => m.EditorEventsComponent) },
+            { path: 'create', loadComponent: () => import('./pages/editor/create-event/editor-create-event.component').then(m => m.EditorCreateEventComponent) },
+            { path: 'create/:id', loadComponent: () => import('./pages/editor/create-event/editor-create-event.component').then(m => m.EditorCreateEventComponent) },
+            { path: 'calendar', loadComponent: () => import('./pages/editor/my-events-calendar/editor-my-events-calendar.component').then(m => m.EditorMyEventsCalendarComponent) },
+        ]
     },
+    { path: 'editor/events', redirectTo: 'editor/manage' },
     { path: 'error/:code', loadComponent: () => import('./pages/error/error-page.component').then(m => m.ErrorPageComponent) },
     { path: '**', redirectTo: 'error/404' },
     // { path: 'about', component: AboutComponent }

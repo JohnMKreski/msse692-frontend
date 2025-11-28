@@ -1,0 +1,90 @@
+<section class="editor-create">
+  <header class="header">
+    <h2>{{ editId ? 'Edit Event' : 'Create Event' }}</h2>
+    <span class="spacer"></span>
+    <button mat-button type="button" (click)="cancel()">Back to Manage</button>
+  </header>
+
+  <form [formGroup]="form" (ngSubmit)="submit()" class="form">
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>Event Name</mat-label>
+      <input matInput formControlName="eventName" required />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>Type</mat-label>
+      <mat-select formControlName="type">
+        <mat-option [value]="''">—</mat-option>
+        <mat-option *ngFor="let t of typeOptions()" [value]="t.value">{{ t.label }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <div class="datetime-layout">
+      <div class="row start-row">
+        <mat-form-field appearance="outline" class="cell">
+          <mat-label>Start Date</mat-label>
+          <input matInput type="date" formControlName="dateStart" required />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="cell">
+          <mat-label>Start Time</mat-label>
+          <mat-select formControlName="timeStart" required>
+            <mat-option *ngFor="let t of timeOptions()" [value]="t">{{ t }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <div class="cell period-toggle">
+          <button mat-stroked-button type="button" [class.active]="form.value.periodStart==='AM'" (click)="form.patchValue({ periodStart: 'AM' })">AM</button>
+          <button mat-stroked-button type="button" [class.active]="form.value.periodStart==='PM'" (click)="form.patchValue({ periodStart: 'PM' })">PM</button>
+        </div>
+      </div>
+
+      <div class="row middle-row">
+        <div class="cell quick-durations">
+          <span class="label">Quick duration:</span>
+          <button mat-stroked-button type="button" (click)="setDurationMinutes(30)" [disabled]="saving()">30m</button>
+          <button mat-stroked-button type="button" (click)="setDurationMinutes(60)" [disabled]="saving()">1h</button>
+          <button mat-stroked-button type="button" (click)="setDurationMinutes(90)" [disabled]="saving()">1.5h</button>
+          <button mat-stroked-button type="button" (click)="setDurationMinutes(120)" [disabled]="saving()">2h</button>
+        </div>
+      </div>
+
+      <div class="row end-row">
+        <mat-form-field appearance="outline" class="cell">
+          <mat-label>End Date</mat-label>
+          <input matInput type="date" formControlName="dateEnd" required />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="cell">
+          <mat-label>End Time</mat-label>
+          <mat-select formControlName="timeEnd" required>
+            <mat-option *ngFor="let t of timeOptions()" [value]="t">{{ t }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <div class="cell period-toggle">
+          <button mat-stroked-button type="button" [class.active]="form.value.periodEnd==='AM'" (click)="form.patchValue({ periodEnd: 'AM' })">AM</button>
+          <button mat-stroked-button type="button" [class.active]="form.value.periodEnd==='PM'" (click)="form.patchValue({ periodEnd: 'PM' })">PM</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="duration-preview" *ngIf="durationPreview() as d">
+      <span class="muted">Duration:</span>
+      <strong>{{ d.hours }}h {{ d.minutes }}m</strong>
+    </div>
+
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>Location</mat-label>
+      <input matInput formControlName="eventLocation" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>Description</mat-label>
+      <textarea matInput formControlName="eventDescription" rows="4"></textarea>
+    </mat-form-field>
+
+    <div class="actions">
+      <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid || saving()">{{ editId ? 'Save Changes' : 'Create Event' }}</button>
+      <button mat-button type="button" (click)="cancel()">Cancel</button>
+    </div>
+
+    <p class="error" *ngIf="error() as err">{{ err }}</p>
+  </form>
+</section>
