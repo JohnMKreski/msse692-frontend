@@ -11,13 +11,12 @@ import { take } from 'rxjs/operators';
 import { MatDialog } from '@angular/material/dialog';
 import { CancelConfirmDialogComponent } from '../../components/cancel-confirm-dialog/cancel-confirm-dialog.component';
 import { StatusBadgeComponent } from '../../components/status-badge/status-badge.component';
-import { EventsCalendarComponent } from '../../components/events-calendar/events-calendar.component';
 import { EnumOption } from '../events/enums.service';
 
 @Component({
   selector: 'app-editor-events',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, materialImports, StatusBadgeComponent, EventsCalendarComponent, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, materialImports, StatusBadgeComponent, RouterLink],
   templateUrl: './editor-events.component.html',
   styleUrls: ['./editor-events.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush

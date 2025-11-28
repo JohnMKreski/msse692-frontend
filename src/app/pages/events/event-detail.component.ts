@@ -1,13 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { EventsService } from './events.service';
+import { ProfileService } from '../../shared/services/profile.service';
 import { EventDto } from './event.model';
 import { ActivatedRoute, Router } from '@angular/router';
 import { materialImports } from '../../shared/material';
 import { StatusBadgeComponent } from '../../components/status-badge/status-badge.component';
 import { take } from 'rxjs/operators';
-import { Auth, onAuthStateChanged } from '@angular/fire/auth';
-import { AppUserService } from '../../shared/services/app-user.service';
 import { formatApiError } from '../../shared/models/api-error';
 
 @Component({
@@ -22,44 +21,33 @@ export class EventDetailComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly events = inject(EventsService);
   private readonly router = inject(Router);
-  private readonly auth = inject(Auth);
-  private readonly appUserService = inject(AppUserService);
+  private readonly profile = inject(ProfileService);
 
   readonly loading = signal<boolean>(true);
-  readonly saving = signal<boolean>(false);
+  // Removed manage logic: no saving state needed on public view
   readonly event = signal<EventDto | null>(null);
   readonly error = signal<string | null>(null);
-  // User context signals
-  readonly currentUserId = signal<number | null>(null);
-  readonly roles = signal<string[]>([]);
-  readonly isAdmin = computed(() => this.roles().some(r => r.toUpperCase() === 'ADMIN'));
-  readonly isEditor = computed(() => this.roles().some(r => r.toUpperCase() === 'EDITOR'));
-  // Manage visibility: ADMIN always; EDITOR only if owner
-  readonly canManage = computed(() => {
-    const e = this.event();
-    if (!e) return false;
-    if (this.isAdmin()) return true;
-    return this.isEditor() && e.createdByUserId != null && this.currentUserId() === e.createdByUserId;
-  });
+  readonly ownerDisplayName = signal<string>('');
 
   constructor() {
-    // Determine if current user can manage (ADMIN/EDITOR). If not authenticated, false by default.
-    onAuthStateChanged(this.auth, (user) => {
-      if (!user) { this.currentUserId.set(null); this.roles.set([]); return; }
-      this.appUserService.getMe().pipe(take(1)).subscribe({
-        next: me => {
-          this.currentUserId.set(me?.id ?? null);
-          this.roles.set(Array.isArray(me?.roles) ? me!.roles!.map(r => String(r)) : []);
-        },
-        error: () => { this.currentUserId.set(null); this.roles.set([]); }
-      });
-    });
     effect(() => {
       const id = this.route.snapshot.paramMap.get('id');
       if (!id) { this.error.set('Missing event id'); return; }
       this.loading.set(true);
       this.events.get(id).pipe(take(1)).subscribe({
-        next: e => { this.event.set(e); this.loading.set(false); },
+        next: e => {
+          this.event.set(e);
+          this.loading.set(false);
+          // Fetch public profile display name (owner) if available
+          if (e?.createdByUserId != null) {
+            this.profile.getByUserId(e.createdByUserId).pipe(take(1)).subscribe({
+              next: p => this.ownerDisplayName.set(p?.displayName || ''),
+              error: () => this.ownerDisplayName.set('')
+            });
+          } else {
+            this.ownerDisplayName.set('');
+          }
+        },
         error: err => {
           console.error(err);
           // If backend returns 404 for missing/unpublished when unauthenticated, route to Not Found
@@ -84,8 +72,5 @@ export class EventDetailComponent {
     });
   }
 
-  manage() {
-    if (!this.event()) return;
-    this.router.navigate(['/editor/events'], { queryParams: { focus: this.event()!.eventId } });
-  }
+  // Public page: management actions removed.
 }

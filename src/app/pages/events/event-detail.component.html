@@ -1,24 +1,51 @@
 <section class="event-detail" *ngIf="event() as e; else loadingOrErrorTpl">
-  <header class="event-detail__header">
-    <h1 class="event-detail__title">{{ e.eventName }}</h1>
-    <app-status-badge [status]="e.status" size="sm"></app-status-badge>
-  </header>
+  <div class="event-detail__card">
+    <header class="event-detail__header">
+      <div class="event-detail__title-group">
+        <h1 class="event-detail__title">{{ e.eventName }}</h1>
+        <app-status-badge [status]="e.status" size="sm"></app-status-badge>
+      </div>
+      <div class="event-detail__primary-times">
+        <span class="start">{{ e.startAt | date:'MMM d, y h:mm a' }}</span>
+        <span class="sep" *ngIf="e.endAt">–</span>
+        <span class="end" *ngIf="e.endAt">{{ e.endAt | date:'MMM d, y h:mm a' }}</span>
+      </div>
+    </header>
 
-  <div class="event-detail__meta">
-    <p><strong>Date:</strong> {{ e.startAt | date:'fullDate' }} <span *ngIf="e.endAt">– {{ e.endAt | date:'shortTime' }}</span></p>
-    <p *ngIf="e.eventLocation"><strong>Location:</strong> {{ e.eventLocation }}</p>
-    <p *ngIf="e.createdByUserId"><strong>Created By (User ID):</strong> {{ e.createdByUserId }}</p>
+    <div class="event-detail__meta-grid">
+      <div class="meta-field">
+        <span class="label">Start:</span>
+        <span class="value">{{ e.startAt | date:'fullDate' }} &#64; {{ e.startAt | date:'shortTime' }}</span>
+      </div>
+      <div class="meta-field" *ngIf="e.endAt">
+        <span class="label">End:</span>
+        <span class="value">{{ e.endAt | date:'fullDate' }} &#64; {{ e.endAt | date:'shortTime' }}</span>
+      </div>
+      <div class="meta-field" *ngIf="e.type">
+        <span class="label">Type:</span>
+        <span class="value">{{ e.type }}</span>
+      </div>
+      <div class="meta-field" *ngIf="e.eventLocation">
+        <span class="label">Location:</span>
+        <span class="value">{{ e.eventLocation }}</span>
+      </div>
+      <div class="meta-field" *ngIf="e.createdByUserId">
+        <span class="label">Owner:</span>
+        <span class="value">{{ ownerDisplayName() || ('User #' + e.createdByUserId) }}</span>
+      </div>
+      <!-- <div class="meta-field" *ngIf="e.createdAt">
+        <span class="label">Created:</span>
+        <span class="value">{{ e.createdAt | date:'MMM d, y h:mm a' }}</span>
+      </div> -->
+    </div>
+
+    <article class="event-detail__description" *ngIf="e.eventDescription">
+      <h2 class="desc-title">Description</h2>
+      <p>{{ e.eventDescription }}</p>
+    </article>
+
+    <p class="error" *ngIf="error() as err">{{ err }}</p>
   </div>
-
-  <article class="event-detail__description" *ngIf="e.eventDescription">
-    <p>{{ e.eventDescription }}</p>
-  </article>
-
-  <div class="event-detail__actions" *ngIf="canManage()">
-    <button mat-raised-button color="primary" (click)="manage()">Manage Event</button>
-  </div>
-
-  <p class="error" *ngIf="error() as err">{{ err }}</p>
 </section>
 
 <ng-template #loadingOrErrorTpl>
