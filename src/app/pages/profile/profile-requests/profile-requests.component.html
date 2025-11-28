@@ -1,0 +1,47 @@
+<section class="profile-requests">
+  <h2 class="section-title">Request Editor Role</h2>
+
+  <div *ngIf="roleReqLoading()">Loading...</div>
+  <div class="error" *ngIf="roleReqError() as err">{{ err }}</div>
+
+  <ng-container *ngIf="!roleReqLoading()">
+    <ng-container *ngIf="latestRoleRequest() as rr; else roleReqForm">
+      <h3 class="subhead">Current Request</h3>
+      <dl class="profile-summary one-column" aria-label="Current role request">
+        <div><dt>ID</dt><dd>{{ rr.id }}</dd></div>
+        <div><dt>Requested Roles</dt><dd>{{ rr.requestedRoles.join(', ') }}</dd></div>
+        <div><dt>Status</dt><dd>{{ rr.status }}</dd></div>
+        <div><dt>Reason</dt><dd>{{ rr.reason || '—' }}</dd></div>
+        <div><dt>Created</dt><dd>{{ rr.createdAt || '—' }}</dd></div>
+        <div><dt>Updated</dt><dd>{{ rr.updatedAt || '—' }}</dd></div>
+      </dl>
+      <div class="actions">
+        <button type="button" (click)="cancelPendingRoleRequest()" [disabled]="roleReqLoading() || rr.status !== 'Pending'">Cancel</button>
+      </div>
+    </ng-container>
+
+    <ng-template #roleReqForm>
+      <h3 class="subhead">New Request</h3>
+      <div class="stack-form">
+        <label class="stack-label">
+          <span class="muted">Reason (optional)</span>
+          <textarea [formControl]="roleReason" rows="3" maxlength="500" placeholder="Tell admins why you need editor access"></textarea>
+        </label>
+        <div class="actions">
+          <button type="button" (click)="submitRoleRequest()" [disabled]="roleReqLoading() || roleReason.invalid">Request Editor Role</button>
+          <span class="muted" *ngIf="roleReason.invalid">Max 500 characters.</span>
+        </div>
+      </div>
+    </ng-template>
+  </ng-container>
+
+  <h3 class="subhead">Request History</h3>
+  <div *ngIf="roleHistoryLoading()">Loading...</div>
+  <div class="error" *ngIf="roleHistoryError() as herr">{{ herr }}</div>
+  <ng-container *ngIf="!roleHistoryLoading() && roleHistory() as hist">
+    <p class="muted" *ngIf="!hist.length">No prior role requests.</p>
+    <dl *ngIf="hist.length" class="profile-summary one-column" aria-label="Role request history">
+      <div *ngFor="let h of hist"><dt>#{{ h.id }}</dt><dd>{{ h.status }} • {{ h.createdAt || '—' }}</dd></div>
+    </dl>
+  </ng-container>
+</section>

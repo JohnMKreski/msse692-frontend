@@ -5,6 +5,7 @@ import { EventsService } from '../../events/events.service';
 import { EnumsService, EnumOption } from '../../events/enums.service';
 import { AppUserService } from '../../../shared/services/app-user.service';
 import { ProfileService } from '../../../shared/services/profile.service';
+import { ProfileResponse } from '../../../shared/models/profile.model';
 import { CreateEventRequest, EventDto, EventAudit } from '../../events/event.model';
 import { HttpClient } from '@angular/common/http';
 import { Auth } from '@angular/fire/auth';
@@ -209,7 +210,11 @@ export class AdminApiComponent {
   upsertProfile() {
     if (this.profileForm.invalid) return;
     const name = this.profileForm.controls.displayName.value;
-    this.profiles.upsert({ displayName: name }).subscribe({ next: (p) => this.meProfile.set(p), error: (e) => this.error.set(formatApiError(e)) });
+    // Use PATCH to update displayName; if profile doesn't exist, this will 404
+    this.profiles.patch({ displayName: name }).subscribe({
+      next: (p: ProfileResponse) => this.meProfile.set(p),
+      error: (e: any) => this.error.set(formatApiError(e))
+    });
   }
 
   // ===== Auth / Admin Users =====

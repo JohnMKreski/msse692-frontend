@@ -1,0 +1,12 @@
+<section class="profile-shell" *ngIf="!loading(); else loadingTpl">
+  <div class="nav">
+    <a routerLink="/profile/info" routerLinkActive="active">Info</a>
+    <a routerLink="/profile/requests" routerLinkActive="active">Requests</a>
+    <a routerLink="/profile/events" routerLinkActive="active">My Events</a>
+  </div>
+  <router-outlet></router-outlet>
+</section>
+
+<ng-template #loadingTpl>
+  <div class="loading">Loading...</div>
+</ng-template>

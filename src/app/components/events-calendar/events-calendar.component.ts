@@ -51,13 +51,19 @@ export class EventsCalendarComponent implements OnInit {
   /** Parent may request a refresh (e.g., re-fetch) */
   @Output() refreshRequested = new EventEmitter<void>();
 
-  calendarOptions: CalendarOptions = {
+    calendarOptions: CalendarOptions = {
+    timeZone: 'local',
     initialView: 'dayGridMonth',
     headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek' },
     nowIndicator: true,
     dayMaxEvents: true,
     navLinks: true,
-    expandRows: true,
+    expandRows: true, // keep month view fully expanded within fixed height
+    height: 700, // Option B: fixed total calendar height for all views (header + view)
+    slotDuration: '00:30:00',
+    // Optional: initial scroll position for timeGrid views (morning focus)
+    scrollTime: '06:00:00',
+    // Minimal defaults (use library defaults for time range/scroll/timed duration)
     eventClick: (arg) => this.onCalendarEventClick(arg),
     eventDidMount: (arg) => this.onEventDidMount(arg),
     datesSet: (arg) => this.onDatesSet(arg),
@@ -83,11 +89,26 @@ export class EventsCalendarComponent implements OnInit {
       const statusColor = this.statusColors[e.status?.toUpperCase() || ''] || '#58a6ff';
       const typeColor = e.type ? this.typeColors[e.type.toUpperCase()] : undefined;
       const finalColor = this.mode === 'MINE' ? statusColor : (typeColor || statusColor);
+      // Ensure end time is present and after start for proper span; if missing or invalid, default to +1 hour
+      const startMs = Date.parse(e.startAt);
+      const endMsRaw = e.endAt ? Date.parse(e.endAt) : NaN;
+      const startDate = !isNaN(startMs) ? new Date(startMs) : new Date(e.startAt);
+      let endDate: Date | undefined = undefined;
+      if (!isNaN(endMsRaw)) {
+        endDate = new Date(endMsRaw);
+        if (!isNaN(startMs) && endDate.getTime() <= startMs) {
+          endDate = new Date(startMs + 30 * 60 * 1000); // minimum 30m span
+        }
+      } else {
+        // No end provided. Keep undefined to avoid forcing 1h default.
+        // If needed later, we can restore a fallback like +60m.
+        endDate = undefined;
+      }
       return {
         id: String(e.eventId),
         title: e.eventName,
-        start: e.startAt,
-        end: e.endAt,
+        start: startDate,
+        end: endDate,
         allDay: false,
         color: finalColor,
         extendedProps: {

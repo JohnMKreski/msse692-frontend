@@ -1,3 +1,46 @@
+.datetime-layout {
+    display: grid;
+    gap: 12px;
+}
+.datetime-layout .row {
+    display: grid;
+    align-items: center;
+    gap: 12px;
+}
+.datetime-layout .row.start-row,
+.datetime-layout .row.end-row {
+    grid-template-columns: 1fr 1fr auto; /* date | time | AM/PM */
+}
+.datetime-layout .row.end-row {
+    grid-template-columns: 1fr 1fr auto;
+}
+.datetime-layout .row.middle-row {
+    grid-template-columns: 1fr;
+    align-items: center;
+}
+.datetime-layout .cell {
+    display: flex;
+}
+.period-toggle {
+    display: flex;
+    gap: 8px;
+    justify-content: center; /* center horizontally */
+    align-items: center;      /* center vertically with inputs */
+}
+.period-toggle button.active {
+    background-color: var(--mdc-filled-button-container-color, #1976d2);
+    color: #fff;
+    border-color: transparent;
+} 
+.quick-durations {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    button + button { margin-left: 4px; }
+}
+.duration-preview {
+    margin-top: 8px;
+}
 .editor{
     padding:1rem
 }
@@ -10,11 +53,10 @@
 }
 
 .editor__content{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:1rem
+    display:block; /* single column full width */
 }
-.editor__calendar{grid-column:1 / -1; width:100%;}
+.editor__list{width:100%;}
+.editor__calendar{display:none;} /* calendar moved to dedicated subpage */
 .editor__calendar h2{margin:0 0 .5rem;}
 .editor__calendar .legend{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-top:.5rem;font-size:.75rem}
 .editor__calendar .legend-title{font-weight:600;margin-right:.5rem}
@@ -23,18 +65,31 @@
 
 .list{
     border:1px solid #e5e7eb;
-    border-radius:8px
+    border-radius:10px;
+    padding:.5rem;
+    background:#fff;
 }
 .row{
-    display:grid;
-    grid-template-columns:2fr 1fr 1.5fr auto;
-    gap:.5rem;align-items:center;
-    padding:.5rem .75rem;
-    border-bottom:1px solid #e5e7eb
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:space-between;
+    gap:1rem;
+    padding:.75rem 1rem;
+    border-bottom:1px solid #e5e7eb;
+    background:#fafafa;
+    border-radius:6px;
+    margin:.25rem 0;
 }
-.row:last-child{
-    border-bottom:none
-}
+.row:last-child{border-bottom:none}
+.event__info{flex:1 1 480px;min-width:240px}
+.event__actions{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center}
+.event__name{margin:0 0 .25rem;font-size:1.05rem;font-weight:600}
+.event__datetime{margin:0 0 .25rem;font-size:.85rem;color:#555}
+.event__location{margin:0 0 .25rem;font-size:.8rem;color:#444}
+.event__status{margin-top:.25rem}
+.event__field{display:flex;gap:.5rem;font-size:.8rem;line-height:1.3}
+.event__field .label{font-weight:600;color:#222;min-width:140px;}
+.event__field .value{flex:1;color:#333}
 .full{
     width:100%
 }

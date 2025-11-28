@@ -1,7 +1,7 @@
 <section class="editor">
   <header class="editor__header">
     <h1>Manage Events</h1>
-    <button mat-stroked-button color="primary" (click)="resetForm()">New Event</button>
+    <a mat-stroked-button color="primary" routerLink="/editor/create">New Event</a>
   </header>
 
   <div class="editor__content">
@@ -12,77 +12,41 @@
       <div class="list" *ngIf="!loading()">
         <p class="muted" *ngIf="!error() && items().length === 0">You have not created any events yet.</p>
         <div class="row" *ngFor="let e of items()">
-          <div class="col col--name">{{ e.eventName }}</div>
-          <div class="col col--date">{{ e.startAt | date:'short' }}</div>
-          <div class="col col--status">
-            <app-status-badge [status]="e.status" size="sm"></app-status-badge>
-            <mat-form-field appearance="outline" class="status-ff">
-              <mat-label>Status</mat-label>
-              <mat-select [value]="e.status" (selectionChange)="onStatusChange(e, $event.value)" [disabled]="e.status === 'CANCELLED'">
-                <mat-option *ngFor="let opt of statusOptions()" [value]="opt.value">{{ opt.label }}</mat-option>
-              </mat-select>
-            </mat-form-field>
+          <div class="event__info">
+            <div class="event__field">
+              <span class="label">Event Name:</span>
+              <span class="value">{{ e.eventName }}</span>
+            </div>
+            <div class="event__field">
+              <span class="label">Start Date/Time:</span>
+              <span class="value">{{ e.startAt | date:'MMM d, y h:mm a' }}</span>
+            </div>
+            <div class="event__field">
+              <span class="label">End Date/Time:</span>
+              <span class="value">{{ e.endAt | date:'MMM d, y h:mm a' }}</span>
+            </div>
+            <div class="event__field" *ngIf="e.type">
+              <span class="label">Type:</span>
+              <span class="value">{{ e.type }}</span>
+            </div>
+            <div class="event__field" *ngIf="e.eventLocation">
+              <span class="label">Location:</span>
+              <span class="value">{{ e.eventLocation }}</span>
+            </div>
+            <div class="event__status">
+              <app-status-badge [status]="e.status"></app-status-badge>
+            </div>
           </div>
-          <div class="col col--actions">
-            <button mat-button (click)="edit(e)">Edit</button>
-            <button mat-button color="warn" (click)="delete(e)" [disabled]="saving()">Delete</button>
+          <div class="event__actions">
+            <button mat-button (click)="edit(e)" [disabled]="saving()">Edit</button>
+            <button mat-button color="primary" *ngIf="e.status === 'DRAFT'" (click)="onStatusChange(e,'PUBLISHED')" [disabled]="saving()">Publish</button>
+            <button mat-button color="warn" *ngIf="e.status === 'PUBLISHED'" (click)="onStatusChange(e,'UNPUBLISHED')" [disabled]="saving()">Unpublish</button>
+            <button mat-button color="warn" *ngIf="e.status !== 'CANCELLED'" (click)="onStatusChange(e,'CANCELLED')" [disabled]="saving()">Cancel</button>
+            <button mat-stroked-button color="warn" (click)="delete(e)" [disabled]="saving()">Delete</button>
           </div>
         </div>
       </div>
-    </div>
-
-    <div class="editor__form">
-      <h2>{{ editId ? 'Edit Event' : 'Create Event' }}</h2>
-      <form [formGroup]="form" (ngSubmit)="submit()">
-        <mat-form-field appearance="outline" class="full">
-          <mat-label>Event Name</mat-label>
-          <input matInput formControlName="eventName" required />
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="full">
-          <mat-label>Type</mat-label>
-          <mat-select formControlName="type">
-            <mat-option [value]="''">—</mat-option>
-            <mat-option *ngFor="let t of typeOptions()" [value]="t.value">{{ t.label }}</mat-option>
-          </mat-select>
-        </mat-form-field>
-
-        <div class="grid grid--datetime">
-          <mat-form-field appearance="outline">
-            <mat-label>Start Date</mat-label>
-            <input matInput type="date" formControlName="dateStart" required />
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Start Time</mat-label>
-            <input matInput type="time" formControlName="timeStart" required />
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>End Date</mat-label>
-            <input matInput type="date" formControlName="dateEnd" required />
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>End Time</mat-label>
-            <input matInput type="time" formControlName="timeEnd" required />
-          </mat-form-field>
-        </div>
-
-        <mat-form-field appearance="outline" class="full">
-          <mat-label>Location</mat-label>
-          <input matInput formControlName="eventLocation" />
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="full">
-          <mat-label>Description</mat-label>
-          <textarea matInput formControlName="eventDescription" rows="4"></textarea>
-        </mat-form-field>
-
-        <div class="actions">
-          <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid || saving()">{{ editId ? 'Save Changes' : 'Create Event' }}</button>
-          <button mat-button type="button" (click)="resetForm()">Reset</button>
-        </div>
-      </form>
-    </div>
-    <div class="editor__calendar">
+    <!-- <div class="editor__calendar">
       <h2>My Events Calendar</h2>
       <app-events-calendar
         mode="MINE"
@@ -99,6 +63,6 @@
           </div>
         </div>
       </app-events-calendar>
-    </div>
+    </div> -->
   </div>
-</section>
+<!-- </section> -->

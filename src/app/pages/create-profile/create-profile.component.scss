@@ -1,0 +1,199 @@
+// Create Profile Page Styles
+// Focus: vertical rhythm, accessible contrast, clear grouping.
+// Use global spacing tokens ($spacing-1..$spacing-5) via @use instead of local sm/md/lg names.
+@use '../../../styles/_tokens.scss' as t;
+// Local aliases for readability in this file:
+$spacing-xs: t.$spacing-1;
+$spacing-sm: t.$spacing-2;
+$spacing-md: t.$spacing-3;
+$spacing-lg: t.$spacing-4;
+$spacing-xl: t.$spacing-5;
+$radius-sm: 4px;
+$radius-md: 6px;
+$color-border: #d4d4d8; // neutral border
+$color-bg-panel: #f8f9fa;
+$color-bg-array: #f1f5f9;
+$color-heading: #1f2937;
+$color-label: #374151;
+$color-error: #b91c1c;
+$color-focus: #2563eb;
+$color-btn: #2563eb;
+$color-btn-text: #ffffff;
+$color-btn-hover: #1d4ed8;
+$color-btn-disabled: #94a3b8;
+$color-note: #6b7280;
+
+.create-profile {
+	max-width: 720px;
+	margin: 0 auto;
+	padding: $spacing-lg $spacing-md $spacing-xl;
+	display: flex;
+	flex-direction: column;
+	gap: $spacing-lg;
+
+	h1 {
+		font-size: clamp(1.75rem, 4.5vw, 2.25rem);
+		font-weight: 600;
+		margin: 0 0 $spacing-sm;
+		color: $color-heading;
+	}
+
+	form {
+		display: flex;
+		flex-direction: column;
+		gap: $spacing-lg;
+		background: $color-bg-panel;
+		padding: $spacing-lg $spacing-md;
+		border: 1px solid $color-border;
+		border-radius: $radius-md;
+	}
+
+	.form-row {
+		display: flex;
+		flex-direction: column;
+		gap: $spacing-xs;
+	}
+
+	label {
+		font-size: .875rem;
+		font-weight: 600;
+		letter-spacing: .25px;
+		color: $color-label;
+	}
+
+	input[type='text'],
+	input[type='url'],
+	select,
+	textarea {
+		font: inherit;
+		padding: $spacing-sm $spacing-sm;
+		border: 1px solid $color-border;
+		border-radius: $radius-sm;
+		background: #ffffff;
+		transition: border-color .15s, box-shadow .15s;
+		line-height: 1.3;
+
+		&:focus {
+			outline: none;
+			border-color: $color-focus;
+			box-shadow: 0 0 0 3px rgba($color-focus, .2);
+		}
+
+		&.invalid {
+			border-color: $color-error;
+		}
+	}
+
+	textarea {
+		resize: vertical;
+		min-height: 120px;
+	}
+
+	fieldset.form-array {
+		margin: 0;
+		padding: $spacing-md;
+		border: 1px solid $color-border;
+		border-radius: $radius-md;
+		background: $color-bg-array;
+		display: flex;
+		flex-direction: column;
+		gap: $spacing-sm;
+
+		legend {
+			font-size: .9rem;
+			font-weight: 600;
+			padding: 0 $spacing-xs;
+			color: $color-label;
+		}
+
+		.array-row {
+			display: flex;
+			gap: $spacing-sm;
+			align-items: center;
+
+			input[type='url'] {
+				flex: 1 1 auto;
+			}
+
+			button[aria-label] {
+				font-size: .85rem;
+				line-height: 1;
+				padding: $spacing-xs $spacing-sm;
+				background: transparent;
+				border: 1px solid $color-border;
+				color: #374151;
+				border-radius: $radius-sm;
+				cursor: pointer;
+				transition: background .15s;
+
+				&:hover {
+					background: #e2e8f0;
+				}
+			}
+		}
+
+		> button[type='button'] {
+			align-self: flex-start;
+			padding: $spacing-sm $spacing-md;
+			border: 1px solid $color-border;
+			background: #ffffff;
+			border-radius: $radius-sm;
+			cursor: pointer;
+			font-size: .8rem;
+			font-weight: 500;
+			transition: background .15s, border-color .15s;
+			&:hover { background: #f1f5f9; }
+			&:active { background: #e2e8f0; }
+		}
+	}
+
+	.actions {
+		display: flex;
+		flex-direction: column;
+		gap: $spacing-sm;
+	}
+
+	.actions button[type='submit'] {
+		padding: $spacing-md $spacing-lg;
+		font-size: 1rem;
+		font-weight: 600;
+		border: none;
+		border-radius: $radius-md;
+		background: $color-btn;
+		color: $color-btn-text;
+		cursor: pointer;
+		transition: background .2s, transform .1s;
+		&:hover { background: $color-btn-hover; }
+		&:active { transform: translateY(1px); }
+		&:disabled { background: $color-btn-disabled; cursor: not-allowed; }
+	}
+
+	.error {
+		font-size: .75rem;
+		color: $color-error;
+	}
+
+	.note {
+		font-size: .75rem;
+		color: $color-note;
+		margin: 0;
+		text-align: right;
+	}
+
+	@media (min-width: 640px) {
+		form {
+			padding: $spacing-xl;
+		}
+		.form-row.inline-group {
+			flex-direction: row;
+			align-items: flex-start;
+			gap: $spacing-lg;
+			> div { flex: 1 1 0; }
+		}
+	}
+}
+
+// Utility spacing class if needed for future expansion
+.mt-sm { margin-top: $spacing-sm; }
+.mt-md { margin-top: $spacing-md; }
+.mt-lg { margin-top: $spacing-lg; }

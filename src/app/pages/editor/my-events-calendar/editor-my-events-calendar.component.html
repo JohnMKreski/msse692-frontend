@@ -1,0 +1,24 @@
+<section class="editor-calendar">
+  <header class="header">
+    <h2>My Events Calendar</h2>
+  </header>
+
+  <div class="content">
+    <p class="error" *ngIf="error() as err">{{ err }}</p>
+    <app-events-calendar
+      mode="MINE"
+      [events]="items()"
+      [loading]="loading()"
+      (eventClick)="onCalendarEventClick($event)"
+      (dateRangeChange)="onCalendarRange($event)">
+      <div calendar-legend>
+        <div class="legend" aria-label="Status legend">
+          <span class="legend-title">Statuses</span>
+          <span class="legend-item" *ngFor="let s of ['PUBLISHED','DRAFT','UNPUBLISHED','CANCELLED']">
+            <span class="color-dot" [style.backgroundColor]="statusColors[s]"></span>{{ s.charAt(0) + s.slice(1).toLowerCase() }}
+          </span>
+        </div>
+      </div>
+    </app-events-calendar>
+  </div>
+</section>

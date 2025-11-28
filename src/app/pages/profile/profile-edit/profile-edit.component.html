@@ -1,0 +1,42 @@
+<section class="profile-edit">
+  <h2 class="section-title">Edit Profile</h2>
+  <form [formGroup]="form" (ngSubmit)="save()" class="stack-form">
+    <label class="stack-label">
+      <span class="muted">Display Name</span>
+      <input type="text" formControlName="displayName" maxlength="200" />
+    </label>
+
+    <label class="stack-label">
+      <span class="muted">Profile Type</span>
+      <select formControlName="profileType">
+        <option value="VENUE">VENUE</option>
+        <option value="ARTIST">ARTIST</option>
+        <option value="OTHER">OTHER</option>
+      </select>
+    </label>
+
+    <label class="stack-label">
+      <span class="muted">Location (required for VENUE)</span>
+      <input type="text" formControlName="location" maxlength="255" />
+    </label>
+
+    <label class="stack-label">
+      <span class="muted">Description</span>
+      <textarea formControlName="description" rows="4" maxlength="1000"></textarea>
+    </label>
+
+    <label class="stack-label">
+      <span class="muted">Socials (comma-separated)</span>
+      <input type="text" formControlName="socials" />
+    </label>
+
+    <label class="stack-label">
+      <span class="muted">Websites (comma-separated)</span>
+      <input type="text" formControlName="websites" />
+    </label>
+
+    <div class="actions">
+      <button type="submit" [disabled]="saving() || form.invalid">Save</button>
+    </div>
+  </form>
+</section>
