@@ -11,7 +11,12 @@ const browserDistFolder = resolve(serverDistFolder, '../browser');
 const indexHtml = join(serverDistFolder, 'index.server.html');
 
 const app = express();
+const port = process.env['PORT'] || 4000;
 const commonEngine = new CommonEngine();
+
+// simple health check
+app.get('/healthz', (_req, res) => res.status(200).send('ok'));
+app.head('/healthz', (_req, res) => res.sendStatus(200));
 
 // Simple SSR file logging (Node-side only). This doesn't run in the browser.
 const logsDir = resolve(process.cwd(), 'logs');
@@ -28,21 +33,7 @@ function ssrLog(line: string) {
     }
 }
 
-/**
- * Example Express Rest API endpoints can be defined here.
- * Uncomment and define endpoints as necessary.
- *
- * Example:
- * ```ts
- * app.get('/api/**', (req, res) => {
- *   // Handle API request
- * });
- * ```
- */
 
-// simple health check
-app.get('/healthz', (_req, res) => res.status(200).send('ok'));
-app.head('/healthz', (_req, res) => res.sendStatus(200));
 
 /**
  * Serve static files from /browser
