@@ -1,7 +1,32 @@
-node_modules
-dist
+# VCS & CI
 .git
-.gitignore
-npm-debug.log
-Dockerfile
-.dockerignore
+.github
+
+# IDE / OS
+.vscode
+*.swp
+.DS_Store
+Thumbs.db
+
+# Logs & coverage
+logs
+*.log
+coverage
+coverage-*
+
+# Build outputs
+dist
+tmp
+.cache
+
+# Dependencies (reinstalled in image via npm ci)
+node_modules
+
+# Tests & local configs
+e2e
+*.local.*
+.env
+.env.*
+*.pem
+*.key
+*.crt

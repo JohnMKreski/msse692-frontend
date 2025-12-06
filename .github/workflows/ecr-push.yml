@@ -1,0 +1,56 @@
+name: Build & Push Frontend SSR to ECR
+
+on:
+  push:
+    branches: [ main ]
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: ave-frontend-ssr
+
+jobs:
+  build-and-push:
+    name: Build Docker image and push to ECR
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Compute image tags
+        id: vars
+        run: |
+          SHA_TAG=${GITHUB_SHA::7}
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          echo "ACCOUNT_ID=$ACCOUNT_ID" >> $GITHUB_OUTPUT
+          echo "ECR_URI=$ACCOUNT_ID.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}" >> $GITHUB_OUTPUT
+          echo "SHA_TAG=$SHA_TAG" >> $GITHUB_OUTPUT
+
+      - name: Build image (Dockerfile in /docker)
+        run: |
+          docker build \
+            -f docker/Dockerfile \
+            -t ${{ steps.vars.outputs.ECR_URI }}:${{ steps.vars.outputs.SHA_TAG }} \
+            -t ${{ steps.vars.outputs.ECR_URI }}:latest \
+            .
+
+      - name: Push images
+        run: |
+          docker push ${{ steps.vars.outputs.ECR_URI }}:${{ steps.vars.outputs.SHA_TAG }}
+          docker push ${{ steps.vars.outputs.ECR_URI }}:latest
+
+      - name: Output image URI
+        run: echo "Pushed ${{ steps.vars.outputs.ECR_URI }}:${{ steps.vars.outputs.SHA_TAG }}"
