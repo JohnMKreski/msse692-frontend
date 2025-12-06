@@ -40,6 +40,10 @@ function ssrLog(line: string) {
  * ```
  */
 
+// simple health check
+app.get('/healthz', (_req, res) => res.status(200).send('ok'));
+app.head('/healthz', (_req, res) => res.sendStatus(200));
+
 /**
  * Serve static files from /browser
  */
@@ -75,9 +79,11 @@ app.get('**', (req, res, next) => {
  * The server listens on the port defined by the `PORT` environment variable, or defaults to 4000.
  */
 if (isMainModule(import.meta.url)) {
-    const port = process.env['PORT'] || 4000;
-    app.listen(port, () => {
-        console.log(`Node Express server listening on http://localhost:${port}`);
+    const port = Number.isFinite(Number(process.env['PORT'])) ? Number(process.env['PORT']) : 4000;
+    const host = '0.0.0.0';
+
+    app.listen(port, host, () => {
+        console.log(`Node Express server listening on http://${host}:${port}`);
     });
 }
 
