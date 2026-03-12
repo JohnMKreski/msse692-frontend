@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 420" preserveAspectRatio="none" role="img" aria-label="Mountain ridge line">
+  <path d="
+    M0,330
+    L90,300  L150,310  L230,270  L310,300  L380,255  L460,290
+    L540,210  L610,250  L690,180  L770,240  L840,205  L910,250
+    L1010,160 L1090,215 L1170,175 L1240,230 L1320,200 L1440,240
+  " fill="none" stroke="#000000" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+</svg>

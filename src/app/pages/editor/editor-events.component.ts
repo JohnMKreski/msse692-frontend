@@ -29,6 +29,8 @@ export class EditorEventsComponent implements OnDestroy {
   // UI change bus merged into EventsService
   private readonly dialog = inject(MatDialog);
 
+  private readonly communityTimeZone = 'America/Denver';
+
   readonly loading = signal<boolean>(true);
   readonly saving = signal<boolean>(false);
   readonly items = signal<EventDto[]>([]);
@@ -91,8 +93,14 @@ export class EditorEventsComponent implements OnDestroy {
   load(range?: { start?: string; end?: string }) {
     this.loading.set(true);
     const params: any = { page: 0, size: 100, sort: 'startAt,asc' };
-    if (range?.start) params.from = range.start;
-    if (range?.end) params.to = range.end;
+    if (range?.start) {
+      const d = new Date(range.start);
+      if (!isNaN(d.getTime())) params.from = this.toCommunityLocalDateTimeString(d);
+    }
+    if (range?.end) {
+      const d = new Date(range.end);
+      if (!isNaN(d.getTime())) params.to = this.toCommunityLocalDateTimeString(d);
+    }
     this.events.listMine(params).pipe(take(1)).subscribe({
       next: (resp) => {
         const rows: EventDto[] = Array.isArray((resp as any)) ? (resp as any as EventDto[]) : (resp?.items ?? []);
@@ -121,15 +129,38 @@ export class EditorEventsComponent implements OnDestroy {
   }
 
   private toLocalDateString(d: Date): string {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: this.communityTimeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).formatToParts(d);
+    const y = parts.find((p) => p.type === 'year')?.value ?? '';
+    const m = parts.find((p) => p.type === 'month')?.value ?? '';
+    const day = parts.find((p) => p.type === 'day')?.value ?? '';
     return `${y}-${m}-${day}`;
   }
   private toLocalTimeString(d: Date): string {
-    const h = String(d.getHours()).padStart(2, '0');
-    const min = String(d.getMinutes()).padStart(2, '0');
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: this.communityTimeZone,
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+      hour12: false
+    }).formatToParts(d);
+    const h = parts.find((p) => p.type === 'hour')?.value ?? '';
+    const min = parts.find((p) => p.type === 'minute')?.value ?? '';
     return `${h}:${min}`;
+  }
+
+  private toCommunityLocalDateTimeString(d: Date): string {
+    return `${this.toLocalDateString(d)}T${this.toLocalTimeString(d)}:00`;
+  }
+
+  private toLocalDateTimeString(date: string, time24: string): string {
+    if (!date || !time24) return '';
+    const time = time24.length === 5 ? `${time24}:00` : time24;
+    return `${date}T${time}`;
   }
 
   private to12HourParts(time24: string): { time: string; period: 'AM'|'PM' } {
@@ -180,8 +211,6 @@ export class EditorEventsComponent implements OnDestroy {
   submit() {
     if (this.form.invalid) return;
     const v = this.form.value as any;
-    // Compose local date+time into ISO
-    const toIsoFromParts = (date: string, time: string) => new Date(`${date}T${time}`).toISOString();
     if (!this.isEndAfterStart(v.dateStart, v.timeStart, v.dateEnd, v.timeEnd)) {
       this.timeError = true;
       return;
@@ -192,8 +221,9 @@ export class EditorEventsComponent implements OnDestroy {
     const payload: CreateEventRequest = {
       eventName: v.eventName,
       type: v.type ? String(v.type).toUpperCase() : undefined,
-      startAt: toIsoFromParts(v.dateStart, start24),
-      endAt: toIsoFromParts(v.dateEnd, end24),
+      // Backend expects Denver wall-time LocalDateTime (no trailing 'Z' / offset)
+      startAt: this.toLocalDateTimeString(v.dateStart, start24),
+      endAt: this.toLocalDateTimeString(v.dateEnd, end24),
       eventLocation: v.eventLocation || undefined,
       eventDescription: v.eventDescription || undefined,
     };
@@ -242,8 +272,18 @@ export class EditorEventsComponent implements OnDestroy {
 
   private parseParts(date: string, time: string): Date | null {
     if (!date || !time) return null;
-    const d = new Date(`${date}T${time}`);
-    return isNaN(d.getTime()) ? null : d;
+    const [yStr, mStr, dStr] = date.split('-');
+    const [hhStr, mmStr, ssStr] = time.split(':');
+    const y = Number(yStr);
+    const m = Number(mStr);
+    const day = Number(dStr);
+    const hh = Number(hhStr);
+    const mm = Number(mmStr);
+    const ss = ssStr === undefined ? 0 : Number(ssStr);
+    if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(day)) return null;
+    if (!Number.isFinite(hh) || !Number.isFinite(mm) || !Number.isFinite(ss)) return null;
+    // Use UTC to keep wall-time math independent of the user's browser timezone.
+    return new Date(Date.UTC(y, m - 1, day, hh, mm, ss, 0));
   }
 
   private isEndAfterStart(ds: string, ts: string, de: string, te: string): boolean {
@@ -262,11 +302,11 @@ export class EditorEventsComponent implements OnDestroy {
     const start = this.parseParts(v.dateStart, ts24);
     if (!start) return;
     const end = new Date(start.getTime() + minutes * 60_000);
-    const y = end.getFullYear();
-    const m = String(end.getMonth() + 1).padStart(2, '0');
-    const day = String(end.getDate()).padStart(2, '0');
-    const h = String(end.getHours()).padStart(2, '0');
-    const min = String(end.getMinutes()).padStart(2, '0');
+    const y = end.getUTCFullYear();
+    const m = String(end.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(end.getUTCDate()).padStart(2, '0');
+    const h = String(end.getUTCHours()).padStart(2, '0');
+    const min = String(end.getUTCMinutes()).padStart(2, '0');
     const { time, period } = this.to12HourParts(`${h}:${min}`);
     this.form.patchValue({
       dateEnd: `${y}-${m}-${day}`,

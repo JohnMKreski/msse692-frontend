@@ -106,7 +106,7 @@
     margin-top:.75rem
 }
 .error{
-    color:#b91c1c
+    color: var(--text-error)
 }
 @media (max-width: 900px){
     .editor__content{grid-template-columns:1fr}

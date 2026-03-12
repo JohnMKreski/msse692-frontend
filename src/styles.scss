@@ -48,11 +48,21 @@ body {
     flex-direction: column;
     font-family: $font-sans;
     background: var(--mat-sys-background);
+
     color: var(--mat-sys-on-background);
 }
 .content {
     flex: 1 0 auto;
 }
+
+// main {
+//     background-image: url("/images/chat-mountain-range.svg");
+//     background-repeat: no-repeat;
+//     background-size: clamp(100vw, 40vw, 100vw);
+//     background-position: static top 25vh; //(or center calc(25vh))
+//     background-attachment: fixed;
+//     // background-size: cover;
+// }
 
 /* Apply Material theme */
 :root {
@@ -72,4 +82,352 @@ html { color-scheme: light; }
         padding: 0.25rem 0.5rem;
         font-size: 0.875rem;
     }
+}
+
+/* App-specific CSS variables (brand tokens) */
+:root {
+    /* Greyscale palette */
+    --gray-0:   #ffffff;
+    --gray-25:  #fcfcfc;
+    --gray-50:  #f7f7f7;
+    --gray-100: #f0f0f0;
+    --gray-200: #e0e0e0;
+    --gray-300: #cfcfcf;
+    --gray-400: #b0b0b0;
+    --gray-500: #909090;
+    --gray-600: #707070;
+    --gray-700: #505050;
+    --gray-800: #303030;
+    --gray-900: #101010;
+    --gray-1000:#000000;
+
+    /* Typography */
+    --font-family-sans: ;
+    --font-family-mono: ;
+    --font-size-2xs: 0.75rem;
+    --font-size-xxs: 0.8rem;
+    --font-size-xs: 0.9rem;
+    --font-size-sm: 0.95rem;
+    --font-size-md: 1rem;
+    --font-size-lg: 1.1rem;
+    --font-size-xl: 1.4rem;
+    --font-size-2xl: 1.6rem;
+    --font-size-2xl-sm: 1.35rem;
+    --font-weight-regular: ;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+    --line-height-tight: 1.1;
+    --line-height-snug: 1.2;
+    --line-height-sm: ;
+    --line-height-md: 1.45;
+    --line-height-lg: ;
+    --line-height-none: 1;
+    --letter-spacing-tight: ;
+    --letter-spacing-normal: ;
+    --letter-spacing-wide: ;
+    --h1-size: ;
+    --h1-weight: ;
+    --h1-line-height: ;
+    --h2-size: ;
+    --h2-weight: ;
+    --h2-line-height: ;
+    --h3-size: ;
+    --h3-weight: ;
+    --h3-line-height: ;
+
+    /* Spacing & Layout */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 18px;
+    --space-6: 24px;
+    --space-7: 28px;
+    --space-8: 32px;
+    --space-9: 40px;
+    --space-10: 48px;
+    --space-11: 56px;
+    --space-12: 64px;
+    --space-13: 72px;
+    --space-14: 80px;
+
+    --space-0_5: 2px;
+    --space-1_5: 6px;
+    --space-3_5: 14px;
+    --space-5_5: 20px;
+    --container-max-width: 1100px;
+    --container-max-width-narrow: 900px;
+    --container-max-width-settings: 760px;
+    --container-padding: ;
+
+    /* Layout sizing (component/page use) */
+    --grid-min-width-card-md: 290px;
+    --grid-min-width-card-sm: 160px;
+    --grid-min-width-field: 240px;
+
+    /* Padding tokens (semantic) */
+    --pad-xs: ;
+    --pad-sm: ;
+    --pad-md: ;
+    --pad-lg: ;
+    --pad-xl: ;
+
+    /* Margin tokens (semantic) */
+    --mar-xs: 6px;
+    --mar-sm: ;
+    --mar-md: ;
+    --mar-lg: ;
+    --mar-xl: ;
+
+    /* Component padding (common patterns) */
+    --pad-card: ;
+    --pad-panel: ;
+    --pad-modal: ;
+    --pad-page: ;
+
+    /* Form spacing */
+    --pad-input-x: 12px;
+    --pad-input-y: 10px;
+    --gap-form: ;
+    --gap-stack: ;
+    --gap-inline: ;
+
+    /* Text (semantic) */
+    --text-primary: var(--gray-1000);
+    --text-muted: var(--gray-600);
+    --text-inverse: var(--gray-0);
+    --text-disabled: var(--gray-400);
+    --text-placeholder: var(--gray-600);
+
+    /* State colors (semantic exceptions: use sparingly) */
+    --state-info-bg: #dbeafe;
+    --state-info-text: #1e40af;
+    --state-info-border: #bfdbfe;
+    --state-success-bg: #dcfce7;
+    --state-success-text: #166534;
+    --state-success-border: #bbf7d0;
+    --state-warning-bg: #fef3c7;
+    --state-warning-text: #92400e;
+    --state-warning-border: #fde68a;
+    --state-error-bg: #fee2e2;
+    --state-error-text: #991b1b;
+    --state-error-border: #fecaca;
+
+    /* Text (semantic states) */
+    --text-error: var(--state-error-text);
+    --text-danger: var(--text-error);
+
+    /* Surfaces (backgrounds) */
+    --surface-page: var(--gray-0);
+    --surface-panel: var(--gray-0);
+    --surface-card: var(--gray-0);
+    --surface-elevated: var(--gray-0);
+    --surface-hover: var(--gray-50);
+    --surface-active: var(--gray-100);
+    --surface-selected: var(--gray-200);
+    --overlay-backdrop: ;
+
+    /* Borders & Dividers */
+    --border-color: var(--gray-300);
+    --border-color-strong: var(--gray-1000);
+    --divider-color: var(--border-color);
+    --border-width: 1px;
+    --focus-ring-color: var(--gray-800);
+    --focus-ring-width: ;
+    --focus-ring-shadow: 0 0 0 3px rgba(0, 0, 0, 0.18);
+    --border-default: 1px solid rgba(0, 0, 0, 0.12);
+
+    /* Legacy component tokens (compat for existing page SCSS) */
+    --component-bg: var(--surface-page);
+    --component-text: var(--text-primary);
+    --component-muted-text: var(--text-muted);
+    --component-border: rgba(0, 0, 0, 0.12);
+    --component-card-bg: var(--surface-card);
+    --component-card-border: var(--border-default);
+    --component-card-text: var(--text-primary);
+    --border-bottom-blk: var(--border-width) solid var(--gray-1000);
+
+    /* States */
+    --state-disabled-opacity: 0.6;
+
+    /* Opacity helpers */
+    --opacity-95: 0.95;
+    --opacity-85: 0.85;
+    --opacity-25: 0.25;
+
+    /* Radii (rounded corners) */
+    --radius-xs: ;
+    --radius-sm: 6px;
+    --radius-8: 8px;
+    --radius-md: 10px;
+    --radius-lg: 12px;
+    --radius-pill: ;
+
+    /* Shadows (elevation) */
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.04);
+    --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.08);
+    --shadow-lg: ;
+
+    /* Motion */
+    --motion-fast: 120ms;
+    --motion-normal: 200ms;
+    --motion-slow: ;
+    --easing-standard: ease;
+
+    /* Transforms */
+    --lift-hover-y: -2px;
+    --decorative-scale-x: 1.2;
+
+    /* Scrollbars */
+    --scrollbar-size: 8px;
+    --scrollbar-thumb-bg: rgba(0, 0, 0, 0.2);
+    --scrollbar-thumb-radius: 8px;
+
+    /* Buttons */
+    --btn-height: ;
+    --btn-padding-x: var(--pad-input-x);
+    --btn-padding-y: var(--pad-input-y);
+    --btn-radius: var(--radius-md);
+    --btn-font-weight: 600;
+
+    --btn-link-padding-x: 8px;
+    --btn-link-padding-y: 6px;
+
+    --btn-primary-bg: var(--gray-1000);
+    --btn-primary-text: var(--text-inverse);
+    --btn-primary-border: ;
+    --btn-primary-hover-bg: var(--gray-900);
+    --btn-primary-active-bg: ;
+    --btn-primary-disabled-bg: ;
+    --btn-primary-disabled-text: ;
+    --btn-primary-disabled-border: ;
+
+    --btn-secondary-bg: var(--gray-200);
+    --btn-secondary-text: var(--text-primary);
+    --btn-secondary-border: ;
+    --btn-secondary-hover-bg: var(--gray-300);
+    --btn-secondary-active-bg: ;
+    --btn-secondary-disabled-bg: ;
+    --btn-secondary-disabled-text: ;
+    --btn-secondary-disabled-border: ;
+
+    --btn-ghost-bg: transparent;
+    --btn-ghost-text: ;
+    --btn-ghost-border: ;
+    --btn-ghost-hover-bg: ;
+    --btn-ghost-active-bg: ;
+
+    --btn-danger-bg: var(--gray-900);
+    --btn-danger-text: var(--text-inverse);
+    --btn-danger-border: ;
+    --btn-danger-hover-bg: var(--gray-1000);
+    --btn-danger-active-bg: ;
+
+    /* Links */
+    --link-text: var(--text-primary);
+    --link-hover-text: ;
+    --link-visited-text: ;
+    --link-focus-ring: ;
+
+    /* Forms / Inputs */
+    --input-height: ;
+    --input-padding-x: var(--pad-input-x);
+    --input-padding-y: var(--pad-input-y);
+    --input-radius: var(--radius-md);
+    --input-bg: var(--surface-panel);
+    --input-text: var(--text-primary);
+    --input-border: ;
+    --input-hover-border: ;
+    --input-focus-border: ;
+    --input-placeholder: var(--text-placeholder);
+    --input-disabled-bg: ;
+    --input-disabled-text: ;
+    --input-disabled-border: ;
+    --input-error-border: ;
+    --input-help-text: ;
+
+    /* Tables (common in admin) */
+    --table-bg: ;
+    --table-border-color: ;
+    --table-header-bg: ;
+    --table-header-text: ;
+    --table-row-bg: ;
+    --table-row-hover-bg: ;
+    --table-row-selected-bg: ;
+    --table-row-text: ;
+
+    /* Lists */
+    --list-item-bg: var(--surface-hover);
+    --list-item-hover-bg: ;
+    --list-separator-color: ;
+
+    /* Badges / Chips */
+    --badge-bg: ;
+    --badge-text: ;
+    --badge-border: ;
+    --chip-bg: ;
+    --chip-text: ;
+    --chip-border: ;
+
+    /* Alerts / Notifications */
+    --alert-info-bg: var(--state-info-bg);
+    --alert-info-text: var(--state-info-text);
+    --alert-info-border: var(--state-info-border);
+    --alert-success-bg: var(--state-success-bg);
+    --alert-success-text: var(--state-success-text);
+    --alert-success-border: var(--state-success-border);
+    --alert-warning-bg: var(--state-warning-bg);
+    --alert-warning-text: var(--state-warning-text);
+    --alert-warning-border: var(--state-warning-border);
+    --alert-error-bg: var(--state-error-bg);
+    --alert-error-text: var(--state-error-text);
+    --alert-error-border: var(--state-error-border);
+
+    /* Modals / Drawers / Popovers */
+    --modal-bg: ;
+    --modal-text: ;
+    --modal-border: ;
+    --modal-shadow: ;
+    --popover-bg: ;
+    --popover-text: ;
+    --popover-border: ;
+    --popover-shadow: ;
+    --backdrop-bg: ;
+
+    /* Navigation */
+    --nav-sidebar-bg: ;
+    --nav-sidebar-text: ;
+    --nav-sidebar-muted-text: ;
+    --nav-sidebar-active-bg: ;
+    --nav-sidebar-active-text: ;
+    --nav-topbar-bg: ;
+    --nav-topbar-text: ;
+    --nav-topbar-border: ;
+
+    /* Cards */
+    --card-bg: ;
+    --card-text: ;
+    --card-border: ;
+    --card-shadow: ;
+    --card-header-text: ;
+    --card-header-border: ;
+    --card-footer-border: ;
+
+    /* Icons */
+    --icon-primary: var(--text-primary);
+    --icon-muted: var(--text-muted);
+    --icon-disabled: var(--text-disabled);
+    --icon-size-md: 16px;
+
+    /* Data Viz (optional) */
+    --chart-gridline: ;
+    --chart-axis-text: ;
+    --chart-series-1: ;
+    --chart-series-2: ;
+    --chart-series-3: ;
+    --chart-series-4: ;
+
+
+
 }

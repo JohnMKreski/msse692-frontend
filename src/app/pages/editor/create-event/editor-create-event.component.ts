@@ -30,6 +30,8 @@ export class EditorCreateEventComponent {
   readonly durationPreview = signal<{ hours: number; minutes: number } | null>(null);
   readonly timeOptions = signal<string[]>([]);
 
+  private readonly communityTimeZone = 'America/Denver';
+
   editId: number | null = null;
 
   readonly form = this.fb.group({
@@ -81,26 +83,40 @@ export class EditorCreateEventComponent {
     this.form.patchValue({
       eventName: item.eventName,
       type: item.type ? String(item.type).toUpperCase() : '',
-      dateStart: start ? this.toLocalDateString(start) : '',
-      dateEnd: end ? this.toLocalDateString(end) : '',
-      ...(start ? (() => { const p = this.to12HourParts(this.toLocalTimeString(start)); return { timeStart: p.time, periodStart: p.period }; })() : { timeStart: '', periodStart: 'AM' }),
-      ...(end ? (() => { const p = this.to12HourParts(this.toLocalTimeString(end)); return { timeEnd: p.time, periodEnd: p.period }; })() : { timeEnd: '', periodEnd: 'AM' }),
+      dateStart: start ? this.toCommunityDateString(start) : '',
+      dateEnd: end ? this.toCommunityDateString(end) : '',
+      ...(start ? (() => { const p = this.to12HourParts(this.toCommunityTimeString(start)); return { timeStart: p.time, periodStart: p.period }; })() : { timeStart: '', periodStart: 'AM' }),
+      ...(end ? (() => { const p = this.to12HourParts(this.toCommunityTimeString(end)); return { timeEnd: p.time, periodEnd: p.period }; })() : { timeEnd: '', periodEnd: 'AM' }),
       eventLocation: item.eventLocation ?? '',
       eventDescription: item.eventDescription ?? '',
     });
     this.updateDurationPreview();
   }
 
-  private toLocalDateString(d: Date): string {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
+  private toCommunityDateString(d: Date): string {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: this.communityTimeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).formatToParts(d);
+    const year = parts.find((p) => p.type === 'year')?.value ?? '';
+    const month = parts.find((p) => p.type === 'month')?.value ?? '';
+    const day = parts.find((p) => p.type === 'day')?.value ?? '';
+    return `${year}-${month}-${day}`;
   }
-  private toLocalTimeString(d: Date): string {
-    const h = String(d.getHours()).padStart(2, '0');
-    const min = String(d.getMinutes()).padStart(2, '0');
-    return `${h}:${min}`;
+
+  private toCommunityTimeString(d: Date): string {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: this.communityTimeZone,
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+      hour12: false
+    }).formatToParts(d);
+    const hour = parts.find((p) => p.type === 'hour')?.value ?? '';
+    const minute = parts.find((p) => p.type === 'minute')?.value ?? '';
+    return `${hour}:${minute}`;
   }
   private to12HourParts(time24: string): { time: string; period: 'AM'|'PM' } {
     if (!time24) return { time: '', period: 'AM' };
@@ -118,10 +134,27 @@ export class EditorCreateEventComponent {
     if (period === 'AM') { if (h === 12) h = 0; } else { if (h !== 12) h = h + 12; }
     return `${String(h).padStart(2,'0')}:${mStr}`;
   }
+
+  private toLocalDateTimeString(date: string, time24: string): string {
+    if (!date || !time24) return '';
+    const time = time24.length === 5 ? `${time24}:00` : time24;
+    return `${date}T${time}`;
+  }
+
   private parseParts(date: string, time: string): Date | null {
     if (!date || !time) return null;
-    const d = new Date(`${date}T${time}`);
-    return isNaN(d.getTime()) ? null : d;
+    const [yStr, mStr, dStr] = date.split('-');
+    const [hhStr, mmStr, ssStr] = time.split(':');
+    const y = Number(yStr);
+    const m = Number(mStr);
+    const day = Number(dStr);
+    const hh = Number(hhStr);
+    const mm = Number(mmStr);
+    const ss = ssStr === undefined ? 0 : Number(ssStr);
+    if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(day)) return null;
+    if (!Number.isFinite(hh) || !Number.isFinite(mm) || !Number.isFinite(ss)) return null;
+    // Use UTC to keep wall-time math independent of the user's browser timezone.
+    return new Date(Date.UTC(y, m - 1, day, hh, mm, ss, 0));
   }
 
   private updateDurationPreview() {
@@ -144,11 +177,11 @@ export class EditorCreateEventComponent {
     const start = this.parseParts(v.dateStart, ts24);
     if (!start) return;
     const end = new Date(start.getTime() + minutes * 60_000);
-    const y = end.getFullYear();
-    const m = String(end.getMonth() + 1).padStart(2, '0');
-    const day = String(end.getDate()).padStart(2, '0');
-    const h = String(end.getHours()).padStart(2, '0');
-    const min = String(end.getMinutes()).padStart(2, '0');
+    const y = end.getUTCFullYear();
+    const m = String(end.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(end.getUTCDate()).padStart(2, '0');
+    const h = String(end.getUTCHours()).padStart(2, '0');
+    const min = String(end.getUTCMinutes()).padStart(2, '0');
     const { time, period } = this.to12HourParts(`${h}:${min}`);
     this.form.patchValue({
       dateEnd: `${y}-${m}-${day}`,
@@ -163,14 +196,14 @@ export class EditorCreateEventComponent {
   submit() {
     if (this.form.invalid) return;
     const v = this.form.value as any;
-    const toIsoFromParts = (date: string, time: string) => new Date(`${date}T${time}`).toISOString();
     const start24 = this.from12To24(v.timeStart, v.periodStart);
     const end24 = this.from12To24(v.timeEnd, v.periodEnd);
     const payload: CreateEventRequest = {
       eventName: v.eventName,
       type: v.type ? String(v.type).toUpperCase() : undefined,
-      startAt: toIsoFromParts(v.dateStart, start24),
-      endAt: toIsoFromParts(v.dateEnd, end24),
+      // Backend expects Denver wall-time LocalDateTime (no trailing 'Z' / offset)
+      startAt: this.toLocalDateTimeString(v.dateStart, start24),
+      endAt: this.toLocalDateTimeString(v.dateEnd, end24),
       eventLocation: v.eventLocation || undefined,
       eventDescription: v.eventDescription || undefined,
     };

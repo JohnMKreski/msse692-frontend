@@ -1,6 +1,16 @@
 /* Footer styling */
-.app-footer{background:#0f1115;color:#f1f5f9;font-size:.85rem;line-height:1.4;display:block}
-.app-footer a{color:#cbd5e1;text-decoration:none;transition:color .15s ease}
+.app-footer{
+	background:#0f1115;
+	color:#f1f5f9;
+	font-size:.85rem;
+	line-height:1.4;
+	display:block;
+}
+.app-footer a{
+	color:#cbd5e1;
+	text-decoration:none;
+	transition:color .15s ease;
+}
 .app-footer a:hover{color:#fff;text-decoration:underline}
 .app-footer__inner{max-width:1200px;margin:0 auto;padding:2rem 1.25rem;display:flex;flex-direction:column;gap:2rem}
 

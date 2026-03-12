@@ -3,6 +3,7 @@ import { PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { materialImports } from '../../shared/material';
+import { EventCardComponent } from '../../components/event-card/event-card.component';
 import { EventsService } from '../events/events.service';
 import { EventDto } from '../events/event.model';
 import { NgFor, NgIf, DatePipe } from '@angular/common';
@@ -11,7 +12,7 @@ import { take } from 'rxjs/operators';
 @Component({
     selector: 'app-home',
     standalone: true,
-    imports: [materialImports, RouterLink, NgFor, NgIf, DatePipe],
+    imports: [materialImports, RouterLink, NgFor, NgIf, DatePipe, EventCardComponent],
     styleUrls: ['./home.component.scss'],
     templateUrl: './home.component.html',
 })

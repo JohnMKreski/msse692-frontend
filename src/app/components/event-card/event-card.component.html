@@ -1,0 +1,53 @@
+<div class="item-container">
+    <div class="img-container">
+      <img [src]="thumbnailUrl || '/images/image.avif'" [alt]="event.eventName" loading="lazy" />
+    </div>
+
+    <div class="body-container">
+      <div class="overlay"></div>
+
+      <!-- OLD (no refs):
+      <div class="event-header">
+        <p class="title">{{ event.eventName }}</p>
+      </div>
+      -->
+
+      <!-- NEW (refs for TS auto-fit): -->
+       <div class="event-container">
+      <div class="event-header" #headerEl>
+        <p class="title" #titleEl>{{ event.eventName }}</p>
+        <!-- <div class="separator"></div> -->
+      </div>
+      <div class="event-info">
+        <p class="location" #locationEl *ngIf="event.eventLocation">Location: {{ event.eventLocation }}</p>
+        <!-- <p class="price">{{event.eventPrice}}</p> -->
+        <p class="info">
+            <span class="icon" aria-hidden="true"></span>
+            Date:
+            {{ event.startAt | date:'EEE, MMM d, h:mm a' }}
+          </p>
+        </div>
+
+        <div class="additional-info">
+          <!-- <p class="info">
+            <span class="icon" aria-hidden="true">📍</span>
+            {{ event.eventLocation || 'Location TBA' }}
+          </p> -->
+          <!-- <p class="info">
+            <span class="icon" aria-hidden="true"></span>
+            {{ event.startAt | date:'EEE, MMM d, h:mm a' }}
+          </p> -->
+
+          <p class="info description" *ngIf="event.eventDescription">
+            Description:
+            {{ event.eventDescription }}
+          </p>
+        </div>
+      </div>
+  
+      <a [routerLink]="['/events', event.eventId]" [attr.aria-label]="'View ' + event.eventName">
+        <span class="action">View</span>
+      </a>
+    </div>
+</div>
+

@@ -1,21 +1,22 @@
 import { ChangeDetectionStrategy, Component, OnDestroy, PLATFORM_ID, ChangeDetectorRef, inject, OnInit, NgZone, AfterViewInit } from '@angular/core';
-import { isPlatformBrowser, NgForOf, NgIf, DatePipe } from '@angular/common';
+import { isPlatformBrowser, NgForOf, NgIf, DatePipe, AsyncPipe } from '@angular/common';
 import { LoadingSkeletonComponent } from '../../components/loading-skeleton/loading-skeleton.component';
 import { FormsModule } from '@angular/forms';
 import { EventsService } from './events.service';
 import { EventDto, EventPageResponse, EventSortField, SortDir } from './event.model';
 import { take, takeUntil } from 'rxjs/operators';
-import { Subject } from 'rxjs';
+import { Observable, Subject, of, map } from 'rxjs';
 import { Router, RouterLink } from '@angular/router';
 import { formatApiError, parseApiError } from '../../shared/models/api-error';
 import { ErrorBannerComponent } from '../../components/error-banner/error-banner.component';
+import { EnumsService } from './enums.service';
 
 import { EventsCalendarComponent } from '../../components/events-calendar/events-calendar.component';
 
 @Component({
     selector: 'app-events',
     standalone: true,
-    imports: [NgIf, NgForOf, FormsModule, EventsCalendarComponent],
+    imports: [NgIf, NgForOf, FormsModule, AsyncPipe, EventsCalendarComponent],
     templateUrl: './events.component.html',
     styleUrls: ['./events.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -24,6 +25,7 @@ import { EventsCalendarComponent } from '../../components/events-calendar/events
 export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
     private readonly platformId = inject(PLATFORM_ID);
     private readonly eventsService = inject(EventsService);
+    private readonly enumsService = inject(EnumsService);
     private readonly cdr = inject(ChangeDetectorRef);
     private readonly zone = inject(NgZone);
     private readonly router = inject(Router);
@@ -45,6 +47,8 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
     publishedEvents: EventDto[] = [];
     calendarLoading = false;
 
+    private readonly communityTimeZone = 'America/Denver';
+
     readonly typeColors: Record<string,string> = {
         CONCERT: '#d97706',
         FESTIVAL: '#2563eb',
@@ -53,7 +57,25 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
     };
 
     // Legend helper arrays (built once)
+    //Legend (typeLegend) answers: “What types exist? Show a key.”
     readonly typeLegend = Object.entries(this.typeColors).map(([key,color]) => ({ key, color, label: key.charAt(0) + key.slice(1).toLowerCase() }));
+
+    /** 
+     * Options (typeOptions$) answers: “What values can the user pick to filter requests?”
+     * Dropdown options for filtering events by backend EventType enum.
+     * Source of truth is the backend enum list (GET /enums/event-types).
+     * We prepend an "All" option (null) to mean "no eventType filter" in the API request.
+     * During SSR (not in browser), avoid making HTTP calls and just return an empty list.
+     */
+    readonly typeOptions$: Observable<Array<{ label: string; value: string | null }>> = (
+        isPlatformBrowser(this.platformId) ? this.enumsService.getEventTypes() : of([])
+    ).pipe(
+        // Convert backend EnumOption { value, label } into the shape our <select> expects.
+        map((opts) => [
+            { label: 'All', value: null },
+            ...(opts ?? []).map((o) => ({ label: o.label, value: o.value }))
+        ])
+    );
 
     // Removed FullCalendarOptions in favor of reusable component inputs/outputs.
 
@@ -94,9 +116,10 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
     private loadEvents(window?: { from?: string; to?: string }) {
         const sort = `${this.sortField},${this.sortDir}`;
         // Derive month key from provided range or current date
-        const refDateStr = window?.from || window?.to || new Date().toISOString();
-        const refDate = new Date(refDateStr);
-        const monthKey = `${refDate.getFullYear()}-${String(refDate.getMonth()+1).padStart(2,'0')}`;
+        const refDateStr = window?.from || window?.to;
+        const refDate = refDateStr ? new Date(refDateStr) : new Date();
+        const ym = this.getCommunityYearMonth(refDate);
+        const monthKey = `${ym.year}-${String(ym.month).padStart(2,'0')}`;
         const key = `${monthKey}|${this.selectedType || ''}|${sort}`;
         const now = Date.now();
         const cached = this.publishedCache.get(key);
@@ -107,12 +130,12 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
         }
         this.calendarLoading = true;
         // Expand fetch window to full month boundaries for stable caching
-        const monthStart = new Date(refDate.getFullYear(), refDate.getMonth(), 1);
-        // Use end-of-day timestamp for last day to avoid truncating events that start later that day
-        const monthEnd = new Date(refDate.getFullYear(), refDate.getMonth()+1, 0, 23, 59, 59, 999); // last day of month end-of-day
-        const fromIso = monthStart.toISOString();
-        const toIso = monthEnd.toISOString();
-        const params = { page: 0, size: 500, sort, eventType: this.selectedType || undefined, from: fromIso, to: toIso };
+        const lastDay = new Date(Date.UTC(ym.year, ym.month, 0)).getUTCDate();
+        const mm = String(ym.month).padStart(2, '0');
+        const dd = String(lastDay).padStart(2, '0');
+        const fromLocal = `${ym.year}-${mm}-01T00:00:00`;
+        const toLocal = `${ym.year}-${mm}-${dd}T23:59:59`;
+        const params = { page: 0, size: 500, sort, eventType: this.selectedType || undefined, from: fromLocal, to: toLocal };
         this.eventsService.listPublished(params).pipe(take(1)).subscribe({
             next: (resp: EventPageResponse) => {
                 this.zone.run(() => {
@@ -131,6 +154,20 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
                 });
             }
         });
+    }
+
+    private getCommunityYearMonth(d: Date): { year: number; month: number } {
+        const parts = new Intl.DateTimeFormat('en-US', {
+            timeZone: this.communityTimeZone,
+            year: 'numeric',
+            month: '2-digit'
+        }).formatToParts(d);
+        const year = Number(parts.find((p) => p.type === 'year')?.value ?? NaN);
+        const month = Number(parts.find((p) => p.type === 'month')?.value ?? NaN);
+        if (!Number.isFinite(year) || !Number.isFinite(month)) {
+            return { year: d.getFullYear(), month: d.getMonth() + 1 };
+        }
+        return { year, month };
     }
 
     onRefreshClick(): void {

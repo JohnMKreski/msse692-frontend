@@ -2,16 +2,30 @@
     <div class="hero__content">
         <h1 id="welcome-heading" class="hero__title">Discover Live Music in the Arkansas Valley</h1>
         <p class="hero__subtitle">
-            Find shows, festivals, and community events—curated for locals and visitors alike.
+            Find shows, festivals, and community music events within the Arkansas Valley.
         </p>
-        <div class="hero__actions">
+        <!-- <div class="hero__actions">
             <a mat-raised-button color="primary" routerLink="/events">Browse Events</a>
             <a mat-stroked-button color="primary" routerLink="/about">Learn More</a>
-        </div>
+        </div> -->
     </div>
 </section>
 
-<section class="upcoming" aria-labelledby="upcoming-heading">
+<section class="event-types-section" aria-labelledby="event-types-heading">
+    <h2 id="event-types-heading" class="visually-hidden">Event Types</h2>
+    <!-- <div class="event-types-graphic" aria-hidden="true">
+        <img src="/images/chat-mountain-range.svg" alt="" />
+    </div> -->
+    <div class="event-types">
+        <h2> (TODO: Filter Events) </h2>
+        <a class="event-type">Live Music</a>
+        <a class="event-type">Performing Arts</a>
+        <a class="event-type">Visual Arts</a>
+        <a class="event-type">Community</a>
+    </div>
+</section>
+
+<!-- <section class="upcoming" aria-labelledby="upcoming-heading">
     <h2 id="upcoming-heading">Upcoming Events</h2>
     <div *ngIf="loading()" class="loading"><mat-spinner diameter="28"></mat-spinner> <span>Loading…</span></div>
     <p *ngIf="!loading() && error() as err" class="error">{{ err }}</p>
@@ -27,9 +41,23 @@
         </mat-card>
     </div>
     <p *ngIf="!loading() && !upcoming().length && !error()" class="empty" aria-live="polite">No upcoming events found.</p>
+</section> -->
+
+<section class="upcoming" aria-labelledby="upcoming-heading">
+    <h2 id="upcoming-heading">Upcoming Events (Todo: Date Range / Next Page (Week)) </h2>
+    <div *ngIf="loading()" class="loading"><mat-spinner diameter="28"></mat-spinner> <span>Loading…</span></div>
+    <p *ngIf="!loading() && error() as err" class="error">{{ err }}</p>
+    <div class="upcoming__grid" *ngIf="!loading() && upcoming().length; else emptyUpcoming">
+        <app-event-card *ngFor="let e of upcoming()" [event]="e"></app-event-card>
+    </div>
+    <ng-template #emptyUpcoming>
+        <p class="empty" aria-live="polite">No upcoming events found.</p>
+    </ng-template>
 </section>
 
-<section class="highlights" aria-label="Why use Ark Valley Events">
+
+
+<!-- <section class="highlights" aria-label="Why use Ark Valley Events">
     <div class="highlights__grid">
         <mat-card class="highlight">
             <mat-card-header>
@@ -61,12 +89,12 @@
             </mat-card-content>
         </mat-card>
     </div>
-</section>
+</section> -->
 
-<section class="cta" aria-label="Call to action">
+<!-- <section class="cta" aria-label="Call to action">
     <div class="cta__inner">
         <h2 class="cta__title">Ready to explore what’s happening?</h2>
         <p class="cta__subtitle">Jump into the calendar and find your next show.</p>
         <a mat-raised-button color="primary" routerLink="/events">View the Calendar</a>
     </div>
-</section>
+</section> -->

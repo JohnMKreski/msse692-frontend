@@ -6,8 +6,8 @@
 
     <!-- View toggle removed: /events now shows only Published events -->
 
-    <!-- Sort & filter controls deferred to future sprint
-    <div class="sort-controls" aria-label="Sort events">
+    <!-- Sort & filter controls deferred to future sprint -->
+    <!-- <div class="sort-controls" aria-label="Sort events">
         <label>
             Sort by
             <select [(ngModel)]="sortField" (ngModelChange)="onSortChange()">
@@ -27,8 +27,7 @@
                 <option *ngFor="let t of (typeOptions$ | async ) ?? []" [ngValue]="t.value">{{ t.label }}</option>
             </select>
         </label>
-    </div>
-    -->
+    </div> -->
 
     <div class="legend-container">
         <div class="legend" aria-label="Event Types Legend">
@@ -38,8 +37,6 @@
             </span>
         </div>
     </div>
-
-    <!-- Upcoming list removed per request -->
 
     <!-- Server-side placeholder to keep SSR markup stable -->
     <div *ngIf="!isBrowser()" class="calendar-placeholder" aria-hidden="true">
@@ -55,5 +52,80 @@
             (dateRangeChange)="onCalendarRange($event)"
             (eventClick)="onEventIdClick($event)">
         </app-events-calendar>
+    </div>
+        <div class="page-header">
+        <h1 class="page-title">Events Calendar (List View)</h1>
+    </div>
+    <!-- Sort & filter controls deferred to future sprint -->
+    <div class="sort-controls" aria-label="Sort events">
+        <label>
+        Event Category
+        <select [ngModel]="selectedType" (ngModelChange)="onTypeChange($event)">
+            <!-- <option [ngValue]="null">All Types</option> -->
+            <option *ngFor="let t of (typeOptions$ | async) ?? []" [ngValue]="t.value">
+            {{ t.label }}
+            </option>
+        </select>
+        </label>
+    </div>
+
+    <!-- Events table (UI-only baseline) -->
+    <div class="events-list" aria-label="Events list">
+    <div *ngIf="calendarLoading" class="events-hint">Loading events…</div>
+
+    <div *ngIf="!calendarLoading && (!publishedEvents || publishedEvents.length === 0)" class="events-hint">
+        No events found.
+    </div>
+
+    <table *ngIf="!calendarLoading && publishedEvents?.length" class="events-table">
+        <thead>
+        <tr>
+            <th scope="col">Name</th>
+            <th scope="col">Type</th>
+            <th scope="col">Starts</th>
+            <th scope="col">Location</th>
+        </tr>
+        </thead>
+
+        <tbody>
+        <tr *ngFor="let e of publishedEvents">
+            <td>
+            <button type="button" class="linklike" (click)="onEventIdClick(e.eventId)">
+                {{ e.eventName }}
+            </button>
+            </td>
+            <td>{{ e.typeDisplayName || e.type || '—' }}</td>
+            <td>{{ e.startAt }}</td>
+            <td>{{ e.eventLocation || '—' }}</td>
+        </tr>
+        </tbody>
+    </table>
+    </div>
+
+    <!-- Events list (UI-only baseline) -->
+    <div class="events-list" aria-label="Events list">
+    <div *ngIf="calendarLoading" class="events-hint">Loading events…</div>
+
+    <div *ngIf="!calendarLoading && (!publishedEvents || publishedEvents.length === 0)" class="events-hint">
+        No events found.
+    </div>
+
+    <ul *ngIf="!calendarLoading && publishedEvents?.length" class="events-cards">
+        <li *ngFor="let e of publishedEvents" class="event-card">
+        <div class="event-title">
+            <button type="button" class="linklike" (click)="onEventIdClick(e.eventId)">
+            {{ e.eventName }}
+            </button>
+        </div>
+
+        <div class="event-meta">
+            <span>{{ e.typeDisplayName || e.type || '—' }}</span>
+            <span class="dot">•</span>
+            <span>{{ e.startAt }}</span>
+            <span *ngIf="e.eventLocation" class="dot">•</span>
+            <span *ngIf="e.eventLocation">{{ e.eventLocation }}</span>
+        </div>
+        </li>
+    </ul>
     </div>
 </section>

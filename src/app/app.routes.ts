@@ -38,6 +38,7 @@ export const routes: Routes = [
             { path: 'users', loadComponent: () => import('./pages/admin/admin-users-list/admin-users-list.component').then(m => m.AdminUsersListComponent) },
             { path: 'api', loadComponent: () => import('./pages/admin/admin-api/admin-api.component').then(m => m.AdminApiComponent) },
             { path: 'logs', loadComponent: () => import('./pages/admin/admin-logs/admin-logs.component').then(m => m.AdminLogsComponent) },
+            { path: 'todo', loadComponent: () => import('./pages/admin/admin-todo/admin-todo.component').then(m => m.AdminTodoComponent) },
         ],
     },
     {

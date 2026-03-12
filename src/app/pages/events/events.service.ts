@@ -10,6 +10,7 @@ export class EventsService {
     private readonly http = inject(HttpClient);
     private readonly apiUrl = inject(API_URL);
     private readonly baseUrl = `${this.apiUrl}`;
+    private readonly communityTimeZone = 'America/Denver';
     // UI event bus (merged from EventsUiService)
     private readonly _changed = new Subject<void>();
     readonly changed$ = this._changed.asObservable();
@@ -95,10 +96,32 @@ export class EventsService {
         return `${field},${dir || 'asc'}`;
     }
 
+    private toCommunityLocalDateTimeString(d: Date): string {
+        const dateParts = new Intl.DateTimeFormat('en-US', {
+            timeZone: this.communityTimeZone,
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        }).formatToParts(d);
+        const timeParts = new Intl.DateTimeFormat('en-US', {
+            timeZone: this.communityTimeZone,
+            hour: '2-digit',
+            minute: '2-digit',
+            hourCycle: 'h23',
+            hour12: false
+        }).formatToParts(d);
+        const year = dateParts.find((p) => p.type === 'year')?.value ?? '';
+        const month = dateParts.find((p) => p.type === 'month')?.value ?? '';
+        const day = dateParts.find((p) => p.type === 'day')?.value ?? '';
+        const hour = timeParts.find((p) => p.type === 'hour')?.value ?? '';
+        const minute = timeParts.find((p) => p.type === 'minute')?.value ?? '';
+        return `${year}-${month}-${day}T${hour}:${minute}:00`;
+    }
+
     listPublicUpcoming(from?: Date, limit: number = 10): Observable<EventDto[]> {
         const clamped = Math.min(Math.max(limit, 1), 100);
         const params: any = { limit: clamped };
-        if (from) params.from = from.toISOString();
+        if (from) params.from = this.toCommunityLocalDateTimeString(from);
         return this.http.get<EventDto[]>(`${this.baseUrl}/events/public-upcoming`, { params });
     }
 

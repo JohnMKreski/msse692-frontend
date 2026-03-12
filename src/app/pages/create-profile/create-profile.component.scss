@@ -15,7 +15,7 @@ $color-bg-panel: #f8f9fa;
 $color-bg-array: #f1f5f9;
 $color-heading: #1f2937;
 $color-label: #374151;
-$color-error: #b91c1c;
+$color-error: var(--text-error);
 $color-focus: #2563eb;
 $color-btn: #2563eb;
 $color-btn-text: #ffffff;
@@ -80,7 +80,7 @@ $color-note: #6b7280;
 		}
 
 		&.invalid {
-			border-color: $color-error;
+			border-color: var(--state-error-border);
 		}
 	}
 

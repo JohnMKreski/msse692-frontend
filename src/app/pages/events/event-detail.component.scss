@@ -1,114 +1,116 @@
+@use '../../../styles/tokens' as *;
+
 .event-detail {
-	padding: 1rem;
+	padding: var(--space-4);
 	display: flex;
 	justify-content: center;
 	flex-direction: column;
 }
 
 .event-detail__card {
-	max-width: 900px; /* slightly narrower for centered readability */
+	max-width: var(--container-max-width-narrow); /* slightly narrower for centered readability */
 	width: 100%;
 	margin: 0 auto; /* center horizontally in page */
-	background: #fff;
-	border: 1px solid #e5e7eb;
-	border-radius: 12px;
-	padding: 1.5rem;
-	box-shadow: 0 2px 4px rgba(0, 0, 0, .04);
+	background: var(--surface-card);
+	border: var(--border-default);
+	border-radius: var(--radius-lg);
+	padding: var(--space-6);
+	box-shadow: var(--shadow-sm);
 }
 
 .event-detail__back {
-	margin: 0 auto .75rem; /* align back nav with card width */
-	max-width: 900px;
+	margin: 0 auto var(--space-3); /* align back nav with card width */
+	max-width: var(--container-max-width-narrow);
 	width: 100%;
 }
 
 .back-link {
-	font-size: .75rem;
-	font-weight: 500;
+	font-size: var(--font-size-2xs);
+	font-weight: var(--font-weight-medium);
 	display: inline-flex;
 	align-items: center;
-	gap: .35rem;
+	gap: var(--space-1_5);
 	text-transform: none;
-	padding: .25rem .5rem;
-	border-radius: 6px;
+	padding: var(--space-1) var(--space-2);
+	border-radius: var(--radius-sm);
 }
 
 .back-link.active {
-	background: #dbeafe;
+	background: var(--surface-selected);
 }
 
 .back-link mat-icon {
-	font-size: 16px;
-	line-height: 1;
+	font-size: var(--icon-size-md);
+	line-height: var(--line-height-none);
 }
 
 .event-detail__header {
 	display: flex;
 	flex-direction: column;
-	gap: .75rem;
-	margin-bottom: 1.25rem;
+	gap: var(--space-3);
+	margin-bottom: var(--space-5_5);
 }
 
 .event-detail__title-group {
 	display: flex;
 	align-items: center;
-	gap: .75rem;
+	gap: var(--space-3);
 	flex-wrap: wrap;
 }
 
 .event-detail__title {
 	margin: 0;
-	font-size: 1.6rem;
-	font-weight: 600;
-	line-height: 1.2;
+	font-size: var(--font-size-2xl);
+	font-weight: var(--font-weight-semibold);
+	line-height: var(--line-height-snug);
 }
 
 .event-detail__primary-times {
-	font-size: .9rem;
-	color: #555;
+	font-size: var(--font-size-xs);
+	color: var(--text-muted);
 	display: flex;
 	align-items: center;
-	gap: .5rem;
+	gap: var(--space-2);
 }
 
 .event-detail__meta-grid {
 	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-	gap: .75rem 1rem;
-	margin-bottom: 1.25rem;
+	grid-template-columns: repeat(auto-fit, minmax(var(--grid-min-width-field), 1fr));
+	gap: var(--space-3) var(--space-4);
+	margin-bottom: var(--space-5_5);
 }
 
 .meta-field {
 	display: flex;
 	flex-direction: column;
-	background: #f9fafb;
-	padding: .75rem .85rem;
-	border: 1px solid #e5e7eb;
-	border-radius: 8px;
-	font-size: .8rem;
+	background: var(--surface-hover);
+	padding: var(--space-3) var(--space-3_5);
+	border: var(--border-default);
+	border-radius: var(--radius-8);
+	font-size: var(--font-size-xxs);
 }
 
 .meta-field .label {
-	font-weight: 600;
-	color: #111;
-	margin-bottom: .15rem;
+	font-weight: var(--font-weight-semibold);
+	color: var(--text-primary);
+	margin-bottom: var(--space-0_5);
 }
 
 .meta-field .value {
-	color: #333;
+	color: var(--text-primary);
 	word-break: break-word;
 }
 
 .event-detail__description {
-	margin: 0 0 1.25rem;
-	font-size: .9rem;
-	line-height: 1.45;
+	margin: 0 0 var(--space-5_5);
+	font-size: var(--font-size-xs);
+	line-height: var(--line-height-md);
 }
 
 .event-detail__description .desc-title {
-	margin: 0 0 .5rem;
-	font-size: 1.1rem;
-	font-weight: 600;
+	margin: 0 0 var(--space-2);
+	font-size: var(--font-size-lg);
+	font-weight: var(--font-weight-semibold);
 }
 
 /* .event-detail__actions removed for public view */
@@ -116,20 +118,20 @@
 .loading {
 	display: flex;
 	align-items: center;
-	gap: .75rem;
-	padding: 1rem;
+	gap: var(--space-3);
+	padding: var(--space-4);
 }
 
 .error {
-	color: #b91c1c;
-	margin-top: 1rem;
+	color: var(--text-error);
+	margin-top: var(--space-4);
 }
 
-@media (max-width: 700px) {
+@media (max-width: $bp-event-detail) {
 	.event-detail__title {
-		font-size: 1.35rem;
+		font-size: var(--font-size-2xl-sm);
 	}
 	.meta-field {
-		font-size: .75rem;
+		font-size: var(--font-size-2xs);
 	}
 }

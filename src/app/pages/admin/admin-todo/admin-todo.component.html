@@ -1,0 +1,94 @@
+<section class="admin-page">
+    <header class="admin-header">
+        <div>
+        <h1 class="admin-title">Admin Todo</h1>
+        <p class="admin-subtitle">Quick notes while building features</p>
+        </div>
+
+        <div class="admin-actions">
+        <button type="button" class="btn btn-secondary" (click)="clearCompleted()" [disabled]="totalCount === 0">
+            Clear Completed
+        </button>
+        <button type="button" class="btn btn-danger" (click)="clearAll()" [disabled]="totalCount === 0">
+            Clear All
+        </button>
+        </div>
+    </header>
+
+    <div class="todo-card">
+        <form class="todo-form" (ngSubmit)="addTodo()">
+        <input
+            type="text"
+            class="todo-input"
+            placeholder="Add a todo (e.g., 'Fix event filters on admin users page')"
+            name="newTodoText"
+            [(ngModel)]="newTodoText"
+            autocomplete="off"
+        />
+        <button type="submit" class="btn btn-primary">Add</button>
+        </form>
+
+        <div class="todo-meta">
+        <span class="todo-count">{{ remainingCount }} remaining ({{ totalCount }} total)</span>
+        <span class="todo-hint">Tip: Keep todos short and actionable.</span>
+        </div>
+
+        <ul class="todo-list" *ngIf="totalCount > 0; else emptyState">
+            <li
+                class="todo-item"
+                *ngFor="let todo of todos; trackBy: trackById"
+                [class.completed]="todo.completed"
+                [class.editing]="editingId === todo.id"
+            >
+                <ng-container *ngIf="editingId !== todo.id; else editMode">
+                    <label class="todo-check">
+                        <input
+                            type="checkbox"
+                            [checked]="todo.completed"
+                            (change)="toggleCompleted(todo)"
+                        />
+                        <span class="todo-text">{{ todo.text }}</span>
+                    </label>
+
+                    <div class="todo-item-actions">
+                        <button type="button" class="btn btn-link" (click)="startEdit(todo)">
+                            Edit
+                        </button>
+                        <button type="button" class="btn btn-link danger" (click)="deleteTodo(todo)">
+                            Delete
+                        </button>
+                    </div>
+                </ng-container>
+
+                <ng-template #editMode>
+                    <div class="todo-edit">
+                        <input
+                            type="text"
+                            class="todo-input"
+                            [name]="'editText-' + todo.id"
+                            [(ngModel)]="editText"
+                            autocomplete="off"
+                            (keydown.enter)="saveEdit(todo)"
+                            (keydown.escape)="cancelEdit()"
+                        />
+                        <div class="todo-item-actions">
+                            <button type="button" class="btn btn-primary" (click)="saveEdit(todo)">
+                                Save
+                            </button>
+                            <button type="button" class="btn btn-secondary" (click)="cancelEdit()">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </ng-template>
+            </li>
+        </ul>
+
+        <ng-template #emptyState>
+            <div class="todo-empty">
+                <p>No todos yet.</p>
+                <p class="muted">Add one above when you spot something to fix.</p>
+            </div>
+        </ng-template>
+    </div>
+</section>
