@@ -5,53 +5,113 @@
       <span>Back to Calendar</span>
     </a>
   </nav>
-  <div class="event-detail__card">
+  <article class="event-detail__card">
     <header class="event-detail__header">
-      <div class="event-detail__title-group">
-        <h1 class="event-detail__title">{{ e.eventName }}</h1>
-        <app-status-badge [status]="e.status" size="sm"></app-status-badge>
+      <div class="event-detail__title-row">
+        <div class="event-detail__title-group">
+          <h1 class="event-detail__title">{{ e.eventName }}</h1>
+          <app-status-badge [status]="e.status" size="sm"></app-status-badge>
+        </div>
+
+        <div class="event-detail__share" *ngIf="shareUrl()">
+          <span class="event-detail__share-text">Share:</span>
+          <ul class="event-detail__share-list" aria-label="Share links">
+            <li class="event-detail__share-item">
+              <a
+                class="event-detail__share-link"
+                aria-label="Share on Facebook"
+                target="_blank"
+                rel="noopener noreferrer"
+                [href]="shareFacebookHref()">
+                <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" viewBox="0 0 24 24">
+                  <path fill="currentColor" d="M14.182 6.09c-.364 0-.727.365-.727 1v2H17v3h-3.636V21H10v-8.818H7v-3h3V7.455C10 4.909 11.818 3 14.182 3H17v3.09z"></path>
+                </svg>
+              </a>
+            </li>
+            <li class="event-detail__share-item">
+              <a
+                class="event-detail__share-link"
+                aria-label="Share on Twitter"
+                target="_blank"
+                rel="noopener noreferrer"
+                [href]="shareTwitterHref()">
+                <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" viewBox="0 0 24 24">
+                  <path fill="currentColor" d="M17.176 4h2.76l-6.03 6.892L21 20.27h-5.554l-4.35-5.688-4.979 5.688H3.355l6.45-7.371L3 4h5.695l3.933 5.199zm-.969 14.618h1.53L7.864 5.565h-1.64z"></path>
+                </svg>
+              </a>
+            </li>
+            <li class="event-detail__share-item">
+              <a
+                class="event-detail__share-link"
+                aria-label="Share by Email"
+                target="_blank"
+                rel="noopener noreferrer"
+                [href]="shareEmailHref()">
+                <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" viewBox="0 0 24 24">
+                  <path fill="currentColor" d="m14.7 11.84 4.95 6.57c-.18.09-.27.09-.45.09H4.44l4.86-6.66.81.72c.54.45 1.17.72 1.89.72.63 0 1.35-.18 1.89-.72zM3.18 6.08l5.04 4.77-4.95 6.75a1.52 1.52 0 0 1-.27-.9V6.8c0-.27.09-.54.18-.72m17.64-.09c.09.27.18.54.18.81v9.9c0 .27-.09.54-.18.81l-5.04-6.75ZM19.264 5a.9.9 0 0 1 .386.09l-6.75 6.39c-.54.45-1.35.45-1.8 0L4.35 5.09C4.53 5 4.62 5 4.8 5Z"></path>
+                </svg>
+              </a>
+            </li>
+          </ul>
+        </div>
       </div>
-      <div class="event-detail__primary-times">
-        <span class="start">{{ e.startAt | date:'MMM d, y h:mm a' }}</span>
+      <div class="event-detail__primary-times" aria-label="Event time">
+        <span>{{ primaryStartDisplay() }}</span>
         <span class="sep" *ngIf="e.endAt">–</span>
-        <span class="end" *ngIf="e.endAt">{{ e.endAt | date:'MMM d, y h:mm a' }}</span>
+        <span *ngIf="e.endAt">{{ primaryEndDisplay() }}</span>
       </div>
     </header>
 
-    <div class="event-detail__meta-grid">
-      <div class="meta-field">
-        <span class="label">Start:</span>
-        <span class="value">{{ e.startAt | date:'fullDate' }} &#64; {{ e.startAt | date:'shortTime' }}</span>
+    <div class="event-detail__body">
+      <h2 class="event-detail__section-title">When</h2>
+      <div class="event-detail__meta">
+        <p><time>{{ whenDateDisplay() }}</time></p>
       </div>
-      <div class="meta-field" *ngIf="e.endAt">
-        <span class="label">End:</span>
-        <span class="value">{{ e.endAt | date:'fullDate' }} &#64; {{ e.endAt | date:'shortTime' }}</span>
+      <div class="event-detail__meta">
+        <p><time>{{ whenTimeRangeDisplay() }}</time></p>
       </div>
-      <div class="meta-field" *ngIf="e.type">
-        <span class="label">Type:</span>
-        <span class="value">{{ e.type }}</span>
+
+      <h2 class="event-detail__section-title">Where</h2>
+      <div class="event-detail__meta" *ngIf="e.eventLocation; else noLocationTpl">
+        <address class="event-detail__address">{{ e.eventLocation }}</address>
       </div>
-      <div class="meta-field" *ngIf="e.eventLocation">
-        <span class="label">Location:</span>
-        <span class="value">{{ e.eventLocation }}</span>
+      <ng-template #noLocationTpl>
+        <div class="event-detail__meta">
+          <p class="event-detail__muted">Location TBD</p>
+        </div>
+      </ng-template>
+
+      <div class="event-detail__meta" *ngIf="e.type">
+        <h2 class="event-detail__section-title">Type</h2>
+        <p>{{ e.typeDisplayName || e.type }}</p>
       </div>
-      <div class="meta-field" *ngIf="e.createdByUserId">
-        <span class="label">Owner:</span>
-        <span class="value">{{ ownerDisplayName() || ('User #' + e.createdByUserId) }}</span>
+
+      <div class="event-detail__meta" *ngIf="e.createdByUserId">
+        <h2 class="event-detail__section-title">Owner</h2>
+        <p>{{ ownerDisplayName() || ('User #' + e.createdByUserId) }}</p>
       </div>
-      <!-- <div class="meta-field" *ngIf="e.createdAt">
-        <span class="label">Created:</span>
-        <span class="value">{{ e.createdAt | date:'MMM d, y h:mm a' }}</span>
-      </div> -->
+
+      <div class="event-detail__description" *ngIf="e.eventDescription">
+        <h2 class="event-detail__section-title">Event Description</h2>
+        <div class="event-detail__freeform">
+          <p>{{ e.eventDescription }}</p>
+        </div>
+      </div>
+
+      <div class="event-detail__map-wrap" *ngIf="mapSrc() as src">
+        <iframe
+          class="event-detail__map"
+          title="Map"
+          frameborder="0"
+          scrolling="no"
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"
+          [src]="src"></iframe>
+      </div>
+
+      <p class="error" *ngIf="error() as err">{{ err }}</p>
     </div>
-
-    <article class="event-detail__description" *ngIf="e.eventDescription">
-      <h2 class="desc-title">Description</h2>
-      <p>{{ e.eventDescription }}</p>
-    </article>
-
-    <p class="error" *ngIf="error() as err">{{ err }}</p>
-  </div>
+  </article>
 </section>
 
 <ng-template #loadingOrErrorTpl>

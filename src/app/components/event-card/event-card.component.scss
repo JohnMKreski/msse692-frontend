@@ -2,280 +2,133 @@
     display: block;
 }
 
-.item-container {
-    position: relative;
-    width: 300px;
-    height: 570px;
-    overflow: hidden;
-    background-color: #fff;
-    box-shadow: 0 0 30px 5px rgba(0, 0, 0, 0.15);
-}
-
-// .item-container:hover {
-//   transform: translateY(-2px);
-//   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.10);
-// }
-
-// .item-container:focus-visible {
-//   outline: 3px solid var(--event-card-accent, var(--component-accent, #1e88e5));
-//   outline-offset: 3px;
-// }
-
-.img-container,
-.body-container {
-    position: absolute;
-    top: 0;
-    left: 0;
+.calendar-event {
     width: 100%;
-    height: 100%;
+    border-bottom: var(--border-width) solid var(--divider-color);
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: var(--space-4);
+    line-height: 1.3;
+    padding: var(--space-4) 0;
 }
 
-.img-container img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-}
-
-.body-container {
-    position: relative;
-}
-
-.event-container {
-  display: flex;
-  flex-direction: column;
-  transform: translateY(-150px);
-  transition: transform 0.22s ease-out;
-
-}
-
-.item-container:hover .event-container{
-  transform: none;
-}
-
-
-
-.overlay {
-    position: relative;
-    width: 100%;
-    height: 70vh;
-    background-color: rgba(24, 83, 122, 0.6);
-    opacity: 0;
-    transition: height linear 0.4s, opacity linear 0.2s;
-}
-
-
-.item-container:hover .overlay {
-    opacity: 1;
-    height: 150px;
-}
-
-.event-info {
-    background-color: #ffffff;
+.calendar-event__date {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 8px;
-    /* Fixed panel: long content scrolls inside instead of resizing card */
-    height: var(--event-card-info-height, 150px);
-    // overflow: hidden;
-    // overflow-wrap: break-word;
-}
-
-.event-info > * {
-    width: 100%;
-    text-align: center;
-}
-
-.event-info .additional-info {
-    /* Remaining space becomes scrollable content */
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow: auto;
-    width: 100%;
-}
-
-// .item-container:hover .event-info {
-//     transform: translateY(-12px);
-// }
-
-.event-header {
-    background-color: #ffffff;
-    display: flex;
-    align-items: center;
     justify-content: center;
-    padding: 8px;
-    height: 8vw;
-    overflow: hidden;
+    min-width: 52px;
+    border: var(--border-default);
+    background: var(--surface-card);
+    padding: var(--space-2) var(--space-3);
 }
 
-// OLD (CSS-only): title gets ellipsis / line-clamp (may hide full title)
-// .title {
-//     width: 100%;
-//     margin: 0;
-//     color: #18537a;
-//     font-weight: bold;
-//     letter-spacing: 1px;
-//     line-height: 1.1;
-//     overflow: hidden;
-//     text-overflow: ellipsis;
-//     overflow-wrap: anywhere;
-//
-//     /* Default fallback: ties font-size to the same vw basis as the header height (8vw). */
-//     font-size: clamp(0.95rem, 2.2vw, 1.6rem);
-//
-//     /* Clamp to 2 lines so the title never changes the header height */
-//     display: -webkit-box;
-//     -webkit-box-orient: vertical;
-//     -webkit-line-clamp: 2;
-//     line-clamp: 2;
-// }
-//
-// /* Modern browsers: compute font-size directly from header height via container query units. */
-// @supports (font-size: 1cqh) {
-//     .event-header {
-//         container-type: size;
-//     }
-//
-//     .title {
-//         /* 24cqh = 24% of the header height; 2 lines @ 1.1 lh stays within the header */
-//         font-size: clamp(0.95rem, 24cqh, 1.6rem);
-//     }
-// }
+.calendar-event__month {
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: var(--mat-sys-primary);
+    text-transform: uppercase;
+    font-size: var(--font-size-xs);
+}
 
-// NEW (TS auto-fit): always show full title without changing header height.
-// The component measures the title and shrinks font-size until it fits.
-.title {
-    width: 100%;
-    margin: 0;
-    color: #18537a;
-    font-weight: bold;
-    letter-spacing: 1px;
-    line-height: 1.1;
-    overflow-wrap: anywhere;
-    white-space: normal;
-
-    /* knobs read by the TS auto-fit routine */
-    --event-card-title-min-px: 12;
-    --event-card-title-max-px: 28;
-
-    /* starting point before TS sets an inline font-size */
+.calendar-event__day {
+    font-weight: 800;
+    color: var(--mat-sys-primary);
     font-size: 1.25rem;
 }
 
-.location {
-    letter-spacing: 0.5px;
-    margin-bottom: 6px;
-    overflow-wrap: anywhere;
-    /* Always-visible fixed slot for location */
-    line-height: 1.15;
-    height: var(--event-card-location-height, 2.3em);
-    // OLD: location scrolls (causes nested scrollbars)
-    // overflow: auto;
-
-    // NEW: no scrollbar; TS auto-fit should shrink to fit the slot
-    overflow: hidden;
-    white-space: normal;
-
-    /* knobs read by TS auto-fit */
-    --event-card-location-min-px: 10;
-    --event-card-location-max-px: 16;
+.calendar-event__content {
+    min-width: 0;
 }
 
-.info {
-    letter-spacing: 0.5px;
-    margin-bottom: 6px;
+.calendar-event__heading {
+    margin: 0 0 var(--space-1_5);
+    font-size: 1.05rem;
+    line-height: var(--line-height-snug);
+}
+
+.calendar-event__heading a {
+    color: var(--mat-sys-primary);
+    text-decoration: none;
     overflow-wrap: anywhere;
 }
 
-.separator {
-    width: 20%;
-    height: 2px;
-    background-color: #17537a;
-    margin-bottom: 16px;
+.calendar-event__heading a:hover {
+    text-decoration: underline;
 }
 
-// OLD: big padding/margins can push description below the fold
-// .additional-info {
-//     border-top: 1px solid #bbb;
-//     margin-top: 12px;
-//     padding: 28px;
-//     padding-bottom: 0;
-// }
-//
-// .additional-info .info {
-//     font-size: 0.9em;
-//     margin-bottom: 20px;
-//     text-align: center;
-// }
-
-// NEW: tighter spacing so description is visible inside the fixed-height panel
-.additional-info {
-    background-color: #0d00ff;
-    border-top: 1px solid #ffffff;
-    // padding: 8px 10px 0;
-    height: var(--event-card-info-height, 150px);
-
+.calendar-event__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    align-items: center;
+    margin-bottom: var(--space-2);
 }
 
-.additional-info .info {
-    font-size: 0.9em;
-    margin-bottom: 8px;
-    text-align: center;
+.calendar-event__time {
+    font-weight: 700;
 }
 
-.info i {
-    color: #18537a;
-    font-size: 1.1em;
-    margin-right: 4px;
+.calendar-event__location,
+.calendar-event__type {
+    opacity: 0.9;
 }
 
-.info span {
-    color: #18537a;
-    font-weight: bolder;
+.calendar-event__desc {
+    margin: 0 0 var(--space-2);
+    overflow-wrap: anywhere;
 }
 
-.action {
-    color: #fff;
-    border: 3px solid #fff;
-    background-color: transparent;
-    position: absolute;
-    top: -100px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 60%;
-    outline: none;
+.calendar-event__toggle {
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--mat-sys-primary);
+    text-decoration: underline;
     cursor: pointer;
-    padding: 12px;
-    text-transform: uppercase;
-    font-size: 1.3em;
-    font-weight: bold;
-    letter-spacing: 2px;
-    transition: background-color 0.4s, top 0.4s;
+    font: inherit;
 }
 
-.item-container:hover .action {
-    top: 50px;
+.calendar-event__toggle:focus-visible {
+    outline: 2px solid var(--focus-ring-color);
+    outline-offset: 2px;
+    box-shadow: var(--focus-ring-shadow);
 }
 
-.action:hover {
-    background-color: rgba(255, 255, 255, 0.2);
+.calendar-event__compare {
+    margin-top: var(--space-3);
+    padding-top: var(--space-3);
+    border-top: var(--border-width) solid var(--divider-color);
 }
 
-// .item-container:hover .action {
-//   filter: brightness(0.95);
-// }
-
-.item-container:hover .action {
-    top: 50px;
+.calendar-event__compare-title {
+    font-weight: 700;
+    margin-bottom: var(--space-1_5);
 }
 
-// .action:hover {
-//     background-color: rgba(255, 255, 255, 0.2);
-// }
+.calendar-event__compare-row {
+    display: flex;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+    align-items: baseline;
+    margin-bottom: var(--space-1_5);
+}
 
-// @media (max-width: 560px) {
-//   .item-container {
-//     grid-template-columns: 120px 1fr;
-//   }
-// }
+.calendar-event__compare-label {
+    font-weight: 700;
+}
+
+.calendar-event__compare-value {
+    overflow-wrap: anywhere;
+}
+
+.calendar-event__compare-json {
+    margin: 0 0 var(--space-1_5);
+    padding: var(--space-1_5);
+    border: var(--border-default);
+    background: var(--surface-hover);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: var(--font-size-xxs);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}

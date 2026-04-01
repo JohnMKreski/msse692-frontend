@@ -25,19 +25,19 @@ describe('ProfileService', () => {
   it('getMe should GET /profile/me', () => {
     const mock = { id: 10, displayName: 'Jane' } as any;
     let result: any;
-    svc.getMe().subscribe(r => (result = r));
+    svc.getMe().subscribe((r: any) => (result = r));
     const req = http.expectOne('/api/v1/profile/me');
     expect(req.request.method).toBe('GET');
     req.flush(mock);
     expect(result).toEqual(mock);
   });
 
-  it('upsert should POST /profile with body', () => {
-    const body = { displayName: 'John' } as any;
+  it('create should POST /profile/create with body', () => {
+    const body = { displayName: 'John', profileType: 'OTHER' } as any;
     const mock = { id: 11, displayName: 'John' } as any;
     let result: any;
-    svc.upsert(body).subscribe(r => (result = r));
-    const req = http.expectOne('/api/v1/profile');
+    svc.create(body).subscribe((r: any) => (result = r));
+    const req = http.expectOne('/api/v1/profile/create');
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual(body);
     req.flush(mock);

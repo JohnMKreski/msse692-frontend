@@ -1,53 +1,62 @@
-<div class="item-container">
-    <div class="img-container">
-      <img [src]="thumbnailUrl || '/images/image.avif'" [alt]="event.eventName" loading="lazy" />
+<article class="calendar-event">
+  <time class="calendar-event__date" *ngIf="badgeMonthShort && badgeDay2">
+    <span class="calendar-event__month">{{ badgeMonthShort }}</span>
+    <span class="calendar-event__day">{{ badgeDay2 }}</span>
+  </time>
+
+  <div class="calendar-event__content">
+    <h2 class="calendar-event__heading">
+      <a [routerLink]="['/events', event.eventId]">{{ event.eventName }}</a>
+    </h2>
+
+    <div class="calendar-event__meta">
+      <span class="calendar-event__time">{{ startTime?.display || 'TBA' }}</span>
+      <span class="calendar-event__location" *ngIf="event.eventLocation">{{ event.eventLocation }}</span>
     </div>
 
-    <div class="body-container">
-      <div class="overlay"></div>
-
-      <!-- OLD (no refs):
-      <div class="event-header">
-        <p class="title">{{ event.eventName }}</p>
+    <div class="calendar-event__more" *ngIf="expanded">
+      <div class="calendar-event__meta" *ngIf="endTime">
+        <span class="calendar-event__time">Ends {{ endTime.display }}</span>
       </div>
-      -->
-
-      <!-- NEW (refs for TS auto-fit): -->
-       <div class="event-container">
-      <div class="event-header" #headerEl>
-        <p class="title" #titleEl>{{ event.eventName }}</p>
-        <!-- <div class="separator"></div> -->
+      <div class="calendar-event__meta" *ngIf="event.type">
+        <span class="calendar-event__type">{{ event.typeDisplayName || event.type }}</span>
       </div>
-      <div class="event-info">
-        <p class="location" #locationEl *ngIf="event.eventLocation">Location: {{ event.eventLocation }}</p>
-        <!-- <p class="price">{{event.eventPrice}}</p> -->
-        <p class="info">
-            <span class="icon" aria-hidden="true"></span>
-            Date:
-            {{ event.startAt | date:'EEE, MMM d, h:mm a' }}
-          </p>
+      <p class="calendar-event__desc" *ngIf="descriptionPreview">{{ descriptionPreview }}</p>
+
+      <div class="calendar-event__compare">
+        <div class="calendar-event__compare-title">timeUtility outputs</div>
+
+        <div class="calendar-event__compare-row">
+          <span class="calendar-event__compare-label">Raw startAt</span>
+          <span class="calendar-event__compare-value">{{ event.startAt }}</span>
+        </div>
+        <pre class="calendar-event__compare-json">formatDenverDate(startAt): {{ startDate | json }}</pre>
+        <pre class="calendar-event__compare-json">formatDenverTime12Hour(startAt): {{ startTime | json }}</pre>
+        <pre class="calendar-event__compare-json">formatDenverDateTime(startAt): {{ startDateTime | json }}</pre>
+        <div class="calendar-event__compare-row">
+          <span class="calendar-event__compare-label">toDenverLocalDateTimeStringForBackend(startAt)</span>
+          <span class="calendar-event__compare-value">{{ startLocalDateTimeForBackend || '(empty)' }}</span>
         </div>
 
-        <div class="additional-info">
-          <!-- <p class="info">
-            <span class="icon" aria-hidden="true">📍</span>
-            {{ event.eventLocation || 'Location TBA' }}
-          </p> -->
-          <!-- <p class="info">
-            <span class="icon" aria-hidden="true"></span>
-            {{ event.startAt | date:'EEE, MMM d, h:mm a' }}
-          </p> -->
-
-          <p class="info description" *ngIf="event.eventDescription">
-            Description:
-            {{ event.eventDescription }}
-          </p>
+        <div class="calendar-event__compare-row" style="margin-top:0.5rem;">
+          <span class="calendar-event__compare-label">Raw endAt</span>
+          <span class="calendar-event__compare-value">{{ event.endAt || '(none)' }}</span>
         </div>
+        <pre class="calendar-event__compare-json">formatDenverDate(endAt): {{ endDate | json }}</pre>
+        <pre class="calendar-event__compare-json">formatDenverTime12Hour(endAt): {{ endTime | json }}</pre>
+        <pre class="calendar-event__compare-json">formatDenverDateTime(endAt): {{ endDateTime | json }}</pre>
+        <div class="calendar-event__compare-row">
+          <span class="calendar-event__compare-label">toDenverLocalDateTimeStringForBackend(endAt)</span>
+          <span class="calendar-event__compare-value">{{ endLocalDateTimeForBackend || '(empty)' }}</span>
+        </div>
+
+        <pre class="calendar-event__compare-json" style="margin-top:0.5rem;">formatDenverEventTimes(startAt/endAt): {{ denverEventTimes | json }}</pre>
       </div>
-  
-      <a [routerLink]="['/events', event.eventId]" [attr.aria-label]="'View ' + event.eventName">
-        <span class="action">View</span>
-      </a>
     </div>
-</div>
+
+    <button type="button" class="calendar-event__toggle" (click)="toggleExpanded()">
+      {{ expanded ? 'Show less' : 'Show more' }}
+    </button>
+  </div>
+</article>
 

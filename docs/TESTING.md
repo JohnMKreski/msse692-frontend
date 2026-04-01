@@ -44,3 +44,6 @@ Do NOT commit environment secrets. Store Firebase/API keys in a separate `.env` 
 
 When/if we reintroduce alternative runners, they will be documented here. For now, keep tests in Jasmine/Karma only.
 
+## Test Specific spec Files
+npm test -- --browsers Firefox --include src/app/shared/utils/timeUtility.spec.ts       
+
