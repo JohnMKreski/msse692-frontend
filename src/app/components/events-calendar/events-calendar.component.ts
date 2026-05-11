@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy, ChangeDetectorRef, NgZone, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy, ChangeDetectorRef, NgZone, OnInit, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CalendarOptions } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -79,8 +79,13 @@ export class EventsCalendarComponent implements OnInit {
     this.applyResponsiveOptions();
   }
 
-  ngOnChanges(): void {
-    this.rebuildCalendarEvents();
+  ngOnChanges(changes: SimpleChanges): void {
+    // Only rebuild when event-related inputs change, not when loading changes.
+    // Rebuilding on loading=true would update calendarOptions, causing FullCalendar
+    // to re-render and re-fire datesSet, triggering another fetch loop.
+    if (changes['events'] || changes['mode'] || changes['statusColors'] || changes['typeColors']) {
+      this.rebuildCalendarEvents();
+    }
   }
 
   /** Map raw DTOs to FullCalendar event objects */

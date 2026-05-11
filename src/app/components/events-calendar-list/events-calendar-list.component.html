@@ -1,0 +1,77 @@
+<section class="events-calendar-list">
+    <div class="page-header">
+        <h1 class="page-title">Events Calendar (List View)</h1>
+        <button type="button" class="refresh-btn" (click)="onRefreshClick()" [disabled]="loading">Refresh</button>
+    </div>
+
+    <div class="month-nav" aria-label="Month navigation">
+        <button type="button" class="month-nav__btn" (click)="previousMonth()" [disabled]="loading" aria-label="Previous month">&#8249;</button>
+        <span class="month-nav__label">{{ monthLabel }}</span>
+        <button type="button" class="month-nav__btn" (click)="nextMonth()" [disabled]="loading" aria-label="Next month">&#8250;</button>
+    </div>
+
+    <div class="sort-controls" aria-label="Sort events">
+        <label>
+            Event Category
+            <select [ngModel]="selectedType" (ngModelChange)="onTypeChange($event)">
+                <option *ngFor="let t of (typeOptions$ | async) ?? []" [ngValue]="t.value">
+                    {{ t.label }}
+                </option>
+            </select>
+        </label>
+    </div>
+
+    <!-- Table view -->
+    <div class="events-list" aria-label="Events list">
+        <div *ngIf="loading" class="events-hint">Loading events…</div>
+
+        <div *ngIf="!loading && (!events || events.length === 0)" class="events-hint">
+            No events found.
+        </div>
+
+        <table *ngIf="!loading && events.length" class="events-table">
+            <thead>
+                <tr>
+                    <th scope="col">Name</th>
+                    <th scope="col">Type</th>
+                    <th scope="col">Starts</th>
+                    <th scope="col">Location</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                <tr *ngFor="let e of events">
+                    <td>
+                        <button type="button" class="linklike" (click)="onEventClick(e.eventId)">
+                            {{ e.eventName }}
+                        </button>
+                    </td>
+                    <td>{{ e.typeDisplayName || e.type || '—' }}</td>
+                    <td>{{ e.startAt }}</td>
+                    <td>{{ e.eventLocation || '—' }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Card view -->
+    <div class="events-list" aria-label="Events card list">
+        <ul *ngIf="!loading && events.length" class="events-cards">
+            <li *ngFor="let e of events" class="event-card">
+                <div class="event-title">
+                    <button type="button" class="linklike" (click)="onEventClick(e.eventId)">
+                        {{ e.eventName }}
+                    </button>
+                </div>
+
+                <div class="event-meta">
+                    <span>{{ e.typeDisplayName || e.type || '—' }}</span>
+                    <span class="dot">•</span>
+                    <span>{{ e.startAt }}</span>
+                    <span *ngIf="e.eventLocation" class="dot">•</span>
+                    <span *ngIf="e.eventLocation">{{ e.eventLocation }}</span>
+                </div>
+            </li>
+        </ul>
+    </div>
+</section>
